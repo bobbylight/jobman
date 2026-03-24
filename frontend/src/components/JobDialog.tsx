@@ -15,8 +15,8 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import { STATUSES, FIT_SCORES } from "../constants";
-import type { Job, JobFormData, FitScore, JobStatus } from "../types";
+import { STATUSES, FIT_SCORES, ENDING_SUBSTATUSES, TERMINAL_STATUSES } from "../constants";
+import type { Job, JobFormData, FitScore, JobStatus, EndingSubstatus } from "../types";
 
 const EMPTY: JobFormData = {
 	date_applied: null,
@@ -30,6 +30,7 @@ const EMPTY: JobFormData = {
 	recruiter: null,
 	notes: null,
 	job_description: null,
+	ending_substatus: null,
 	favorite: false,
 };
 
@@ -75,6 +76,8 @@ export default function JobDialog({
 		if (!form.company?.trim()) e.company = "Required";
 		if (!form.role?.trim()) e.role = "Required";
 		if (!form.link?.trim()) e.link = "Required";
+		if (TERMINAL_STATUSES.has(form.status) && !form.ending_substatus)
+			e.ending_substatus = "Required for this status";
 		setErrors(e);
 		return Object.keys(e).length === 0;
 	}
@@ -180,11 +183,50 @@ export default function JobDialog({
 								select
 								label="Status"
 								value={form.status}
-								onChange={(e) => set("status", e.target.value as JobStatus)}
+								onChange={(e) => {
+									const newStatus = e.target.value as JobStatus;
+									const isTerminal = TERMINAL_STATUSES.has(newStatus);
+									setForm((f) => ({
+										...f,
+										status: newStatus,
+										ending_substatus: isTerminal ? f.ending_substatus : null,
+									}));
+									if (errors.status) setErrors(({ status: _, ...rest }) => rest);
+									if (!isTerminal)
+										setErrors(({ ending_substatus: _, ...rest }) => rest);
+								}}
 								fullWidth
 								size="small"
 							>
 								{STATUSES.map((s) => (
+									<MenuItem key={s} value={s}>
+										{s}
+									</MenuItem>
+								))}
+							</TextField>
+						</Grid>
+
+						<Grid size={{ xs: 12, sm: 6 }}>
+							<TextField
+								select
+								label="Final Resolution"
+								value={form.ending_substatus ?? ""}
+								onChange={(e) =>
+									set(
+										"ending_substatus",
+										(e.target.value || null) as EndingSubstatus | null,
+									)
+								}
+								disabled={!TERMINAL_STATUSES.has(form.status)}
+								error={!!errors.ending_substatus}
+								helperText={errors.ending_substatus}
+								fullWidth
+								size="small"
+							>
+								<MenuItem value="">
+									<em>None</em>
+								</MenuItem>
+								{ENDING_SUBSTATUSES.map((s) => (
 									<MenuItem key={s} value={s}>
 										{s}
 									</MenuItem>

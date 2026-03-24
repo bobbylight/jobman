@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import JobDialog from "./JobDialog";
-import type { Job } from "../types";
+import type { Job, JobStatus, EndingSubstatus } from "../types";
 
 const BASE_JOB: Job = {
 	id: 42,
@@ -16,9 +16,21 @@ const BASE_JOB: Job = {
 	recruiter: "Jane",
 	notes: "Great team",
 	referred_by: "Alice",
+	job_description: null,
+	ending_substatus: null,
 	favorite: false,
 	created_at: "2024-01-01T00:00:00.000Z",
 };
+
+const terminalJob = (
+	status: JobStatus,
+	ending_substatus: EndingSubstatus | null,
+): Job => ({ ...BASE_JOB, status, ending_substatus });
+
+function changeSelect(labelText: RegExp | string, optionName: string) {
+	fireEvent.mouseDown(screen.getByLabelText(labelText));
+	fireEvent.click(screen.getByRole("option", { name: optionName }));
+}
 
 const DEFAULT_PROPS = {
 	open: true,
@@ -159,6 +171,201 @@ describe("JobDialog", () => {
 			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
 				expect.objectContaining({ company: "Updated Corp" }),
 			);
+		});
+	});
+
+	describe("Final Resolution field (ending_substatus)", () => {
+		describe("disabled state", () => {
+			it("is disabled for a new job (non-terminal default status)", () => {
+				render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
+				expect(
+					screen.getByLabelText(/Final Resolution/i),
+				).toHaveAttribute("aria-disabled", "true");
+			});
+
+			it("is disabled when editing a job with a non-terminal status", () => {
+				render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+				expect(
+					screen.getByLabelText(/Final Resolution/i),
+				).toHaveAttribute("aria-disabled", "true");
+			});
+
+			it("is enabled when editing a job that already has a terminal status", () => {
+				render(
+					<JobDialog
+						{...DEFAULT_PROPS}
+						initialValues={terminalJob("Offer!", "Offer accepted")}
+					/>,
+				);
+				expect(
+					screen.getByLabelText(/Final Resolution/i),
+				).not.toHaveAttribute("aria-disabled");
+			});
+
+			it("becomes enabled when the user changes status to a terminal value", () => {
+				render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
+				expect(
+					screen.getByLabelText(/Final Resolution/i),
+				).toHaveAttribute("aria-disabled", "true");
+
+				changeSelect(/^Status$/i, "Rejected/Withdrawn");
+
+				expect(
+					screen.getByLabelText(/Final Resolution/i),
+				).not.toHaveAttribute("aria-disabled");
+			});
+
+			it("becomes disabled again when status reverts from terminal to non-terminal", () => {
+				render(
+					<JobDialog
+						{...DEFAULT_PROPS}
+						initialValues={terminalJob("Offer!", "Offer accepted")}
+					/>,
+				);
+				changeSelect(/^Status$/i, "Final round interview");
+				expect(
+					screen.getByLabelText(/Final Resolution/i),
+				).toHaveAttribute("aria-disabled", "true");
+			});
+		});
+
+		describe("auto-clear behavior", () => {
+			it("clears the substatus value when status changes from terminal to non-terminal", () => {
+				render(
+					<JobDialog
+						{...DEFAULT_PROPS}
+						initialValues={terminalJob("Offer!", "Offer accepted")}
+					/>,
+				);
+				const field = screen.getByLabelText(/Final Resolution/i);
+				expect(field).toHaveTextContent("Offer accepted");
+
+				changeSelect(/^Status$/i, "Resume submitted");
+
+				expect(field).not.toHaveTextContent("Offer accepted");
+			});
+
+			it("preserves the substatus when switching between two terminal statuses", () => {
+				render(
+					<JobDialog
+						{...DEFAULT_PROPS}
+						initialValues={terminalJob("Offer!", "Offer accepted")}
+					/>,
+				);
+				changeSelect(/^Status$/i, "Rejected/Withdrawn");
+				expect(
+					screen.getByLabelText(/Final Resolution/i),
+				).toHaveTextContent("Offer accepted");
+			});
+		});
+
+		describe("pre-fill", () => {
+			it("displays the existing substatus value when editing a terminal-status job", () => {
+				render(
+					<JobDialog
+						{...DEFAULT_PROPS}
+						initialValues={terminalJob("Rejected/Withdrawn", "Ghosted")}
+					/>,
+				);
+				expect(
+					screen.getByLabelText(/Final Resolution/i),
+				).toHaveTextContent("Ghosted");
+			});
+		});
+
+		describe("validation", () => {
+			it("blocks save and shows error when terminal status has no substatus", () => {
+				render(
+					<JobDialog
+						{...DEFAULT_PROPS}
+						initialValues={terminalJob("Offer!", null)}
+					/>,
+				);
+				fireEvent.click(screen.getByRole("button", { name: "Save" }));
+				expect(
+					screen.getByText("Required for this status"),
+				).toBeInTheDocument();
+				expect(DEFAULT_PROPS.onSave).not.toHaveBeenCalled();
+			});
+
+			it("does not show a substatus error for non-terminal status on save attempt", () => {
+				render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
+				fireEvent.click(screen.getByRole("button", { name: "Add Job" }));
+				expect(
+					screen.queryByText("Required for this status"),
+				).not.toBeInTheDocument();
+			});
+
+			it("clears the substatus error when a substatus is subsequently chosen", () => {
+				render(
+					<JobDialog
+						{...DEFAULT_PROPS}
+						initialValues={terminalJob("Offer!", null)}
+					/>,
+				);
+				// Trigger the error
+				fireEvent.click(screen.getByRole("button", { name: "Save" }));
+				expect(screen.getByText("Required for this status")).toBeInTheDocument();
+
+				// Pick a substatus
+				changeSelect(/Final Resolution/i, "Offer accepted");
+
+				expect(
+					screen.queryByText("Required for this status"),
+				).not.toBeInTheDocument();
+			});
+
+			it("clears the substatus error when status changes away from terminal", () => {
+				render(
+					<JobDialog
+						{...DEFAULT_PROPS}
+						initialValues={terminalJob("Offer!", null)}
+					/>,
+				);
+				fireEvent.click(screen.getByRole("button", { name: "Save" }));
+				expect(screen.getByText("Required for this status")).toBeInTheDocument();
+
+				changeSelect(/^Status$/i, "Initial interview");
+
+				expect(
+					screen.queryByText("Required for this status"),
+				).not.toBeInTheDocument();
+			});
+		});
+
+		describe("onSave payload", () => {
+			it("includes ending_substatus in the saved data", () => {
+				render(
+					<JobDialog
+						{...DEFAULT_PROPS}
+						initialValues={terminalJob("Rejected/Withdrawn", "Ghosted")}
+					/>,
+				);
+				fireEvent.click(screen.getByRole("button", { name: "Save" }));
+				expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
+					expect.objectContaining({
+						status: "Rejected/Withdrawn",
+						ending_substatus: "Ghosted",
+					}),
+				);
+			});
+
+			it("sends ending_substatus as null for non-terminal status jobs", () => {
+				render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
+				fireEvent.change(screen.getByLabelText(/Company/), {
+					target: { value: "X" },
+				});
+				fireEvent.change(screen.getByLabelText(/Role/), {
+					target: { value: "Y" },
+				});
+				fireEvent.change(screen.getByLabelText(/Link/), {
+					target: { value: "https://x.com" },
+				});
+				fireEvent.click(screen.getByRole("button", { name: "Add Job" }));
+				expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
+					expect.objectContaining({ ending_substatus: null }),
+				);
+			});
 		});
 	});
 });
