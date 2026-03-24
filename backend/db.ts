@@ -18,7 +18,8 @@ db.exec(`
     notes TEXT,
     favorite INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now')),
-    job_description TEXT
+    job_description TEXT,
+    ending_substatus TEXT
   )
 `);
 

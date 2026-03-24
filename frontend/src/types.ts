@@ -6,6 +6,14 @@ export type JobStatus =
 	| "Offer!"
 	| "Rejected/Withdrawn";
 
+export type EndingSubstatus =
+	| "Withdrawn"
+	| "Rejected"
+	| "Ghosted"
+	| "No response"
+	| "Offer declined"
+	| "Offer accepted";
+
 export type FitScore =
 	| "Not sure"
 	| "Very Low"
@@ -27,6 +35,7 @@ export interface Job {
 	recruiter: string | null;
 	notes: string | null;
 	job_description: string | null;
+	ending_substatus: EndingSubstatus | null;
 	favorite: boolean;
 	created_at: string;
 }
