@@ -135,6 +135,8 @@ describe("App", () => {
 		});
 
 		fireEvent.click(screen.getByRole("button", { name: /Add Job/ }));
-		expect(screen.getByRole("heading", { name: "Add Job" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Add Job" }),
+		).toBeInTheDocument();
 	});
 });

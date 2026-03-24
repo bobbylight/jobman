@@ -4,8 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "concurrently --names \"api,web\" --prefix-colors \"cyan,magenta\" \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "build": "npm run build --prefix frontend",
     "lint": "oxlint --config oxlint.json frontend/src backend",
-    "format": "biome format --write frontend/src backend/*.ts",
+    "lint:fix": "oxlint --fix --config oxlint.json frontend/src backend",
+    "format": "biome format frontend/src backend/*.ts",
+    "format:fix": "biome format --write frontend/src backend/*.ts",
     "install:all": "npm install --prefix backend && npm install --prefix frontend",
     "test": "npm test --prefix backend && npm test --prefix frontend"
   },
