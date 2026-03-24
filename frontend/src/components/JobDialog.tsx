@@ -140,7 +140,7 @@ export default function JobDialog({
 
 				<DialogContent dividers>
 					<Grid container spacing={2} sx={{ pt: 0.5 }}>
-						<Grid item xs={12} sm={6}>
+						<Grid size={{ xs: 12, sm: 6 }}>
 							<TextField
 								label="Company *"
 								value={form.company}
@@ -151,7 +151,7 @@ export default function JobDialog({
 								size="small"
 							/>
 						</Grid>
-						<Grid item xs={12} sm={6}>
+						<Grid size={{ xs: 12, sm: 6 }}>
 							<TextField
 								label="Role *"
 								value={form.role}
@@ -162,7 +162,7 @@ export default function JobDialog({
 								size="small"
 							/>
 						</Grid>
-						<Grid item xs={12}>
+						<Grid size={12}>
 							<TextField
 								label="Link *"
 								value={form.link}
@@ -175,7 +175,7 @@ export default function JobDialog({
 							/>
 						</Grid>
 
-						<Grid item xs={12} sm={6}>
+						<Grid size={{ xs: 12, sm: 6 }}>
 							<TextField
 								select
 								label="Status"
@@ -192,7 +192,7 @@ export default function JobDialog({
 							</TextField>
 						</Grid>
 
-						<Grid item xs={12} sm={6}>
+						<Grid size={{ xs: 12, sm: 6 }}>
 							<TextField
 								select
 								label="Fit Score"
@@ -214,7 +214,7 @@ export default function JobDialog({
 							</TextField>
 						</Grid>
 
-						<Grid item xs={12} sm={6}>
+						<Grid size={{ xs: 12, sm: 6 }}>
 							<TextField
 								label="Date Applied"
 								type="date"
@@ -222,11 +222,11 @@ export default function JobDialog({
 								onChange={(e) => set("date_applied", e.target.value || null)}
 								fullWidth
 								size="small"
-								InputLabelProps={{ shrink: true }}
+								slotProps={{ inputLabel: { shrink: true } }}
 							/>
 						</Grid>
 
-						<Grid item xs={12} sm={6}>
+						<Grid size={{ xs: 12, sm: 6 }}>
 							<TextField
 								label="Salary"
 								value={form.salary ?? ""}
@@ -237,7 +237,7 @@ export default function JobDialog({
 							/>
 						</Grid>
 
-						<Grid item xs={12} sm={6}>
+						<Grid size={{ xs: 12, sm: 6 }}>
 							<TextField
 								label="Recruiter"
 								value={form.recruiter ?? ""}
@@ -247,7 +247,7 @@ export default function JobDialog({
 							/>
 						</Grid>
 
-						<Grid item xs={12}>
+						<Grid size={12}>
 							<TextField
 								label="Job Description"
 								value={form.job_description ?? ""}
@@ -260,7 +260,7 @@ export default function JobDialog({
 							/>
 						</Grid>
 
-						<Grid item xs={12}>
+						<Grid size={12}>
 							<TextField
 								label="Notes"
 								value={form.notes ?? ""}
@@ -272,7 +272,7 @@ export default function JobDialog({
 							/>
 						</Grid>
 
-						<Grid item xs={12} sm={6}>
+						<Grid size={{ xs: 12, sm: 6 }}>
 							<TextField
 								label="Referred By"
 								value={form.referred_by ?? ""}
@@ -282,7 +282,7 @@ export default function JobDialog({
 								placeholder="Name of referrer"
 							/>
 						</Grid>
-						<Grid item xs={12} sm={6}>
+						<Grid size={{ xs: 12, sm: 6 }}>
 							<FormControlLabel
 								control={
 									<Checkbox

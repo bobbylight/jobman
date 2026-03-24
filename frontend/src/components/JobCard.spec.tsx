@@ -88,7 +88,11 @@ describe("JobCard", () => {
 				onToggleFavorite={vi.fn()}
 			/>,
 		);
-		expect(screen.getByTitle("Referred by Jane Doe")).toBeInTheDocument();
+		// MUI v7 Tooltip sets aria-label on the child element instead of title
+		expect(screen.getByTestId("PeopleIcon")).toHaveAttribute(
+			"aria-label",
+			"Referred by Jane Doe",
+		);
 	});
 
 	it("does not show referral icon when referred_by is null", () => {
@@ -99,7 +103,7 @@ describe("JobCard", () => {
 				onToggleFavorite={vi.fn()}
 			/>,
 		);
-		expect(screen.queryByTitle(/Referred by/)).not.toBeInTheDocument();
+		expect(screen.queryByTestId("PeopleIcon")).not.toBeInTheDocument();
 	});
 
 	it("shows recruiter name when recruiter is set", () => {
@@ -121,7 +125,8 @@ describe("JobCard", () => {
 				onToggleFavorite={vi.fn()}
 			/>,
 		);
-		expect(screen.getByTitle("Unfavorite")).toBeInTheDocument();
+		// MUI v7 Tooltip sets aria-label on the child element instead of title
+		expect(screen.getByRole("button", { name: "Unfavorite" })).toBeInTheDocument();
 	});
 
 	it("shows Favorite tooltip when job is not a favorite", () => {
@@ -132,7 +137,8 @@ describe("JobCard", () => {
 				onToggleFavorite={vi.fn()}
 			/>,
 		);
-		expect(screen.getByTitle("Favorite")).toBeInTheDocument();
+		// MUI v7 Tooltip sets aria-label on the child element instead of title
+		expect(screen.getByRole("button", { name: "Favorite" })).toBeInTheDocument();
 	});
 
 	it("calls onToggleFavorite with the job when the star button is clicked", () => {
@@ -144,7 +150,7 @@ describe("JobCard", () => {
 				onToggleFavorite={onToggleFavorite}
 			/>,
 		);
-		fireEvent.click(screen.getByTitle("Favorite"));
+		fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
 		expect(onToggleFavorite).toHaveBeenCalledWith(BASE_JOB);
 	});
 
@@ -169,7 +175,8 @@ describe("JobCard", () => {
 				onToggleFavorite={vi.fn()}
 			/>,
 		);
-		const link = screen.getByTitle("Open job link").closest("a");
+		// MUI v7 Tooltip sets aria-label on the child element instead of title
+		const link = screen.getByRole("link", { name: "Open job link" });
 		expect(link).toHaveAttribute("href", "https://acme.example.com/job");
 	});
 });
