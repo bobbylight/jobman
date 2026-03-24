@@ -3,6 +3,7 @@ backend/node_modules/
 frontend/node_modules/
 backend/jobman.db
 dist/
+coverage/
 .vite/
 .DS_Store
 *.iml

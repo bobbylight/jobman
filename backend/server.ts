@@ -1,12 +1,8 @@
 import express from "express";
 import cors from "cors";
-import db from "./db.js";
+import type { DatabaseSync } from "node:sqlite"; // type-only: erased at compile time
 
-const app = express();
 const PORT = 3001;
-
-app.use(cors());
-app.use(express.json());
 
 interface JobRow {
 	id: number;
@@ -31,85 +27,110 @@ function toClient(row: unknown) {
 	return { ...job, favorite: !!job.favorite };
 }
 
-// GET all jobs
-app.get("/api/jobs", (_req, res) => {
-	const jobs = db.prepare("SELECT * FROM jobs ORDER BY created_at DESC").all();
-	res.json(jobs.map(toClient));
-});
+export function createApp(db: DatabaseSync) {
+	const app = express();
 
-// POST create job
-app.post("/api/jobs", (req, res) => {
-	const f = req.body;
-	const result = db
-		.prepare(`
-    INSERT INTO jobs (date_applied, company, role, link, salary, fit_score, referred_by, status, recruiter, notes, job_description, favorite)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `)
-		.run(
-			f.date_applied ?? null,
-			f.company,
-			f.role,
-			f.link,
-			f.salary ?? null,
-			f.fit_score ?? null,
-			f.referred_by ?? null,
-			f.status ?? "Not started",
-			f.recruiter ?? null,
-			f.notes ?? null,
-			f.job_description ?? null,
-			f.favorite ? 1 : 0,
-		);
-	const job = db
-		.prepare("SELECT * FROM jobs WHERE id = ?")
-		.get(result.lastInsertRowid);
-	res.status(201).json(toClient(job));
-});
+	app.use(cors());
+	app.use(express.json());
 
-// PUT update job
-app.put("/api/jobs/:id", (req, res) => {
-	const { id } = req.params;
-	const f = req.body;
-	const info = db
-		.prepare(`
-    UPDATE jobs SET
-      date_applied = ?, company = ?, role = ?, link = ?, salary = ?,
-      fit_score = ?, referred_by = ?, status = ?, recruiter = ?, notes = ?, job_description = ?, favorite = ?
-    WHERE id = ?
-  `)
-		.run(
-			f.date_applied ?? null,
-			f.company,
-			f.role,
-			f.link,
-			f.salary ?? null,
-			f.fit_score ?? null,
-			f.referred_by ?? null,
-			f.status,
-			f.recruiter ?? null,
-			f.notes ?? null,
-			f.job_description ?? null,
-			f.favorite ? 1 : 0,
-			id,
-		);
-	if (info.changes === 0)
-		return res.status(404).json({ error: "Job not found" });
-	const job = db.prepare("SELECT * FROM jobs WHERE id = ?").get(id);
-	return res.json(toClient(job));
-});
+	// GET all jobs
+	app.get("/api/jobs", (_req, res) => {
+		const jobs = db
+			.prepare("SELECT * FROM jobs ORDER BY created_at DESC")
+			.all();
+		res.json(jobs.map(toClient));
+	});
 
-// DELETE job
-app.delete("/api/jobs/:id", (req, res) => {
-	const info = db.prepare("DELETE FROM jobs WHERE id = ?").run(req.params.id);
-	if (info.changes === 0)
-		return res.status(404).json({ error: "Job not found" });
-	return res.json({ success: true });
-});
+	// POST create job
+	app.post("/api/jobs", (req, res) => {
+		const f = req.body;
+		if (f.company && f.link) {
+			const existing = db
+				.prepare(
+					"SELECT id FROM jobs WHERE company = ? AND link = ? LIMIT 1",
+				)
+				.get(f.company, f.link);
+			if (existing) {
+				return res.status(409).json({ error: "Job already exists" });
+			}
+		}
+		const result = db
+			.prepare(`
+      INSERT INTO jobs (date_applied, company, role, link, salary, fit_score, referred_by, status, recruiter, notes, job_description, favorite)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+			.run(
+				f.date_applied ?? null,
+				f.company,
+				f.role,
+				f.link,
+				f.salary ?? null,
+				f.fit_score ?? null,
+				f.referred_by ?? null,
+				f.status ?? "Not started",
+				f.recruiter ?? null,
+				f.notes ?? null,
+				f.job_description ?? null,
+				f.favorite ? 1 : 0,
+			);
+		const job = db
+			.prepare("SELECT * FROM jobs WHERE id = ?")
+			.get(result.lastInsertRowid);
+		return res.status(201).json(toClient(job));
+	});
 
+	// PUT update job
+	app.put("/api/jobs/:id", (req, res) => {
+		const { id } = req.params;
+		const f = req.body;
+		const info = db
+			.prepare(`
+      UPDATE jobs SET
+        date_applied = ?, company = ?, role = ?, link = ?, salary = ?,
+        fit_score = ?, referred_by = ?, status = ?, recruiter = ?, notes = ?, job_description = ?, favorite = ?
+      WHERE id = ?
+    `)
+			.run(
+				f.date_applied ?? null,
+				f.company,
+				f.role,
+				f.link,
+				f.salary ?? null,
+				f.fit_score ?? null,
+				f.referred_by ?? null,
+				f.status,
+				f.recruiter ?? null,
+				f.notes ?? null,
+				f.job_description ?? null,
+				f.favorite ? 1 : 0,
+				id,
+			);
+		if (info.changes === 0)
+			return res.status(404).json({ error: "Job not found" });
+		const job = db.prepare("SELECT * FROM jobs WHERE id = ?").get(id);
+		return res.json(toClient(job));
+	});
+
+	// DELETE job
+	app.delete("/api/jobs/:id", (req, res) => {
+		const info = db
+			.prepare("DELETE FROM jobs WHERE id = ?")
+			.run(req.params.id);
+		if (info.changes === 0)
+			return res.status(404).json({ error: "Job not found" });
+		return res.json({ success: true });
+	});
+
+	return app;
+}
+
+// Production startup — dynamic import keeps db.ts (and node:sqlite) out of
+// the module graph when server.ts is imported by tests.
 if (process.env["NODE_ENV"] !== "test") {
+	const { default: db } = await import("./db.js");
+	const app = createApp(db);
 	app.listen(PORT, () => {
 		// eslint-disable-next-line no-console
 		console.log(`JobMan API running at http://localhost:${PORT}`);
 	});
 }
-
-export { app };
