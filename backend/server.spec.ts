@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { DatabaseSync } from "node:sqlite";
 import request from "supertest";
-import { createApp } from "./server.js";
+import { createApp, TERMINAL_STATUSES, VALID_ENDING_SUBSTATUSES } from "./server.js";
 
 const testDb = new DatabaseSync(":memory:");
 testDb.exec(`
@@ -19,7 +19,8 @@ testDb.exec(`
     notes TEXT,
     favorite INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now')),
-    job_description TEXT
+    job_description TEXT,
+    ending_substatus TEXT
   )
 `);
 
@@ -112,6 +113,7 @@ describe("POST /api/jobs", () => {
 		expect(res.body.fit_score).toBeNull();
 		expect(res.body.recruiter).toBeNull();
 		expect(res.body.notes).toBeNull();
+		expect(res.body.ending_substatus).toBeNull();
 	});
 
 	it("returns 409 when a job with the same company and link already exists", async () => {
@@ -180,6 +182,119 @@ describe("PUT /api/jobs/:id", () => {
 
 		expect(res.body.referred_by).toBe("Jane Doe");
 		expect(res.body.favorite).toBe(true);
+	});
+});
+
+describe("ending_substatus validation", () => {
+	const NON_TERMINAL_CASES = [
+		"Not started",
+		"Resume submitted",
+		"Initial interview",
+		"Final round interview",
+	] as const;
+	const VALID_SUBSTATUSES = [...VALID_ENDING_SUBSTATUSES];
+
+	describe("POST /api/jobs", () => {
+		it.each([...TERMINAL_STATUSES])(
+			'returns 422 when status is "%s" and ending_substatus is absent',
+			async (status) => {
+				const res = await request(app)
+					.post("/api/jobs")
+					.send({ ...BASE_JOB, status });
+				expect(res.status).toBe(422);
+				expect(res.body.error).toMatch(/ending_substatus is required/);
+			},
+		);
+
+		it.each([...TERMINAL_STATUSES])(
+			'returns 422 when status is "%s" and ending_substatus is an invalid value',
+			async (status) => {
+				const res = await request(app)
+					.post("/api/jobs")
+					.send({ ...BASE_JOB, status, ending_substatus: "Vanished" });
+				expect(res.status).toBe(422);
+			},
+		);
+
+		it.each(VALID_SUBSTATUSES)(
+			'accepts ending_substatus "%s" with terminal status',
+			async (ending_substatus) => {
+				const status = "Offer!";
+				const res = await request(app)
+					.post("/api/jobs")
+					.send({ ...BASE_JOB, status, ending_substatus });
+				expect(res.status).toBe(201);
+				expect(res.body.ending_substatus).toBe(ending_substatus);
+			},
+		);
+
+		it.each(NON_TERMINAL_CASES)(
+			'returns 422 when status is "%s" and ending_substatus is set',
+			async (status) => {
+				const res = await request(app)
+					.post("/api/jobs")
+					.send({ ...BASE_JOB, status, ending_substatus: "Ghosted" });
+				expect(res.status).toBe(422);
+				expect(res.body.error).toMatch(/must be null/);
+			},
+		);
+
+		it("returns ending_substatus as null for non-terminal jobs", async () => {
+			const res = await request(app).post("/api/jobs").send(BASE_JOB);
+			expect(res.status).toBe(201);
+			expect(res.body.ending_substatus).toBeNull();
+		});
+	});
+
+	describe("PUT /api/jobs/:id", () => {
+		it("returns 422 when updating to terminal status without ending_substatus", async () => {
+			const createRes = await request(app).post("/api/jobs").send(BASE_JOB);
+			const id: number = createRes.body.id;
+
+			const res = await request(app)
+				.put(`/api/jobs/${id}`)
+				.send({ ...BASE_JOB, status: "Rejected/Withdrawn" });
+			expect(res.status).toBe(422);
+			expect(res.body.error).toMatch(/ending_substatus is required/);
+		});
+
+		it("accepts a valid ending_substatus when updating to a terminal status", async () => {
+			const createRes = await request(app).post("/api/jobs").send(BASE_JOB);
+			const id: number = createRes.body.id;
+
+			const res = await request(app)
+				.put(`/api/jobs/${id}`)
+				.send({
+					...BASE_JOB,
+					status: "Rejected/Withdrawn",
+					ending_substatus: "Ghosted",
+				});
+			expect(res.status).toBe(200);
+			expect(res.body.ending_substatus).toBe("Ghosted");
+		});
+
+		it("returns 422 when updating a non-terminal job with a non-null ending_substatus", async () => {
+			const createRes = await request(app).post("/api/jobs").send(BASE_JOB);
+			const id: number = createRes.body.id;
+
+			const res = await request(app)
+				.put(`/api/jobs/${id}`)
+				.send({ ...BASE_JOB, status: "Resume submitted", ending_substatus: "Ghosted" });
+			expect(res.status).toBe(422);
+		});
+
+		it("clears ending_substatus when moving from terminal back to non-terminal", async () => {
+			const createRes = await request(app)
+				.post("/api/jobs")
+				.send({ ...BASE_JOB, status: "Offer!", ending_substatus: "Offer accepted" });
+			const id: number = createRes.body.id;
+
+			const res = await request(app)
+				.put(`/api/jobs/${id}`)
+				.send({ ...BASE_JOB, status: "Final round interview" });
+			expect(res.status).toBe(200);
+			expect(res.body.ending_substatus).toBeNull();
+		});
 	});
 });
 

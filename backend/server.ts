@@ -17,8 +17,37 @@ interface JobRow {
 	recruiter: string | null;
 	notes: string | null;
 	job_description: string | null;
+	ending_substatus: string | null;
 	favorite: number;
 	created_at: string;
+}
+
+// TODO: Share types with frontend
+export const TERMINAL_STATUSES = new Set(["Rejected/Withdrawn", "Offer!"]);
+export const VALID_ENDING_SUBSTATUSES = new Set([
+	"Withdrawn",
+	"Rejected",
+	"Ghosted",
+	"No response",
+	"Offer declined",
+	"Offer accepted",
+]);
+
+function validateEndingSubstatus(
+	status: string,
+	ending_substatus: unknown,
+): string | null {
+	if (TERMINAL_STATUSES.has(status)) {
+		if (
+			typeof ending_substatus !== "string" ||
+			!VALID_ENDING_SUBSTATUSES.has(ending_substatus)
+		) {
+			return `ending_substatus is required for status "${status}" and must be one of: ${[...VALID_ENDING_SUBSTATUSES].join(", ")}`;
+		}
+	} else if (ending_substatus != null) {
+		return `ending_substatus must be null when status is "${status}"`;
+	}
+	return null;
 }
 
 // SQLite stores booleans as 0/1 — convert for the client
@@ -44,6 +73,11 @@ export function createApp(db: DatabaseSync) {
 	// POST create job
 	app.post("/api/jobs", (req, res) => {
 		const f = req.body;
+		const substatusError = validateEndingSubstatus(
+			f.status ?? "Not started",
+			f.ending_substatus ?? null,
+		);
+		if (substatusError) return res.status(422).json({ error: substatusError });
 		if (f.company && f.link) {
 			const existing = db
 				.prepare(
@@ -56,8 +90,8 @@ export function createApp(db: DatabaseSync) {
 		}
 		const result = db
 			.prepare(`
-      INSERT INTO jobs (date_applied, company, role, link, salary, fit_score, referred_by, status, recruiter, notes, job_description, favorite)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO jobs (date_applied, company, role, link, salary, fit_score, referred_by, status, recruiter, notes, job_description, ending_substatus, favorite)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
 			.run(
 				f.date_applied ?? null,
@@ -71,6 +105,7 @@ export function createApp(db: DatabaseSync) {
 				f.recruiter ?? null,
 				f.notes ?? null,
 				f.job_description ?? null,
+				f.ending_substatus ?? null,
 				f.favorite ? 1 : 0,
 			);
 		const job = db
@@ -83,11 +118,13 @@ export function createApp(db: DatabaseSync) {
 	app.put("/api/jobs/:id", (req, res) => {
 		const { id } = req.params;
 		const f = req.body;
+		const substatusError = validateEndingSubstatus(f.status, f.ending_substatus ?? null);
+		if (substatusError) return res.status(422).json({ error: substatusError });
 		const info = db
 			.prepare(`
       UPDATE jobs SET
         date_applied = ?, company = ?, role = ?, link = ?, salary = ?,
-        fit_score = ?, referred_by = ?, status = ?, recruiter = ?, notes = ?, job_description = ?, favorite = ?
+        fit_score = ?, referred_by = ?, status = ?, recruiter = ?, notes = ?, job_description = ?, ending_substatus = ?, favorite = ?
       WHERE id = ?
     `)
 			.run(
@@ -102,6 +139,7 @@ export function createApp(db: DatabaseSync) {
 				f.recruiter ?? null,
 				f.notes ?? null,
 				f.job_description ?? null,
+				f.ending_substatus ?? null,
 				f.favorite ? 1 : 0,
 				id,
 			);
