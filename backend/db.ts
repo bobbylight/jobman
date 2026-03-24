@@ -17,9 +17,17 @@ db.exec(`
     recruiter TEXT,
     notes TEXT,
     favorite INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now'))
+    created_at TEXT DEFAULT (datetime('now')),
+    job_description TEXT
   )
 `);
+
+// Add column to existing databases that predate job_description
+try {
+  db.exec("ALTER TABLE jobs ADD COLUMN job_description TEXT");
+} catch {
+  // Column already exists
+}
 
 
 export default db;

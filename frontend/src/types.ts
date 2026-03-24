@@ -26,6 +26,7 @@ export interface Job {
 	status: JobStatus;
 	recruiter: string | null;
 	notes: string | null;
+	job_description: string | null;
 	favorite: boolean;
 	created_at: string;
 }

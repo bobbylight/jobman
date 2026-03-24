@@ -29,6 +29,7 @@ const EMPTY: JobFormData = {
 	status: "Not started",
 	recruiter: null,
 	notes: null,
+	job_description: null,
 	favorite: false,
 };
 
@@ -243,6 +244,19 @@ export default function JobDialog({
 								onChange={(e) => set("recruiter", e.target.value || null)}
 								fullWidth
 								size="small"
+							/>
+						</Grid>
+
+						<Grid item xs={12}>
+							<TextField
+								label="Job Description"
+								value={form.job_description ?? ""}
+								onChange={(e) => set("job_description", e.target.value || null)}
+								fullWidth
+								size="small"
+								multiline
+								rows={5}
+								placeholder="Paste the job description here in case the posting gets removed..."
 							/>
 						</Grid>
 
