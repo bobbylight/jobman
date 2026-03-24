@@ -20,6 +20,7 @@ vi.mock("./db.js", async () => {
       status TEXT DEFAULT 'Not started',
       recruiter TEXT,
       notes TEXT,
+      job_description TEXT,
       favorite INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     )
