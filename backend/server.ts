@@ -80,9 +80,7 @@ export function createApp(db: DatabaseSync) {
 		if (substatusError) return res.status(422).json({ error: substatusError });
 		if (f.company && f.link) {
 			const existing = db
-				.prepare(
-					"SELECT id FROM jobs WHERE company = ? AND link = ? LIMIT 1",
-				)
+				.prepare("SELECT id FROM jobs WHERE company = ? AND link = ? LIMIT 1")
 				.get(f.company, f.link);
 			if (existing) {
 				return res.status(409).json({ error: "Job already exists" });
@@ -118,7 +116,10 @@ export function createApp(db: DatabaseSync) {
 	app.put("/api/jobs/:id", (req, res) => {
 		const { id } = req.params;
 		const f = req.body;
-		const substatusError = validateEndingSubstatus(f.status, f.ending_substatus ?? null);
+		const substatusError = validateEndingSubstatus(
+			f.status,
+			f.ending_substatus ?? null,
+		);
 		if (substatusError) return res.status(422).json({ error: substatusError });
 		const info = db
 			.prepare(`
@@ -151,9 +152,7 @@ export function createApp(db: DatabaseSync) {
 
 	// DELETE job
 	app.delete("/api/jobs/:id", (req, res) => {
-		const info = db
-			.prepare("DELETE FROM jobs WHERE id = ?")
-			.run(req.params.id);
+		const info = db.prepare("DELETE FROM jobs WHERE id = ?").run(req.params.id);
 		if (info.changes === 0)
 			return res.status(404).json({ error: "Job not found" });
 		return res.json({ success: true });

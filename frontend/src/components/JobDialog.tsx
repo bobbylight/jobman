@@ -15,8 +15,19 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import { STATUSES, FIT_SCORES, ENDING_SUBSTATUSES, TERMINAL_STATUSES } from "../constants";
-import type { Job, JobFormData, FitScore, JobStatus, EndingSubstatus } from "../types";
+import {
+	STATUSES,
+	FIT_SCORES,
+	ENDING_SUBSTATUSES,
+	TERMINAL_STATUSES,
+} from "../constants";
+import type {
+	Job,
+	JobFormData,
+	FitScore,
+	JobStatus,
+	EndingSubstatus,
+} from "../types";
 
 const EMPTY: JobFormData = {
 	date_applied: null,
@@ -191,7 +202,8 @@ export default function JobDialog({
 										status: newStatus,
 										ending_substatus: isTerminal ? f.ending_substatus : null,
 									}));
-									if (errors.status) setErrors(({ status: _, ...rest }) => rest);
+									if (errors.status)
+										setErrors(({ status: _, ...rest }) => rest);
 									if (!isTerminal)
 										setErrors(({ ending_substatus: _, ...rest }) => rest);
 								}}

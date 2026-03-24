@@ -23,7 +23,9 @@ vi.mock("@dnd-kit/utilities", () => ({
 	CSS: { Translate: { toString: () => "" } },
 }));
 
-const makeJob = (overrides: Partial<Job> & Pick<Job, "id" | "status">): Job => ({
+const makeJob = (
+	overrides: Partial<Job> & Pick<Job, "id" | "status">,
+): Job => ({
 	company: "Acme",
 	role: "Engineer",
 	link: "https://acme.com",

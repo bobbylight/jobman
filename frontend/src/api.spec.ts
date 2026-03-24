@@ -42,13 +42,17 @@ describe("api", () => {
 			const result = await api.getJobs();
 			expect(mockFetch).toHaveBeenCalledWith(
 				"/api/jobs",
-				expect.objectContaining({ headers: { "Content-Type": "application/json" } }),
+				expect.objectContaining({
+					headers: { "Content-Type": "application/json" },
+				}),
 			);
 			expect(result).toEqual([MOCK_JOB]);
 		});
 
 		it("throws when the response is not ok", async () => {
-			mockFetch.mockResolvedValue(makeResponse({ error: "Server error" }, false));
+			mockFetch.mockResolvedValue(
+				makeResponse({ error: "Server error" }, false),
+			);
 			await expect(api.getJobs()).rejects.toThrow("API error 400");
 		});
 	});

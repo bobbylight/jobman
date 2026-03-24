@@ -9,7 +9,10 @@ export const STATUSES: JobStatus[] = [
 	"Rejected/Withdrawn",
 ];
 
-export const TERMINAL_STATUSES = new Set<JobStatus>(["Offer!", "Rejected/Withdrawn"]);
+export const TERMINAL_STATUSES = new Set<JobStatus>([
+	"Offer!",
+	"Rejected/Withdrawn",
+]);
 
 export const ENDING_SUBSTATUSES: EndingSubstatus[] = [
 	"Withdrawn",

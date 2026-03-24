@@ -47,17 +47,23 @@ describe("JobDialog", () => {
 	describe("add mode (no initialValues)", () => {
 		it('shows "Add Job" as the dialog title', () => {
 			render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
-			expect(screen.getByRole("heading", { name: "Add Job" })).toBeInTheDocument();
+			expect(
+				screen.getByRole("heading", { name: "Add Job" }),
+			).toBeInTheDocument();
 		});
 
 		it("does not show a Delete button", () => {
 			render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
-			expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: "Delete" }),
+			).not.toBeInTheDocument();
 		});
 
 		it('shows an "Add Job" submit button', () => {
 			render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
-			expect(screen.getByRole("button", { name: "Add Job" })).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: "Add Job" }),
+			).toBeInTheDocument();
 		});
 
 		it("shows validation errors when required fields are empty on save", () => {
@@ -113,21 +119,27 @@ describe("JobDialog", () => {
 	describe("edit mode (with initialValues)", () => {
 		it('shows "Edit Job" as the dialog title', () => {
 			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
-			expect(screen.getByRole("heading", { name: "Edit Job" })).toBeInTheDocument();
+			expect(
+				screen.getByRole("heading", { name: "Edit Job" }),
+			).toBeInTheDocument();
 		});
 
 		it("pre-fills form fields with initialValues", () => {
 			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
 			expect(screen.getByLabelText(/Company/)).toHaveValue("Acme Corp");
 			expect(screen.getByLabelText(/Role/)).toHaveValue("Engineer");
-			expect(screen.getByLabelText(/Link/)).toHaveValue("https://acme.example.com/job");
+			expect(screen.getByLabelText(/Link/)).toHaveValue(
+				"https://acme.example.com/job",
+			);
 			expect(screen.getByLabelText(/Salary/)).toHaveValue("$120k");
 			expect(screen.getByLabelText(/Recruiter/)).toHaveValue("Jane");
 		});
 
 		it("shows a Delete button", () => {
 			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
-			expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: "Delete" }),
+			).toBeInTheDocument();
 		});
 
 		it('shows "Save" as the submit button label', () => {
@@ -147,8 +159,12 @@ describe("JobDialog", () => {
 			fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 
 			// Click the confirm Delete button inside the confirmation dialog
-			const confirmDialog = screen.getByText("Delete job?").closest('[role="dialog"]')!;
-			fireEvent.click(within(confirmDialog).getByRole("button", { name: "Delete" }));
+			const confirmDialog = screen
+				.getByText("Delete job?")
+				.closest('[role="dialog"]')!;
+			fireEvent.click(
+				within(confirmDialog).getByRole("button", { name: "Delete" }),
+			);
 
 			expect(DEFAULT_PROPS.onDelete).toHaveBeenCalledWith(42);
 		});
@@ -178,16 +194,18 @@ describe("JobDialog", () => {
 		describe("disabled state", () => {
 			it("is disabled for a new job (non-terminal default status)", () => {
 				render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
-				expect(
-					screen.getByLabelText(/Final Resolution/i),
-				).toHaveAttribute("aria-disabled", "true");
+				expect(screen.getByLabelText(/Final Resolution/i)).toHaveAttribute(
+					"aria-disabled",
+					"true",
+				);
 			});
 
 			it("is disabled when editing a job with a non-terminal status", () => {
 				render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
-				expect(
-					screen.getByLabelText(/Final Resolution/i),
-				).toHaveAttribute("aria-disabled", "true");
+				expect(screen.getByLabelText(/Final Resolution/i)).toHaveAttribute(
+					"aria-disabled",
+					"true",
+				);
 			});
 
 			it("is enabled when editing a job that already has a terminal status", () => {
@@ -197,22 +215,23 @@ describe("JobDialog", () => {
 						initialValues={terminalJob("Offer!", "Offer accepted")}
 					/>,
 				);
-				expect(
-					screen.getByLabelText(/Final Resolution/i),
-				).not.toHaveAttribute("aria-disabled");
+				expect(screen.getByLabelText(/Final Resolution/i)).not.toHaveAttribute(
+					"aria-disabled",
+				);
 			});
 
 			it("becomes enabled when the user changes status to a terminal value", () => {
 				render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
-				expect(
-					screen.getByLabelText(/Final Resolution/i),
-				).toHaveAttribute("aria-disabled", "true");
+				expect(screen.getByLabelText(/Final Resolution/i)).toHaveAttribute(
+					"aria-disabled",
+					"true",
+				);
 
 				changeSelect(/^Status$/i, "Rejected/Withdrawn");
 
-				expect(
-					screen.getByLabelText(/Final Resolution/i),
-				).not.toHaveAttribute("aria-disabled");
+				expect(screen.getByLabelText(/Final Resolution/i)).not.toHaveAttribute(
+					"aria-disabled",
+				);
 			});
 
 			it("becomes disabled again when status reverts from terminal to non-terminal", () => {
@@ -223,9 +242,10 @@ describe("JobDialog", () => {
 					/>,
 				);
 				changeSelect(/^Status$/i, "Final round interview");
-				expect(
-					screen.getByLabelText(/Final Resolution/i),
-				).toHaveAttribute("aria-disabled", "true");
+				expect(screen.getByLabelText(/Final Resolution/i)).toHaveAttribute(
+					"aria-disabled",
+					"true",
+				);
 			});
 		});
 
@@ -253,9 +273,9 @@ describe("JobDialog", () => {
 					/>,
 				);
 				changeSelect(/^Status$/i, "Rejected/Withdrawn");
-				expect(
-					screen.getByLabelText(/Final Resolution/i),
-				).toHaveTextContent("Offer accepted");
+				expect(screen.getByLabelText(/Final Resolution/i)).toHaveTextContent(
+					"Offer accepted",
+				);
 			});
 		});
 
@@ -267,9 +287,9 @@ describe("JobDialog", () => {
 						initialValues={terminalJob("Rejected/Withdrawn", "Ghosted")}
 					/>,
 				);
-				expect(
-					screen.getByLabelText(/Final Resolution/i),
-				).toHaveTextContent("Ghosted");
+				expect(screen.getByLabelText(/Final Resolution/i)).toHaveTextContent(
+					"Ghosted",
+				);
 			});
 		});
 
@@ -305,7 +325,9 @@ describe("JobDialog", () => {
 				);
 				// Trigger the error
 				fireEvent.click(screen.getByRole("button", { name: "Save" }));
-				expect(screen.getByText("Required for this status")).toBeInTheDocument();
+				expect(
+					screen.getByText("Required for this status"),
+				).toBeInTheDocument();
 
 				// Pick a substatus
 				changeSelect(/Final Resolution/i, "Offer accepted");
@@ -323,7 +345,9 @@ describe("JobDialog", () => {
 					/>,
 				);
 				fireEvent.click(screen.getByRole("button", { name: "Save" }));
-				expect(screen.getByText("Required for this status")).toBeInTheDocument();
+				expect(
+					screen.getByText("Required for this status"),
+				).toBeInTheDocument();
 
 				changeSelect(/^Status$/i, "Initial interview");
 
