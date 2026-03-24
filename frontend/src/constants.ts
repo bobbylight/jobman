@@ -1,4 +1,4 @@
-import type { JobStatus, FitScore } from "./types";
+import type { JobStatus, FitScore, EndingSubstatus } from "./types";
 
 export const STATUSES: JobStatus[] = [
 	"Not started",
@@ -7,6 +7,17 @@ export const STATUSES: JobStatus[] = [
 	"Final round interview",
 	"Offer!",
 	"Rejected/Withdrawn",
+];
+
+export const TERMINAL_STATUSES = new Set<JobStatus>(["Offer!", "Rejected/Withdrawn"]);
+
+export const ENDING_SUBSTATUSES: EndingSubstatus[] = [
+	"Withdrawn",
+	"Rejected",
+	"Ghosted",
+	"No response",
+	"Offer declined",
+	"Offer accepted",
 ];
 
 export const FIT_SCORES: FitScore[] = [
