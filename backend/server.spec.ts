@@ -1,36 +1,33 @@
-import type { DatabaseSync } from "node:sqlite";
+import { afterEach, describe, expect, it } from "vitest";
+import { DatabaseSync } from "node:sqlite";
 import request from "supertest";
+import { createApp } from "./server.js";
 
-// testDb is assigned inside the vi.mock factory, which runs before any test code.
-let testDb!: DatabaseSync;
+const testDb = new DatabaseSync(":memory:");
+testDb.exec(`
+  CREATE TABLE IF NOT EXISTS jobs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date_applied TEXT,
+    company TEXT NOT NULL,
+    role TEXT NOT NULL,
+    link TEXT NOT NULL,
+    salary TEXT,
+    fit_score TEXT,
+    referred_by TEXT,
+    status TEXT DEFAULT 'Not started',
+    recruiter TEXT,
+    notes TEXT,
+    favorite INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now')),
+    job_description TEXT
+  )
+`);
 
-vi.mock("./db.js", async () => {
-	const { DatabaseSync } = await import("node:sqlite");
-	const db = new DatabaseSync(":memory:");
-	db.exec(`
-    CREATE TABLE IF NOT EXISTS jobs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date_applied TEXT,
-      company TEXT NOT NULL,
-      role TEXT NOT NULL,
-      link TEXT NOT NULL,
-      salary TEXT,
-      fit_score TEXT,
-      referred_by TEXT,
-      status TEXT DEFAULT 'Not started',
-      recruiter TEXT,
-      notes TEXT,
-      job_description TEXT,
-      favorite INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now'))
-    )
-  `);
-	testDb = db;
-	return { default: db };
+const app = createApp(testDb);
+
+afterEach(() => {
+	testDb.exec("DELETE FROM jobs");
 });
-
-// Import after mock registration so server.ts gets the mocked db.
-const { app } = await import("./server.js");
 
 const BASE_JOB = {
 	company: "Acme Corp",
@@ -47,10 +44,6 @@ const BASE_JOB = {
 };
 
 describe("GET /api/jobs", () => {
-	beforeEach(() => {
-		testDb.exec("DELETE FROM jobs");
-	});
-
 	it("returns an empty array when no jobs exist", async () => {
 		const res = await request(app).get("/api/jobs");
 		expect(res.status).toBe(200);
@@ -89,10 +82,6 @@ describe("GET /api/jobs", () => {
 });
 
 describe("POST /api/jobs", () => {
-	beforeEach(() => {
-		testDb.exec("DELETE FROM jobs");
-	});
-
 	it("creates a job and returns 201 with the created record", async () => {
 		const res = await request(app).post("/api/jobs").send(BASE_JOB);
 		expect(res.status).toBe(201);
@@ -124,20 +113,49 @@ describe("POST /api/jobs", () => {
 		expect(res.body.recruiter).toBeNull();
 		expect(res.body.notes).toBeNull();
 	});
+
+	it("returns 409 when a job with the same company and link already exists", async () => {
+		const first = await request(app).post("/api/jobs").send(BASE_JOB);
+		expect(first.status).toBe(201);
+
+		const second = await request(app).post("/api/jobs").send(BASE_JOB);
+		expect(second.status).toBe(409);
+		expect(second.body).toEqual({ error: "Job already exists" });
+	});
+
+	it("allows the same company with a different link", async () => {
+		const first = await request(app).post("/api/jobs").send(BASE_JOB);
+		expect(first.status).toBe(201);
+
+		const second = await request(app)
+			.post("/api/jobs")
+			.send({ ...BASE_JOB, link: "https://acme.example.com/jobs/2" });
+		expect(second.status).toBe(201);
+	});
+
+	it("allows the same link at a different company", async () => {
+		const first = await request(app).post("/api/jobs").send(BASE_JOB);
+		expect(first.status).toBe(201);
+
+		const second = await request(app)
+			.post("/api/jobs")
+			.send({ ...BASE_JOB, company: "Other Corp" });
+		expect(second.status).toBe(201);
+	});
 });
 
 describe("PUT /api/jobs/:id", () => {
-	beforeEach(() => {
-		testDb.exec("DELETE FROM jobs");
-	});
-
 	it("updates an existing job and returns the updated record", async () => {
 		const createRes = await request(app).post("/api/jobs").send(BASE_JOB);
 		const id: number = createRes.body.id;
 
 		const res = await request(app)
 			.put(`/api/jobs/${id}`)
-			.send({ ...BASE_JOB, company: "Updated Corp", status: "Resume submitted" });
+			.send({
+				...BASE_JOB,
+				company: "Updated Corp",
+				status: "Resume submitted",
+			});
 
 		expect(res.status).toBe(200);
 		expect(res.body.company).toBe("Updated Corp");
@@ -166,10 +184,6 @@ describe("PUT /api/jobs/:id", () => {
 });
 
 describe("DELETE /api/jobs/:id", () => {
-	beforeEach(() => {
-		testDb.exec("DELETE FROM jobs");
-	});
-
 	it("deletes a job and returns success", async () => {
 		const createRes = await request(app).post("/api/jobs").send(BASE_JOB);
 		const id: number = createRes.body.id;
