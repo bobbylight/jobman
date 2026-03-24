@@ -17,9 +17,9 @@ db.exec(`
     recruiter TEXT,
     notes TEXT,
     favorite INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now'))
+    created_at TEXT DEFAULT (datetime('now')),
+    job_description TEXT
   )
 `);
-
 
 export default db;

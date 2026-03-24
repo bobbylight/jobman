@@ -20,6 +20,7 @@ interface JobRow {
 	status: string;
 	recruiter: string | null;
 	notes: string | null;
+	job_description: string | null;
 	favorite: number;
 	created_at: string;
 }
@@ -41,8 +42,8 @@ app.post("/api/jobs", (req, res) => {
 	const f = req.body;
 	const result = db
 		.prepare(`
-    INSERT INTO jobs (date_applied, company, role, link, salary, fit_score, referred_by, status, recruiter, notes, favorite)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO jobs (date_applied, company, role, link, salary, fit_score, referred_by, status, recruiter, notes, job_description, favorite)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `)
 		.run(
 			f.date_applied ?? null,
@@ -55,6 +56,7 @@ app.post("/api/jobs", (req, res) => {
 			f.status ?? "Not started",
 			f.recruiter ?? null,
 			f.notes ?? null,
+			f.job_description ?? null,
 			f.favorite ? 1 : 0,
 		);
 	const job = db
@@ -71,7 +73,7 @@ app.put("/api/jobs/:id", (req, res) => {
 		.prepare(`
     UPDATE jobs SET
       date_applied = ?, company = ?, role = ?, link = ?, salary = ?,
-      fit_score = ?, referred_by = ?, status = ?, recruiter = ?, notes = ?, favorite = ?
+      fit_score = ?, referred_by = ?, status = ?, recruiter = ?, notes = ?, job_description = ?, favorite = ?
     WHERE id = ?
   `)
 		.run(
@@ -85,6 +87,7 @@ app.put("/api/jobs/:id", (req, res) => {
 			f.status,
 			f.recruiter ?? null,
 			f.notes ?? null,
+			f.job_description ?? null,
 			f.favorite ? 1 : 0,
 			id,
 		);
