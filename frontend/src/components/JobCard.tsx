@@ -16,8 +16,56 @@ import StarBorderIcon from "@mui/icons-material/StarBorder";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PeopleIcon from "@mui/icons-material/People";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
-import { FIT_SCORE_COLORS } from "../constants";
-import type { Job } from "../types";
+import type { FitScore, Job } from "../types";
+
+// Maps each fit score to a number of filled bars (out of 5)
+const FIT_SCORE_BARS: Record<FitScore, number> = {
+	"Not sure": 0,
+	"Very Low": 1,
+	Low: 2,
+	Medium: 3,
+	High: 4,
+	"Very High": 5,
+};
+
+// Maps MUI color names to actual hex values for the bar fill
+const FIT_SCORE_HEX: Record<FitScore, string> = {
+	"Not sure": "#9e9e9e",
+	"Very Low": "#ef5350",
+	Low: "#ff7043",
+	Medium: "#ffa726",
+	High: "#66bb6a",
+	"Very High": "#43a047",
+};
+
+function FitScoreBars({ score }: { score: FitScore }) {
+	const filled = FIT_SCORE_BARS[score];
+	const color = FIT_SCORE_HEX[score];
+
+	return (
+		<Box
+			sx={{
+				display: "flex",
+				alignItems: "flex-end",
+				gap: "2px",
+				height: 14,
+				flexShrink: 0,
+			}}
+		>
+			{[1, 2, 3, 4, 5].map((bar) => (
+				<Box
+					key={bar}
+					sx={{
+						width: 3,
+						height: `${(bar / 5) * 100}%`,
+						borderRadius: "1px",
+						bgcolor: bar <= filled ? color : "rgba(0,0,0,0.15)",
+					}}
+				/>
+			))}
+		</Box>
+	);
+}
 
 interface Props {
 	job: Job;
@@ -32,124 +80,147 @@ export default function JobCard({ job, onClick, onToggleFavorite }: Props) {
 			data: { job },
 		});
 
+	const hasChips = job.salary || job.referred_by;
+
 	const style = {
 		transform: CSS.Translate.toString(transform),
 		opacity: isDragging ? 0.4 : 1,
-		cursor: isDragging ? "grabbing" : "grab",
 	};
 
 	return (
 		<Card
 			ref={setNodeRef}
 			style={style}
-			elevation={isDragging ? 0 : 1}
-			sx={{ mb: 1.5, position: "relative", "&:hover": { boxShadow: 3 } }}
+			elevation={0}
+			sx={{
+				mb: 1.5,
+				"&:hover": {
+					boxShadow: `0 0 0 1px rgba(99,102,241,0.3), 0 4px 12px rgba(0,0,0,0.1)`,
+				},
+				transition: "box-shadow 0.15s",
+			}}
 			{...attributes}
 		>
+			{/* Card header — full row is the drag handle */}
 			<Box
 				{...listeners}
 				sx={{
-					position: "absolute",
-					top: 4,
-					left: 4,
-					zIndex: 1,
-					color: "text.disabled",
-					cursor: isDragging ? "grabbing" : "grab",
 					display: "flex",
 					alignItems: "center",
+					gap: 0.5,
+					px: 1,
+					py: 0.5,
+					bgcolor: "rgba(0,0,0,0.035)",
+					borderBottom: "1px solid rgba(0,0,0,0.07)",
+					cursor: isDragging ? "grabbing" : "grab",
 					touchAction: "none",
 				}}
 			>
-				<DragIndicatorIcon sx={{ fontSize: 16 }} />
+				<DragIndicatorIcon
+					sx={{ fontSize: 16, color: "text.disabled", flexShrink: 0 }}
+				/>
+				<Typography
+					variant="subtitle2"
+					fontWeight={700}
+					noWrap
+					sx={{ flex: 1, minWidth: 0 }}
+				>
+					{job.company}
+				</Typography>
+
+				{job.fit_score && (
+					<Tooltip title={`Fit: ${job.fit_score}`} placement="top">
+						<Box
+							onPointerDown={(e) => e.stopPropagation()}
+							sx={{ display: "flex", alignItems: "center", cursor: "default" }}
+						>
+							<FitScoreBars score={job.fit_score} />
+						</Box>
+					</Tooltip>
+				)}
+
+				<Tooltip title="Open job listing">
+					<IconButton
+						size="small"
+						component="a"
+						href={job.link}
+						target="_blank"
+						rel="noopener noreferrer"
+						onPointerDown={(e) => e.stopPropagation()}
+						onClick={(e) => e.stopPropagation()}
+						sx={{ color: "text.disabled", flexShrink: 0 }}
+					>
+						<OpenInNewIcon fontSize="small" />
+					</IconButton>
+				</Tooltip>
+				<Tooltip title={job.favorite ? "Unfavorite" : "Favorite"}>
+					<IconButton
+						size="small"
+						onPointerDown={(e) => e.stopPropagation()}
+						onClick={(e) => {
+							e.stopPropagation();
+							onToggleFavorite(job);
+						}}
+						sx={{
+							color: job.favorite ? "warning.main" : "text.disabled",
+							flexShrink: 0,
+						}}
+					>
+						{job.favorite ? (
+							<StarIcon fontSize="small" />
+						) : (
+							<StarBorderIcon fontSize="small" />
+						)}
+					</IconButton>
+				</Tooltip>
 			</Box>
 
-			<Tooltip title={job.favorite ? "Unfavorite" : "Favorite"}>
-				<IconButton
-					size="small"
-					onPointerDown={(e) => e.stopPropagation()}
-					onClick={(e) => {
-						e.stopPropagation();
-						onToggleFavorite(job);
-					}}
-					sx={{
-						position: "absolute",
-						top: 4,
-						right: 4,
-						zIndex: 1,
-						color: job.favorite ? "warning.main" : "text.disabled",
-					}}
-				>
-					{job.favorite ? (
-						<StarIcon fontSize="small" />
-					) : (
-						<StarBorderIcon fontSize="small" />
-					)}
-				</IconButton>
-			</Tooltip>
-
+			{/* Card body — clickable to open edit dialog */}
 			<CardActionArea
 				onPointerDown={(e) => e.stopPropagation()}
 				onClick={onClick}
 				sx={{ p: 0 }}
 			>
-				<CardContent sx={{ pb: "12px !important", pt: 1.5, pl: 3.5, pr: 4 }}>
-					<Typography variant="subtitle2" fontWeight={700} noWrap>
-						{job.company}
-					</Typography>
+				<CardContent sx={{ pt: 1, pb: "10px !important", px: 1.5 }}>
 					<Typography
 						variant="body2"
 						color="text.secondary"
 						noWrap
-						sx={{ mb: 0.75 }}
+						sx={{ mb: hasChips || job.recruiter ? 0.75 : 0 }}
 					>
 						{job.role}
 					</Typography>
 
-					<Box
-						sx={{
-							display: "flex",
-							flexWrap: "wrap",
-							gap: 0.5,
-							alignItems: "center",
-						}}
-					>
-						{job.salary && (
-							<Chip label={job.salary} size="small" variant="outlined" />
-						)}
-						{job.fit_score && (
-							<Chip
-								label={job.fit_score}
-								size="small"
-								color={FIT_SCORE_COLORS[job.fit_score]}
-								variant="outlined"
-							/>
-						)}
-						{job.referred_by && (
-							<Tooltip title={`Referred by ${job.referred_by}`}>
-								<PeopleIcon fontSize="small" color="primary" />
-							</Tooltip>
-						)}
-						<Tooltip title="Open job link">
-							<IconButton
-								size="small"
-								component="a"
-								href={job.link}
-								target="_blank"
-								rel="noopener noreferrer"
-								onPointerDown={(e) => e.stopPropagation()}
-								onClick={(e) => e.stopPropagation()}
-								sx={{ ml: "auto", color: "text.disabled" }}
-							>
-								<OpenInNewIcon fontSize="small" />
-							</IconButton>
-						</Tooltip>
-					</Box>
+					{hasChips && (
+						<Box
+							sx={{
+								display: "flex",
+								flexWrap: "wrap",
+								gap: 0.5,
+								alignItems: "center",
+								mb: job.recruiter ? 0.5 : 0,
+							}}
+						>
+							{job.salary && (
+								<Chip label={job.salary} size="small" variant="filled" />
+							)}
+							{job.referred_by && (
+								<Chip
+									icon={<PeopleIcon />}
+									label={job.referred_by}
+									size="small"
+									variant="outlined"
+									sx={{ maxWidth: 120 }}
+								/>
+							)}
+						</Box>
+					)}
 
 					{job.recruiter && (
 						<Typography
 							variant="caption"
 							color="text.secondary"
-							sx={{ mt: 0.5, display: "block" }}
+							sx={{ display: "block" }}
 						>
 							Recruiter: {job.recruiter}
 						</Typography>

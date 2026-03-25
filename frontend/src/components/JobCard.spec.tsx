@@ -61,7 +61,7 @@ describe("JobCard", () => {
 		expect(screen.queryByText(/\$/)).not.toBeInTheDocument();
 	});
 
-	it("shows fit score chip when fit_score is set", () => {
+	it("shows fit score indicator when fit_score is set", () => {
 		render(
 			<JobCard
 				job={{ ...BASE_JOB, fit_score: "High" }}
@@ -69,10 +69,10 @@ describe("JobCard", () => {
 				onToggleFavorite={vi.fn()}
 			/>,
 		);
-		expect(screen.getByText("High")).toBeInTheDocument();
+		expect(screen.getByLabelText("Fit: High")).toBeInTheDocument();
 	});
 
-	it("shows referral icon with name when referred_by is set", () => {
+	it("shows referral chip with name when referred_by is set", () => {
 		render(
 			<JobCard
 				job={{ ...BASE_JOB, referred_by: "Jane Doe" }}
@@ -80,11 +80,7 @@ describe("JobCard", () => {
 				onToggleFavorite={vi.fn()}
 			/>,
 		);
-		// MUI v7 Tooltip sets aria-label on the child element instead of title
-		expect(screen.getByTestId("PeopleIcon")).toHaveAttribute(
-			"aria-label",
-			"Referred by Jane Doe",
-		);
+		expect(screen.getByText("Jane Doe")).toBeInTheDocument();
 	});
 
 	it("does not show referral icon when referred_by is null", () => {
@@ -147,7 +143,7 @@ describe("JobCard", () => {
 		render(
 			<JobCard job={BASE_JOB} onClick={onClick} onToggleFavorite={vi.fn()} />,
 		);
-		fireEvent.click(screen.getByText("Acme Corp"));
+		fireEvent.click(screen.getByText("Software Engineer"));
 		expect(onClick).toHaveBeenCalledTimes(1);
 	});
 
@@ -156,7 +152,7 @@ describe("JobCard", () => {
 			<JobCard job={BASE_JOB} onClick={vi.fn()} onToggleFavorite={vi.fn()} />,
 		);
 		// MUI v7 Tooltip sets aria-label on the child element instead of title
-		const link = screen.getByRole("link", { name: "Open job link" });
+		const link = screen.getByRole("link", { name: "Open job listing" });
 		expect(link).toHaveAttribute("href", "https://acme.example.com/job");
 	});
 });
