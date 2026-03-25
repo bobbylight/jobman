@@ -4,7 +4,6 @@ import {
 	CssBaseline,
 	AppBar,
 	Toolbar,
-	Typography,
 	Button,
 	Box,
 	CircularProgress,
@@ -14,7 +13,6 @@ import {
 	TextField,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import WorkIcon from "@mui/icons-material/Work";
 import SearchIcon from "@mui/icons-material/Search";
 import theme from "./theme";
 import { api } from "./api";
@@ -128,20 +126,15 @@ export default function App() {
 		<ThemeProvider theme={theme}>
 			<CssBaseline />
 
-			<AppBar
-				position="sticky"
-				elevation={1}
-				sx={{ bgcolor: "white", color: "text.primary" }}
-			>
+			<AppBar position="sticky">
 				<Toolbar sx={{ gap: 1 }}>
-					<WorkIcon color="primary" />
-					<Typography
-						variant="h6"
-						fontWeight={700}
-						sx={{ flexGrow: 1, color: "primary.main" }}
-					>
-						JobMan
-					</Typography>
+					<Box
+						component="img"
+						src="/img/logo.svg"
+						alt="JobMan"
+						sx={{ height: 64 }}
+					/>
+					<Box sx={{ flexGrow: 1 }} />
 					<Button variant="contained" startIcon={<AddIcon />} onClick={openAdd}>
 						Add Job
 					</Button>

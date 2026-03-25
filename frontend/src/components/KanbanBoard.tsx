@@ -55,11 +55,11 @@ export default function KanbanBoard({
 			<Box
 				sx={{
 					display: "flex",
-					gap: 2,
+					gap: 0,
 					overflowX: "auto",
 					pb: 2,
 					px: 3,
-					alignItems: "flex-start",
+					alignItems: "stretch",
 					minHeight: "calc(100vh - 80px)",
 				}}
 			>

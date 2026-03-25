@@ -1,6 +1,6 @@
 import React from "react";
 import { useDroppable } from "@dnd-kit/core";
-import { Box, Typography, Paper, Badge } from "@mui/material";
+import { Box, Typography, Chip } from "@mui/material";
 import { STATUS_COLORS } from "../constants";
 import type { Job, JobStatus } from "../types";
 import JobCard from "./JobCard";
@@ -29,53 +29,65 @@ export default function KanbanColumn({
 				minWidth: 240,
 				maxWidth: 280,
 				flex: "0 0 260px",
+				borderRadius: 0,
+				overflow: "hidden",
+				bgcolor: "rgba(0,0,0,0.025)",
+				border: "1px solid rgba(0,0,0,0.08)",
+				ml: "-1px",
+				"&:first-of-type": { borderRadius: "10px 0 0 10px" },
+				"&:last-of-type": { borderRadius: "0 10px 10px 0" },
 			}}
 		>
-			<Box sx={{ display: "flex", alignItems: "center", mb: 1, gap: 1 }}>
-				<Box
-					sx={{
-						width: 10,
-						height: 10,
-						borderRadius: "50%",
-						bgcolor: color,
-						flexShrink: 0,
-					}}
-				/>
+			{/* Colored top bar */}
+			<Box sx={{ height: 3, bgcolor: color }} />
+
+			{/* Column header */}
+			<Box
+				sx={{
+					display: "flex",
+					alignItems: "center",
+					px: 1.5,
+					py: 1,
+					gap: 1,
+				}}
+			>
 				<Typography
 					variant="caption"
 					fontWeight={700}
-					color="text.secondary"
-					sx={{ textTransform: "uppercase", letterSpacing: 0.8, flexGrow: 1 }}
+					sx={{
+						textTransform: "uppercase",
+						letterSpacing: 0.8,
+						flexGrow: 1,
+						color: "text.secondary",
+					}}
 				>
 					{status}
 				</Typography>
-				<Badge
-					badgeContent={jobs.length}
-					color="default"
+				<Chip
+					label={jobs.length}
+					size="small"
 					sx={{
-						"& .MuiBadge-badge": {
-							fontSize: 10,
-							height: 16,
-							minWidth: 16,
-							bgcolor: color,
-							color: "#fff",
-						},
+						height: 18,
+						fontSize: 10,
+						fontWeight: 700,
+						bgcolor: `${color}22`,
+						color: color,
+						border: `1px solid ${color}44`,
+						"& .MuiChip-label": { px: 0.75 },
 					}}
 				/>
 			</Box>
 
-			<Paper
+			{/* Drop zone */}
+			<Box
 				ref={setNodeRef}
-				elevation={0}
 				sx={{
 					flex: 1,
 					minHeight: 80,
 					p: 1,
-					bgcolor: isOver ? "action.hover" : "background.paper",
-					borderRadius: 2,
-					border: "2px solid",
-					borderColor: isOver ? color : "transparent",
-					transition: "border-color 0.15s, background-color 0.15s",
+					bgcolor: isOver ? `${color}33` : "transparent",
+					borderTop: "1px solid rgba(0,0,0,0.05)",
+					transition: "background-color 0.15s",
 				}}
 			>
 				{jobs.map((job) => (
@@ -95,7 +107,7 @@ export default function KanbanColumn({
 						Drop here
 					</Typography>
 				)}
-			</Paper>
+			</Box>
 		</Box>
 	);
 }
