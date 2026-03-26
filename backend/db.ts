@@ -19,7 +19,9 @@ db.exec(`
     favorite INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now')),
     job_description TEXT,
-    ending_substatus TEXT
+    ending_substatus TEXT,
+    date_phone_screen TEXT,
+    date_last_onsite TEXT
   )
 `);
 

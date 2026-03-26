@@ -18,6 +18,8 @@ interface JobRow {
 	notes: string | null;
 	job_description: string | null;
 	ending_substatus: string | null;
+	date_phone_screen: string | null;
+	date_last_onsite: string | null;
 	favorite: number;
 	created_at: string;
 }
@@ -88,8 +90,8 @@ export function createApp(db: DatabaseSync) {
 		}
 		const result = db
 			.prepare(`
-      INSERT INTO jobs (date_applied, company, role, link, salary, fit_score, referred_by, status, recruiter, notes, job_description, ending_substatus, favorite)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO jobs (date_applied, company, role, link, salary, fit_score, referred_by, status, recruiter, notes, job_description, ending_substatus, date_phone_screen, date_last_onsite, favorite)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
 			.run(
 				f.date_applied ?? null,
@@ -104,6 +106,8 @@ export function createApp(db: DatabaseSync) {
 				f.notes ?? null,
 				f.job_description ?? null,
 				f.ending_substatus ?? null,
+				f.date_phone_screen ?? null,
+				f.date_last_onsite ?? null,
 				f.favorite ? 1 : 0,
 			);
 		const job = db
@@ -125,7 +129,7 @@ export function createApp(db: DatabaseSync) {
 			.prepare(`
       UPDATE jobs SET
         date_applied = ?, company = ?, role = ?, link = ?, salary = ?,
-        fit_score = ?, referred_by = ?, status = ?, recruiter = ?, notes = ?, job_description = ?, ending_substatus = ?, favorite = ?
+        fit_score = ?, referred_by = ?, status = ?, recruiter = ?, notes = ?, job_description = ?, ending_substatus = ?, date_phone_screen = ?, date_last_onsite = ?, favorite = ?
       WHERE id = ?
     `)
 			.run(
@@ -141,6 +145,8 @@ export function createApp(db: DatabaseSync) {
 				f.notes ?? null,
 				f.job_description ?? null,
 				f.ending_substatus ?? null,
+				f.date_phone_screen ?? null,
+				f.date_last_onsite ?? null,
 				f.favorite ? 1 : 0,
 				id,
 			);

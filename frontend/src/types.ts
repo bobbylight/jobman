@@ -36,6 +36,8 @@ export interface Job {
 	notes: string | null;
 	job_description: string | null;
 	ending_substatus: EndingSubstatus | null;
+	date_phone_screen: string | null;
+	date_last_onsite: string | null;
 	favorite: boolean;
 	created_at: string;
 }

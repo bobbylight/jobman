@@ -42,6 +42,8 @@ const EMPTY: JobFormData = {
 	notes: null,
 	job_description: null,
 	ending_substatus: null,
+	date_phone_screen: null,
+	date_last_onsite: null,
 	favorite: false,
 };
 
@@ -274,6 +276,33 @@ export default function JobDialog({
 								type="date"
 								value={form.date_applied ?? ""}
 								onChange={(e) => set("date_applied", e.target.value || null)}
+								fullWidth
+								size="small"
+								slotProps={{ inputLabel: { shrink: true } }}
+							/>
+						</Grid>
+
+						<Grid size={{ xs: 12, sm: 6 }}>
+							<TextField
+								label="Phone Screen Date"
+								type="datetime-local"
+								value={form.date_phone_screen?.slice(0, 16) ?? ""}
+								onChange={(e) =>
+									set("date_phone_screen", e.target.value || null)
+								}
+								fullWidth
+								size="small"
+								slotProps={{ inputLabel: { shrink: true } }}
+							/>
+						</Grid>
+						<Grid size={{ xs: 12, sm: 6 }}>
+							<TextField
+								label="Last Onsite Date"
+								type="datetime-local"
+								value={form.date_last_onsite?.slice(0, 16) ?? ""}
+								onChange={(e) =>
+									set("date_last_onsite", e.target.value || null)
+								}
 								fullWidth
 								size="small"
 								slotProps={{ inputLabel: { shrink: true } }}

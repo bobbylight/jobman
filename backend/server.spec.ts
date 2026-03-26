@@ -24,7 +24,9 @@ testDb.exec(`
     favorite INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now')),
     job_description TEXT,
-    ending_substatus TEXT
+    ending_substatus TEXT,
+    date_phone_screen TEXT,
+    date_last_onsite TEXT
   )
 `);
 
@@ -303,6 +305,81 @@ describe("ending_substatus validation", () => {
 			expect(res.status).toBe(200);
 			expect(res.body.ending_substatus).toBeNull();
 		});
+	});
+});
+
+describe("date_phone_screen and date_last_onsite fields", () => {
+	it("stores null for both date fields when omitted on create", async () => {
+		const res = await request(app).post("/api/jobs").send(BASE_JOB);
+		expect(res.status).toBe(201);
+		expect(res.body.date_phone_screen).toBeNull();
+		expect(res.body.date_last_onsite).toBeNull();
+	});
+
+	it("stores provided date_phone_screen and date_last_onsite on create", async () => {
+		const res = await request(app)
+			.post("/api/jobs")
+			.send({
+				...BASE_JOB,
+				date_phone_screen: "2026-03-20T10:00",
+				date_last_onsite: "2026-03-23T09:00",
+			});
+		expect(res.status).toBe(201);
+		expect(res.body.date_phone_screen).toBe("2026-03-20T10:00");
+		expect(res.body.date_last_onsite).toBe("2026-03-23T09:00");
+	});
+
+	it("updates date_phone_screen and date_last_onsite via PUT", async () => {
+		const createRes = await request(app).post("/api/jobs").send(BASE_JOB);
+		const id: number = createRes.body.id;
+
+		const res = await request(app)
+			.put(`/api/jobs/${id}`)
+			.send({
+				...BASE_JOB,
+				date_phone_screen: "2026-03-20T10:00",
+				date_last_onsite: "2026-03-23T09:00",
+			});
+		expect(res.status).toBe(200);
+		expect(res.body.date_phone_screen).toBe("2026-03-20T10:00");
+		expect(res.body.date_last_onsite).toBe("2026-03-23T09:00");
+	});
+
+	it("clears both date fields when PUT sends null values", async () => {
+		const createRes = await request(app)
+			.post("/api/jobs")
+			.send({
+				...BASE_JOB,
+				date_phone_screen: "2026-03-20T10:00",
+				date_last_onsite: "2026-03-23T09:00",
+			});
+		const id: number = createRes.body.id;
+
+		const res = await request(app)
+			.put(`/api/jobs/${id}`)
+			.send({
+				...BASE_JOB,
+				date_phone_screen: null,
+				date_last_onsite: null,
+			});
+		expect(res.status).toBe(200);
+		expect(res.body.date_phone_screen).toBeNull();
+		expect(res.body.date_last_onsite).toBeNull();
+	});
+
+	it("returns both date fields in GET /api/jobs", async () => {
+		await request(app)
+			.post("/api/jobs")
+			.send({
+				...BASE_JOB,
+				date_phone_screen: "2026-03-20T10:00",
+				date_last_onsite: "2026-03-23T09:00",
+			});
+
+		const res = await request(app).get("/api/jobs");
+		expect(res.status).toBe(200);
+		expect(res.body[0].date_phone_screen).toBe("2026-03-20T10:00");
+		expect(res.body[0].date_last_onsite).toBe("2026-03-23T09:00");
 	});
 });
 
