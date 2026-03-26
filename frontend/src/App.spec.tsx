@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import App from "./App";
+import App, { computeDateUpdates } from "./App";
 import { api } from "./api";
 import type { Job } from "./types";
 
@@ -45,6 +45,8 @@ const makeJob = (overrides: Partial<Job> & Pick<Job, "id">): Job => ({
 	recruiter: null,
 	notes: null,
 	referred_by: null,
+	date_phone_screen: null,
+	date_last_onsite: null,
 	favorite: false,
 	created_at: "2024-01-01T00:00:00.000Z",
 	...overrides,
@@ -138,5 +140,66 @@ describe("App", () => {
 		expect(
 			screen.getByRole("heading", { name: "Add Job" }),
 		).toBeInTheDocument();
+	});
+});
+
+describe("computeDateUpdates", () => {
+	const NOW = "2026-03-25T14:30";
+	const jobWithDates = {
+		date_phone_screen: "2026-03-20T10:00",
+		date_last_onsite: "2026-03-23T09:00",
+	};
+	const jobNoDates = { date_phone_screen: null, date_last_onsite: null };
+
+	it("sets date_phone_screen to now and clears date_last_onsite when moving to Initial interview", () => {
+		const result = computeDateUpdates(jobWithDates, "Initial interview", NOW);
+		expect(result.date_phone_screen).toBe(NOW);
+		expect(result.date_last_onsite).toBeNull();
+	});
+
+	it("sets date_phone_screen to now when moving to Initial interview from a job with no prior dates", () => {
+		const result = computeDateUpdates(jobNoDates, "Initial interview", NOW);
+		expect(result.date_phone_screen).toBe(NOW);
+		expect(result.date_last_onsite).toBeNull();
+	});
+
+	it("sets date_last_onsite to now and preserves date_phone_screen when moving to Final round interview", () => {
+		const result = computeDateUpdates(
+			jobWithDates,
+			"Final round interview",
+			NOW,
+		);
+		expect(result.date_last_onsite).toBe(NOW);
+		expect(result.date_phone_screen).toBe(jobWithDates.date_phone_screen);
+	});
+
+	it("sets date_last_onsite to now when moving to Final round interview with no prior phone screen", () => {
+		const result = computeDateUpdates(jobNoDates, "Final round interview", NOW);
+		expect(result.date_last_onsite).toBe(NOW);
+		expect(result.date_phone_screen).toBeNull();
+	});
+
+	it("clears both dates when moving back to Not started", () => {
+		const result = computeDateUpdates(jobWithDates, "Not started", NOW);
+		expect(result.date_phone_screen).toBeNull();
+		expect(result.date_last_onsite).toBeNull();
+	});
+
+	it("clears both dates when moving back to Resume submitted", () => {
+		const result = computeDateUpdates(jobWithDates, "Resume submitted", NOW);
+		expect(result.date_phone_screen).toBeNull();
+		expect(result.date_last_onsite).toBeNull();
+	});
+
+	it("preserves both dates when moving to Offer!", () => {
+		const result = computeDateUpdates(jobWithDates, "Offer!", NOW);
+		expect(result.date_phone_screen).toBe(jobWithDates.date_phone_screen);
+		expect(result.date_last_onsite).toBe(jobWithDates.date_last_onsite);
+	});
+
+	it("preserves both dates when moving to Rejected/Withdrawn", () => {
+		const result = computeDateUpdates(jobWithDates, "Rejected/Withdrawn", NOW);
+		expect(result.date_phone_screen).toBe(jobWithDates.date_phone_screen);
+		expect(result.date_last_onsite).toBe(jobWithDates.date_last_onsite);
 	});
 });

@@ -22,6 +22,42 @@ import JobDialog from "./components/JobDialog";
 
 type Severity = "success" | "error" | "info" | "warning";
 
+function formatDatetime(value: string) {
+	return new Date(value).toLocaleString(undefined, {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+		hour: "numeric",
+		minute: "2-digit",
+	});
+}
+
+function nowDatetimeLocal() {
+	const d = new Date();
+	const pad = (n: number) => String(n).padStart(2, "0");
+	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function computeDateUpdates(
+	job: Pick<Job, "date_phone_screen" | "date_last_onsite">,
+	newStatus: JobStatus,
+	now: string,
+): Pick<Job, "date_phone_screen" | "date_last_onsite"> {
+	if (newStatus === "Initial interview") {
+		return { date_phone_screen: now, date_last_onsite: null };
+	}
+	if (newStatus === "Final round interview") {
+		return { date_phone_screen: job.date_phone_screen, date_last_onsite: now };
+	}
+	if (newStatus === "Not started" || newStatus === "Resume submitted") {
+		return { date_phone_screen: null, date_last_onsite: null };
+	}
+	return {
+		date_phone_screen: job.date_phone_screen,
+		date_last_onsite: job.date_last_onsite,
+	};
+}
+
 export default function App() {
 	const [jobs, setJobs] = useState<Job[]>([]);
 	const [search, setSearch] = useState("");
@@ -97,14 +133,32 @@ export default function App() {
 	}
 
 	async function handleStatusChange(job: Job, newStatus: JobStatus) {
-		const optimistic = { ...job, status: newStatus };
+		const dateUpdates = computeDateUpdates(job, newStatus, nowDatetimeLocal());
+		const optimistic = { ...job, status: newStatus, ...dateUpdates };
 		setJobs((prev) => prev.map((j) => (j.id === job.id ? optimistic : j)));
 		try {
 			const updated = await api.updateJob(job.id, {
 				...job,
 				status: newStatus,
+				...dateUpdates,
 			});
 			setJobs((prev) => prev.map((j) => (j.id === updated.id ? updated : j)));
+			const lines = ["Job status updated successfully"];
+			if (dateUpdates.date_phone_screen !== job.date_phone_screen) {
+				lines.push(
+					dateUpdates.date_phone_screen
+						? `Phone screen date set to ${formatDatetime(dateUpdates.date_phone_screen)}`
+						: "Phone screen date cleared",
+				);
+			}
+			if (dateUpdates.date_last_onsite !== job.date_last_onsite) {
+				lines.push(
+					dateUpdates.date_last_onsite
+						? `Last onsite date set to ${formatDatetime(dateUpdates.date_last_onsite)}`
+						: "Last onsite date cleared",
+				);
+			}
+			notify(lines.join("\n"));
 		} catch {
 			setJobs((prev) => prev.map((j) => (j.id === job.id ? job : j)));
 			notify("Failed to move job", "error");
@@ -208,7 +262,11 @@ export default function App() {
 					variant="filled"
 					sx={{ width: "100%" }}
 				>
-					{snack.message}
+					{snack.message.includes("\n")
+						? snack.message
+								.split("\n")
+								.map((line, i) => <div key={i}>{line}</div>)
+						: snack.message}
 				</Alert>
 			</Snackbar>
 		</ThemeProvider>
