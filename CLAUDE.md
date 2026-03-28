@@ -78,7 +78,7 @@ interface Job {
 }
 ```
 
-**JobStatus values:** `"Not started"` | `"Resume submitted"` | `"Initial interview"` | `"Final round interview"` | `"Offer!"` | `"Rejected/Withdrawn"`
+**JobStatus values:** `"Not started"` | `"Resume submitted"` | `"Phone screen"` | `"Interviewing"` | `"Offer!"` | `"Rejected/Withdrawn"`
 
 **SQLite boolean note:** `favorite` is stored as 0/1. The API's `toClient()` helper converts it to `true`/`false` before returning JSON.
 

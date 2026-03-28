@@ -195,8 +195,8 @@ describe("ending_substatus validation", () => {
 	const NON_TERMINAL_CASES = [
 		"Not started",
 		"Resume submitted",
-		"Initial interview",
-		"Final round interview",
+		"Phone screen",
+		"Interviewing",
 	] as const;
 	const VALID_SUBSTATUSES = [...VALID_ENDING_SUBSTATUSES];
 
@@ -301,7 +301,7 @@ describe("ending_substatus validation", () => {
 
 			const res = await request(app)
 				.put(`/api/jobs/${id}`)
-				.send({ ...BASE_JOB, status: "Final round interview" });
+				.send({ ...BASE_JOB, status: "Interviewing" });
 			expect(res.status).toBe(200);
 			expect(res.body.ending_substatus).toBeNull();
 		});

@@ -3,8 +3,8 @@ import type { JobStatus, FitScore, EndingSubstatus } from "./types";
 export const STATUSES: JobStatus[] = [
 	"Not started",
 	"Resume submitted",
-	"Initial interview",
-	"Final round interview",
+	"Phone screen",
+	"Interviewing",
 	"Offer!",
 	"Rejected/Withdrawn",
 ];
@@ -37,8 +37,8 @@ export const FIT_SCORES: FitScore[] = [
 export const STATUS_COLORS = {
 	"Not started": "#90a4ae",
 	"Resume submitted": "#ffa726",
-	"Initial interview": "#ab47bc",
-	"Final round interview": "#1e88e5",
+	"Phone screen": "#ab47bc",
+	Interviewing: "#1e88e5",
 	"Offer!": "#66bb6a",
 	"Rejected/Withdrawn": "#ef5350",
 } satisfies Record<JobStatus, string>;
