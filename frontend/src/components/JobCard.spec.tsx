@@ -37,7 +37,11 @@ const BASE_JOB: Job = {
 describe("JobCard", () => {
 	it("renders company name and role", () => {
 		render(
-			<JobCard job={BASE_JOB} onClick={vi.fn()} onToggleFavorite={vi.fn()} />,
+			<JobCard
+				job={BASE_JOB}
+				onCardClick={vi.fn()}
+				onToggleFavorite={vi.fn()}
+			/>,
 		);
 		expect(screen.getByText("Acme Corp")).toBeInTheDocument();
 		expect(screen.getByText("Software Engineer")).toBeInTheDocument();
@@ -47,7 +51,7 @@ describe("JobCard", () => {
 		render(
 			<JobCard
 				job={{ ...BASE_JOB, salary: "$120k–$150k" }}
-				onClick={vi.fn()}
+				onCardClick={vi.fn()}
 				onToggleFavorite={vi.fn()}
 			/>,
 		);
@@ -56,7 +60,11 @@ describe("JobCard", () => {
 
 	it("shows $??? chip when salary is null", () => {
 		render(
-			<JobCard job={BASE_JOB} onClick={vi.fn()} onToggleFavorite={vi.fn()} />,
+			<JobCard
+				job={BASE_JOB}
+				onCardClick={vi.fn()}
+				onToggleFavorite={vi.fn()}
+			/>,
 		);
 		expect(screen.getByText("$???")).toBeInTheDocument();
 	});
@@ -65,7 +73,7 @@ describe("JobCard", () => {
 		render(
 			<JobCard
 				job={{ ...BASE_JOB, fit_score: "High" }}
-				onClick={vi.fn()}
+				onCardClick={vi.fn()}
 				onToggleFavorite={vi.fn()}
 			/>,
 		);
@@ -76,7 +84,7 @@ describe("JobCard", () => {
 		render(
 			<JobCard
 				job={{ ...BASE_JOB, referred_by: "Jane Doe" }}
-				onClick={vi.fn()}
+				onCardClick={vi.fn()}
 				onToggleFavorite={vi.fn()}
 			/>,
 		);
@@ -85,7 +93,11 @@ describe("JobCard", () => {
 
 	it("does not show referral icon when referred_by is null", () => {
 		render(
-			<JobCard job={BASE_JOB} onClick={vi.fn()} onToggleFavorite={vi.fn()} />,
+			<JobCard
+				job={BASE_JOB}
+				onCardClick={vi.fn()}
+				onToggleFavorite={vi.fn()}
+			/>,
 		);
 		expect(screen.queryByTestId("PeopleIcon")).not.toBeInTheDocument();
 	});
@@ -94,7 +106,7 @@ describe("JobCard", () => {
 		render(
 			<JobCard
 				job={{ ...BASE_JOB, recruiter: "Jane Smith" }}
-				onClick={vi.fn()}
+				onCardClick={vi.fn()}
 				onToggleFavorite={vi.fn()}
 			/>,
 		);
@@ -105,7 +117,7 @@ describe("JobCard", () => {
 		render(
 			<JobCard
 				job={{ ...BASE_JOB, favorite: true }}
-				onClick={vi.fn()}
+				onCardClick={vi.fn()}
 				onToggleFavorite={vi.fn()}
 			/>,
 		);
@@ -117,7 +129,11 @@ describe("JobCard", () => {
 
 	it("shows Favorite tooltip when job is not a favorite", () => {
 		render(
-			<JobCard job={BASE_JOB} onClick={vi.fn()} onToggleFavorite={vi.fn()} />,
+			<JobCard
+				job={BASE_JOB}
+				onCardClick={vi.fn()}
+				onToggleFavorite={vi.fn()}
+			/>,
 		);
 		// MUI v7 Tooltip sets aria-label on the child element instead of title
 		expect(
@@ -130,7 +146,7 @@ describe("JobCard", () => {
 		render(
 			<JobCard
 				job={BASE_JOB}
-				onClick={vi.fn()}
+				onCardClick={vi.fn()}
 				onToggleFavorite={onToggleFavorite}
 			/>,
 		);
@@ -138,18 +154,26 @@ describe("JobCard", () => {
 		expect(onToggleFavorite).toHaveBeenCalledWith(BASE_JOB);
 	});
 
-	it("calls onClick when the card action area is clicked", () => {
-		const onClick = vi.fn();
+	it("calls onCardClick with the job when the card action area is clicked", () => {
+		const onCardClick = vi.fn();
 		render(
-			<JobCard job={BASE_JOB} onClick={onClick} onToggleFavorite={vi.fn()} />,
+			<JobCard
+				job={BASE_JOB}
+				onCardClick={onCardClick}
+				onToggleFavorite={vi.fn()}
+			/>,
 		);
 		fireEvent.click(screen.getByText("Software Engineer"));
-		expect(onClick).toHaveBeenCalledTimes(1);
+		expect(onCardClick).toHaveBeenCalledWith(BASE_JOB);
 	});
 
 	it("renders a link to the job posting", () => {
 		render(
-			<JobCard job={BASE_JOB} onClick={vi.fn()} onToggleFavorite={vi.fn()} />,
+			<JobCard
+				job={BASE_JOB}
+				onCardClick={vi.fn()}
+				onToggleFavorite={vi.fn()}
+			/>,
 		);
 		// MUI v7 Tooltip sets aria-label on the child element instead of title
 		const link = screen.getByRole("link", { name: "Open job listing" });

@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, {
+	useState,
+	useEffect,
+	useCallback,
+	useDeferredValue,
+	useMemo,
+} from "react";
 import {
 	ThemeProvider,
 	CssBaseline,
@@ -11,12 +17,19 @@ import {
 	Alert,
 	InputAdornment,
 	TextField,
+	Chip,
+	Select,
+	MenuItem,
+	Divider,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
+import StarIcon from "@mui/icons-material/Star";
+import CloseIcon from "@mui/icons-material/Close";
 import theme from "./theme";
 import { api } from "./api";
-import type { Job, JobFormData, JobStatus } from "./types";
+import type { Job, JobFormData, JobStatus, FitScore } from "./types";
+import { FIT_SCORES } from "./constants";
 import KanbanBoard from "./components/KanbanBoard";
 import JobDialog from "./components/JobDialog";
 
@@ -58,9 +71,22 @@ export function computeDateUpdates(
 	};
 }
 
+// Minimum fit score filter: show jobs at or above this threshold
+// "Not sure" is excluded when any threshold is set
+const MIN_FIT_SCORE_OPTIONS: { label: string; value: FitScore | null }[] = [
+	{ label: "Any score", value: null },
+	{ label: "Low or better", value: "Low" },
+	{ label: "Medium or better", value: "Medium" },
+	{ label: "High or better", value: "High" },
+	{ label: "Very High only", value: "Very High" },
+];
+
 export default function App() {
 	const [jobs, setJobs] = useState<Job[]>([]);
 	const [search, setSearch] = useState("");
+	const [favoritesOnly, setFavoritesOnly] = useState(false);
+	const [minFitScore, setMinFitScore] = useState<FitScore | null>(null);
+	const [hideWithdrawn, setHideWithdrawn] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [dialog, setDialog] = useState<{ open: boolean; job: Job | null }>({
 		open: false,
@@ -94,78 +120,93 @@ export default function App() {
 		loadJobs();
 	}, [loadJobs]);
 
-	function openAdd() {
-		setDialog({ open: true, job: null });
-	}
-	function openEdit(job: Job) {
-		setDialog({ open: true, job });
-	}
-	function closeDialog() {
-		setDialog({ open: false, job: null });
-	}
+	const openAdd = useCallback(() => setDialog({ open: true, job: null }), []);
+	const openEdit = useCallback(
+		(job: Job) => setDialog({ open: true, job }),
+		[],
+	);
+	const closeDialog = useCallback(
+		() => setDialog({ open: false, job: null }),
+		[],
+	);
 
-	async function handleSave(formData: JobFormData) {
-		try {
-			if (dialog.job) {
-				const updated = await api.updateJob(dialog.job.id, formData);
+	const handleSave = useCallback(
+		async (formData: JobFormData) => {
+			try {
+				if (dialog.job) {
+					const updated = await api.updateJob(dialog.job.id, formData);
+					setJobs((prev) =>
+						prev.map((j) => (j.id === updated.id ? updated : j)),
+					);
+					notify("Job updated");
+				} else {
+					const created = await api.createJob(formData);
+					setJobs((prev) => [created, ...prev]);
+					notify("Job added");
+				}
+				closeDialog();
+			} catch {
+				notify("Failed to save job", "error");
+			}
+		},
+		[dialog.job, closeDialog],
+	);
+
+	const handleDelete = useCallback(
+		async (id: number) => {
+			try {
+				await api.deleteJob(id);
+				setJobs((prev) => prev.filter((j) => j.id !== id));
+				closeDialog();
+				notify("Job deleted");
+			} catch {
+				notify("Failed to delete job", "error");
+			}
+		},
+		[closeDialog],
+	);
+
+	const handleStatusChange = useCallback(
+		async (job: Job, newStatus: JobStatus) => {
+			const dateUpdates = computeDateUpdates(
+				job,
+				newStatus,
+				nowDatetimeLocal(),
+			);
+			const optimistic = { ...job, status: newStatus, ...dateUpdates };
+			setJobs((prev) => prev.map((j) => (j.id === job.id ? optimistic : j)));
+			try {
+				const updated = await api.updateJob(job.id, {
+					...job,
+					status: newStatus,
+					...dateUpdates,
+				});
 				setJobs((prev) => prev.map((j) => (j.id === updated.id ? updated : j)));
-				notify("Job updated");
-			} else {
-				const created = await api.createJob(formData);
-				setJobs((prev) => [created, ...prev]);
-				notify("Job added");
+				const lines = ["Job status updated successfully"];
+				if (dateUpdates.date_phone_screen !== job.date_phone_screen) {
+					lines.push(
+						dateUpdates.date_phone_screen
+							? `Phone screen date set to ${formatDatetime(dateUpdates.date_phone_screen)}`
+							: "Phone screen date cleared",
+					);
+				}
+				if (dateUpdates.date_last_onsite !== job.date_last_onsite) {
+					lines.push(
+						dateUpdates.date_last_onsite
+							? `Last onsite date set to ${formatDatetime(dateUpdates.date_last_onsite)}`
+							: "Last onsite date cleared",
+					);
+				}
+				notify(lines.join("\n"));
+			} catch {
+				setJobs((prev) => prev.map((j) => (j.id === job.id ? job : j)));
+				notify("Failed to move job", "error");
 			}
-			closeDialog();
-		} catch {
-			notify("Failed to save job", "error");
-		}
-	}
+		},
+		[],
+	);
 
-	async function handleDelete(id: number) {
-		try {
-			await api.deleteJob(id);
-			setJobs((prev) => prev.filter((j) => j.id !== id));
-			closeDialog();
-			notify("Job deleted");
-		} catch {
-			notify("Failed to delete job", "error");
-		}
-	}
-
-	async function handleStatusChange(job: Job, newStatus: JobStatus) {
-		const dateUpdates = computeDateUpdates(job, newStatus, nowDatetimeLocal());
-		const optimistic = { ...job, status: newStatus, ...dateUpdates };
-		setJobs((prev) => prev.map((j) => (j.id === job.id ? optimistic : j)));
-		try {
-			const updated = await api.updateJob(job.id, {
-				...job,
-				status: newStatus,
-				...dateUpdates,
-			});
-			setJobs((prev) => prev.map((j) => (j.id === updated.id ? updated : j)));
-			const lines = ["Job status updated successfully"];
-			if (dateUpdates.date_phone_screen !== job.date_phone_screen) {
-				lines.push(
-					dateUpdates.date_phone_screen
-						? `Phone screen date set to ${formatDatetime(dateUpdates.date_phone_screen)}`
-						: "Phone screen date cleared",
-				);
-			}
-			if (dateUpdates.date_last_onsite !== job.date_last_onsite) {
-				lines.push(
-					dateUpdates.date_last_onsite
-						? `Last onsite date set to ${formatDatetime(dateUpdates.date_last_onsite)}`
-						: "Last onsite date cleared",
-				);
-			}
-			notify(lines.join("\n"));
-		} catch {
-			setJobs((prev) => prev.map((j) => (j.id === job.id ? job : j)));
-			notify("Failed to move job", "error");
-		}
-	}
-
-	async function handleToggleFavorite(job: Job) {
+	const handleToggleFavorite = useCallback(async (job: Job) => {
 		const updated = { ...job, favorite: !job.favorite };
 		setJobs((prev) => prev.map((j) => (j.id === job.id ? updated : j)));
 		try {
@@ -174,25 +215,191 @@ export default function App() {
 			setJobs((prev) => prev.map((j) => (j.id === job.id ? job : j)));
 			notify("Failed to update favorite", "error");
 		}
+	}, []);
+
+	const hasActiveFilters =
+		favoritesOnly || minFitScore !== null || hideWithdrawn;
+	const hasAnyFilter = search.trim() !== "" || hasActiveFilters;
+
+	function clearFilters() {
+		setSearch("");
+		setFavoritesOnly(false);
+		setMinFitScore(null);
+		setHideWithdrawn(false);
 	}
+
+	// Defer filter values so the input stays responsive while the board catches up
+	const deferredSearch = useDeferredValue(search);
+	const deferredFavoritesOnly = useDeferredValue(favoritesOnly);
+	const deferredMinFitScore = useDeferredValue(minFitScore);
+	const deferredHideWithdrawn = useDeferredValue(hideWithdrawn);
+
+	const filteredJobs = useMemo(
+		() =>
+			jobs.filter((j) => {
+				const q = deferredSearch.trim().toLowerCase();
+				if (
+					q &&
+					!j.company.toLowerCase().includes(q) &&
+					!j.role.toLowerCase().includes(q)
+				)
+					return false;
+				if (deferredFavoritesOnly && !j.favorite) return false;
+				if (deferredMinFitScore !== null) {
+					const minIdx = FIT_SCORES.indexOf(deferredMinFitScore);
+					const jobIdx = j.fit_score ? FIT_SCORES.indexOf(j.fit_score) : -1;
+					if (jobIdx < minIdx) return false;
+				}
+				if (deferredHideWithdrawn && j.ending_substatus === "Withdrawn")
+					return false;
+				return true;
+			}),
+		[
+			jobs,
+			deferredSearch,
+			deferredFavoritesOnly,
+			deferredMinFitScore,
+			deferredHideWithdrawn,
+		],
+	);
 
 	return (
 		<ThemeProvider theme={theme}>
 			<CssBaseline />
 
 			<AppBar position="sticky">
-				<Toolbar sx={{ gap: 1 }}>
+				<Toolbar sx={{ gap: 1, minHeight: "56px !important" }}>
 					<Box
 						component="img"
 						src="/img/logo.svg"
 						alt="JobMan"
-						sx={{ height: 64 }}
+						sx={{ height: 52 }}
 					/>
 					<Box sx={{ flexGrow: 1 }} />
 					<Button variant="contained" startIcon={<AddIcon />} onClick={openAdd}>
 						Add Job
 					</Button>
 				</Toolbar>
+
+				{/* Filter strip */}
+				<Box
+					sx={{
+						px: 2,
+						py: 0.5,
+						display: "flex",
+						gap: 1,
+						alignItems: "center",
+						flexWrap: "wrap",
+						borderTop: "1px solid rgba(99,102,241,0.15)",
+					}}
+				>
+					<TextField
+						placeholder="Search company or role…"
+						size="small"
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						slotProps={{
+							input: {
+								startAdornment: (
+									<InputAdornment position="start">
+										<SearchIcon
+											fontSize="small"
+											sx={{ color: "text.disabled" }}
+										/>
+									</InputAdornment>
+								),
+							},
+						}}
+						sx={{
+							width: 280,
+							"& .MuiOutlinedInput-root": {
+								bgcolor: "rgba(255,255,255,0.7)",
+								borderRadius: 2,
+							},
+						}}
+					/>
+
+					<Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
+
+					<Chip
+						icon={<StarIcon fontSize="small" />}
+						label="Favorites"
+						onClick={() => setFavoritesOnly((v) => !v)}
+						color={favoritesOnly ? "warning" : "default"}
+						variant={favoritesOnly ? "filled" : "outlined"}
+						sx={{
+							fontWeight: 500,
+							bgcolor: favoritesOnly ? undefined : "rgba(255,255,255,0.7)",
+						}}
+					/>
+
+					<Select
+						size="small"
+						value={minFitScore ?? ""}
+						onChange={(e) =>
+							setMinFitScore((e.target.value as FitScore) || null)
+						}
+						displayEmpty
+						renderValue={(val) =>
+							val
+								? (MIN_FIT_SCORE_OPTIONS.find((o) => o.value === val)?.label ??
+									"Fit score")
+								: "Fit score"
+						}
+						sx={{
+							height: 32,
+							bgcolor: minFitScore ? "primary.main" : "rgba(255,255,255,0.7)",
+							color: minFitScore ? "primary.contrastText" : "text.primary",
+							borderRadius: "16px",
+							fontWeight: 500,
+							fontSize: "0.8125rem",
+							"& .MuiSelect-icon": {
+								color: minFitScore ? "primary.contrastText" : "action.active",
+							},
+							"& .MuiOutlinedInput-notchedOutline": {
+								borderColor: minFitScore ? "primary.main" : "rgba(0,0,0,0.23)",
+							},
+							"&:hover .MuiOutlinedInput-notchedOutline": {
+								borderColor: minFitScore ? "primary.dark" : "rgba(0,0,0,0.87)",
+							},
+							minWidth: 120,
+						}}
+					>
+						{MIN_FIT_SCORE_OPTIONS.map(({ label, value }) => (
+							<MenuItem key={label} value={value ?? ""}>
+								{label}
+							</MenuItem>
+						))}
+					</Select>
+
+					<Chip
+						label="Hide Withdrawn"
+						onClick={() => setHideWithdrawn((v) => !v)}
+						color={hideWithdrawn ? "primary" : "default"}
+						variant={hideWithdrawn ? "filled" : "outlined"}
+						sx={{
+							fontWeight: 500,
+							bgcolor: hideWithdrawn ? undefined : "rgba(255,255,255,0.7)",
+						}}
+					/>
+
+					{hasAnyFilter && (
+						<>
+							<Divider
+								orientation="vertical"
+								flexItem
+								sx={{ mx: 0.5, my: 0.5 }}
+							/>
+							<Chip
+								icon={<CloseIcon fontSize="small" />}
+								label="Clear"
+								onClick={clearFilters}
+								size="small"
+								sx={{ fontWeight: 500, bgcolor: "rgba(255,255,255,0.7)" }}
+							/>
+						</>
+					)}
+				</Box>
 			</AppBar>
 
 			<Box
@@ -207,39 +414,12 @@ export default function App() {
 						<CircularProgress />
 					</Box>
 				) : (
-					<>
-						<Box sx={{ px: 3, pb: 2 }}>
-							<TextField
-								placeholder="Search by company or role…"
-								size="small"
-								value={search}
-								onChange={(e) => setSearch(e.target.value)}
-								slotProps={{
-									input: {
-										startAdornment: (
-											<InputAdornment position="start">
-												<SearchIcon fontSize="small" />
-											</InputAdornment>
-										),
-									},
-								}}
-								sx={{ width: 320 }}
-							/>
-						</Box>
-						<KanbanBoard
-							jobs={jobs.filter((j) => {
-								const q = search.trim().toLowerCase();
-								if (!q) return true;
-								return (
-									j.company.toLowerCase().includes(q) ||
-									j.role.toLowerCase().includes(q)
-								);
-							})}
-							onStatusChange={handleStatusChange}
-							onCardClick={openEdit}
-							onToggleFavorite={handleToggleFavorite}
-						/>
-					</>
+					<KanbanBoard
+						jobs={filteredJobs}
+						onStatusChange={handleStatusChange}
+						onCardClick={openEdit}
+						onToggleFavorite={handleToggleFavorite}
+					/>
 				)}
 			</Box>
 
