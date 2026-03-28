@@ -16,7 +16,45 @@ import StarBorderIcon from "@mui/icons-material/StarBorder";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PeopleIcon from "@mui/icons-material/People";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
-import type { FitScore, Job } from "../types";
+import type { FitScore, Job, JobStatus } from "../types";
+
+function formatDate(dateStr: string | null): string | null {
+	if (!dateStr) return null;
+	const d = new Date(dateStr);
+	if (isNaN(d.getTime())) return null;
+	return d.toLocaleDateString("en-US", {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+	});
+}
+
+const STATUS_DATE_LABEL: Record<
+	JobStatus,
+	{ label: string; getDate: (job: Job) => string | null }
+> = {
+	"Not started": {
+		label: "Last updated",
+		getDate: (job) => formatDate(job.created_at),
+	},
+	"Resume submitted": {
+		label: "Applied",
+		getDate: (job) => formatDate(job.date_applied),
+	},
+	"Initial interview": {
+		label: "Phone screen",
+		getDate: (job) => formatDate(job.date_phone_screen),
+	},
+	"Final round interview": {
+		label: "Last onsite",
+		getDate: (job) => formatDate(job.date_last_onsite),
+	},
+	"Offer!": { label: "Last updated", getDate: () => null },
+	"Rejected/Withdrawn": {
+		label: "Last updated",
+		getDate: (job) => formatDate(job.updated_at),
+	},
+};
 
 // Maps each fit score to a number of filled bars (out of 5)
 const FIT_SCORE_BARS: Record<FitScore, number> = {
@@ -225,6 +263,21 @@ export default function JobCard({ job, onClick, onToggleFavorite }: Props) {
 							Recruiter: {job.recruiter}
 						</Typography>
 					)}
+
+					{(() => {
+						const { label, getDate } = STATUS_DATE_LABEL[job.status];
+						const date = getDate(job);
+						if (!date) return null;
+						return (
+							<Typography
+								variant="caption"
+								color="text.disabled"
+								sx={{ display: "block", mt: 0.5 }}
+							>
+								{label} {date}
+							</Typography>
+						);
+					})()}
 				</CardContent>
 			</CardActionArea>
 		</Card>
