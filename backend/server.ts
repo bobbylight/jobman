@@ -22,6 +22,7 @@ interface JobRow {
 	date_last_onsite: string | null;
 	favorite: number;
 	created_at: string;
+	updated_at: string;
 }
 
 // TODO: Share types with frontend

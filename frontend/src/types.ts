@@ -40,6 +40,7 @@ export interface Job {
 	date_last_onsite: string | null;
 	favorite: boolean;
 	created_at: string;
+	updated_at: string;
 }
 
 export type JobFormData = Omit<Job, "id" | "created_at">;

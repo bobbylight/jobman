@@ -21,7 +21,8 @@ db.exec(`
     job_description TEXT,
     ending_substatus TEXT,
     date_phone_screen TEXT,
-    date_last_onsite TEXT
+    date_last_onsite TEXT,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   )
 `);
 
