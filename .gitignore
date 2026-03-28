@@ -9,4 +9,5 @@ coverage/
 *.iml
 .idea/
 settings.local.json
-
+.env
+.env.production
