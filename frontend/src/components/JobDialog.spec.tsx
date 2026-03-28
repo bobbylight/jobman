@@ -128,9 +128,10 @@ describe("JobDialog", () => {
 			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
 			expect(screen.getByLabelText(/Company/)).toHaveValue("Acme Corp");
 			expect(screen.getByLabelText(/Role/)).toHaveValue("Engineer");
-			expect(screen.getByLabelText(/Link/)).toHaveValue(
-				"https://acme.example.com/job",
-			);
+			// Link is shown as a hyperlink in edit mode
+			expect(
+				screen.getByRole("link", { name: "https://acme.example.com/job" }),
+			).toHaveAttribute("href", "https://acme.example.com/job");
 			expect(screen.getByLabelText(/Salary/)).toHaveValue("$120k");
 			expect(screen.getByLabelText(/Recruiter/)).toHaveValue("Jane");
 		});

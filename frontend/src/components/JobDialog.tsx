@@ -12,7 +12,10 @@ import {
 	Checkbox,
 	IconButton,
 	Typography,
+	Box,
+	Link,
 } from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
 import CloseIcon from "@mui/icons-material/Close";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
@@ -68,12 +71,14 @@ export default function JobDialog({
 		Partial<Record<keyof JobFormData, string>>
 	>({});
 	const [confirmDelete, setConfirmDelete] = useState(false);
+	const [linkEditing, setLinkEditing] = useState(false);
 
 	useEffect(() => {
 		if (open) {
 			setForm(initialValues ? { ...EMPTY, ...initialValues } : EMPTY);
 			setErrors({});
 			setConfirmDelete(false);
+			setLinkEditing(false);
 		}
 	}, [open, initialValues]);
 
@@ -179,16 +184,37 @@ export default function JobDialog({
 							/>
 						</Grid>
 						<Grid size={12}>
-							<TextField
-								label="Link *"
-								value={form.link}
-								onChange={(e) => set("link", e.target.value)}
-								error={!!errors.link}
-								helperText={errors.link}
-								fullWidth
-								size="small"
-								placeholder="https://..."
-							/>
+							{isEdit && !linkEditing ? (
+								<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+									<Link
+										href={form.link}
+										target="_blank"
+										rel="noopener noreferrer"
+										sx={{ wordBreak: "break-all" }}
+									>
+										{form.link}
+									</Link>
+									<IconButton
+										size="small"
+										onClick={() => setLinkEditing(true)}
+										aria-label="Edit link"
+										title="Edit link"
+									>
+										<EditIcon fontSize="small" />
+									</IconButton>
+								</Box>
+							) : (
+								<TextField
+									label="Link *"
+									value={form.link}
+									onChange={(e) => set("link", e.target.value)}
+									error={!!errors.link}
+									helperText={errors.link}
+									fullWidth
+									size="small"
+									placeholder="https://..."
+								/>
+							)}
 						</Grid>
 
 						<Grid size={{ xs: 12, sm: 6 }}>
