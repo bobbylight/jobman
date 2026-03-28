@@ -44,11 +44,14 @@ const makeJob = (overrides: Partial<Job> & Pick<Job, "id">): Job => ({
 	date_applied: null,
 	recruiter: null,
 	notes: null,
+	job_description: null,
 	referred_by: null,
+	ending_substatus: null,
 	date_phone_screen: null,
 	date_last_onsite: null,
 	favorite: false,
 	created_at: "2024-01-01T00:00:00.000Z",
+	updated_at: "2024-01-01T00:00:00.000Z",
 	...overrides,
 });
 
@@ -103,7 +106,7 @@ describe("App", () => {
 			expect(screen.getByText("TechCorp")).toBeInTheDocument();
 		});
 
-		fireEvent.change(screen.getByPlaceholderText(/Search by company or role/), {
+		fireEvent.change(screen.getByPlaceholderText(/Search company or role/), {
 			target: { value: "tech" },
 		});
 
@@ -121,12 +124,101 @@ describe("App", () => {
 			expect(screen.getByText("Acme")).toBeInTheDocument();
 		});
 
-		fireEvent.change(screen.getByPlaceholderText(/Search by company or role/), {
+		fireEvent.change(screen.getByPlaceholderText(/Search company or role/), {
 			target: { value: "frontend" },
 		});
 
 		expect(screen.getByText("Acme")).toBeInTheDocument();
 		expect(screen.queryByText("Beta")).not.toBeInTheDocument();
+	});
+
+	it("filters jobs to favorites only when the Favorites chip is toggled", async () => {
+		mockGetJobs.mockResolvedValue([
+			makeJob({ id: 1, company: "Starred Co", favorite: true }),
+			makeJob({ id: 2, company: "Plain Co", favorite: false }),
+		]);
+		render(<App />);
+		await waitFor(() => {
+			expect(screen.getByText("Starred Co")).toBeInTheDocument();
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: /Favorites/ }));
+
+		expect(screen.getByText("Starred Co")).toBeInTheDocument();
+		expect(screen.queryByText("Plain Co")).not.toBeInTheDocument();
+	});
+
+	it("hides withdrawn jobs when Hide Withdrawn is toggled, but keeps rejections", async () => {
+		mockGetJobs.mockResolvedValue([
+			makeJob({
+				id: 1,
+				company: "Withdrawn Co",
+				status: "Rejected/Withdrawn",
+				ending_substatus: "Withdrawn",
+			}),
+			makeJob({
+				id: 2,
+				company: "Rejected Co",
+				status: "Rejected/Withdrawn",
+				ending_substatus: "Rejected",
+			}),
+		]);
+		render(<App />);
+		await waitFor(() => {
+			expect(screen.getByText("Withdrawn Co")).toBeInTheDocument();
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: /Hide Withdrawn/ }));
+
+		expect(screen.queryByText("Withdrawn Co")).not.toBeInTheDocument();
+		expect(screen.getByText("Rejected Co")).toBeInTheDocument();
+	});
+
+	it("filters jobs by minimum fit score", async () => {
+		mockGetJobs.mockResolvedValue([
+			makeJob({ id: 1, company: "High Co", fit_score: "High" }),
+			makeJob({ id: 2, company: "Low Co", fit_score: "Low" }),
+			makeJob({ id: 3, company: "Unsure Co", fit_score: null }),
+		]);
+		render(<App />);
+		await waitFor(() => {
+			expect(screen.getByText("High Co")).toBeInTheDocument();
+		});
+
+		// Open the fit score select and pick "High or better"
+		fireEvent.mouseDown(screen.getByRole("combobox"));
+		fireEvent.click(
+			await screen.findByRole("option", { name: "High or better" }),
+		);
+
+		expect(screen.getByText("High Co")).toBeInTheDocument();
+		expect(screen.queryByText("Low Co")).not.toBeInTheDocument();
+		expect(screen.queryByText("Unsure Co")).not.toBeInTheDocument();
+	});
+
+	it("shows the Clear button when any filter is active and resets all filters on click", async () => {
+		mockGetJobs.mockResolvedValue([
+			makeJob({ id: 1, company: "Starred Co", favorite: true }),
+			makeJob({ id: 2, company: "Plain Co", favorite: false }),
+		]);
+		render(<App />);
+		await waitFor(() => {
+			expect(screen.getByText("Plain Co")).toBeInTheDocument();
+		});
+
+		expect(
+			screen.queryByRole("button", { name: /Clear/ }),
+		).not.toBeInTheDocument();
+
+		fireEvent.click(screen.getByRole("button", { name: /Favorites/ }));
+		expect(screen.queryByText("Plain Co")).not.toBeInTheDocument();
+		expect(screen.getByRole("button", { name: /Clear/ })).toBeInTheDocument();
+
+		fireEvent.click(screen.getByRole("button", { name: /Clear/ }));
+		expect(screen.getByText("Plain Co")).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: /Clear/ }),
+		).not.toBeInTheDocument();
 	});
 
 	it("opens the add job dialog when 'Add Job' is clicked", async () => {

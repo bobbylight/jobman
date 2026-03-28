@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { Box, Typography, Chip } from "@mui/material";
 import { STATUS_COLORS } from "../constants";
@@ -12,7 +12,7 @@ interface Props {
 	onToggleFavorite: (job: Job) => void;
 }
 
-export default function KanbanColumn({
+export default memo(function KanbanColumn({
 	status,
 	jobs,
 	onCardClick,
@@ -94,7 +94,7 @@ export default function KanbanColumn({
 					<JobCard
 						key={job.id}
 						job={job}
-						onClick={() => onCardClick(job)}
+						onCardClick={onCardClick}
 						onToggleFavorite={onToggleFavorite}
 					/>
 				))}
@@ -110,4 +110,4 @@ export default function KanbanColumn({
 			</Box>
 		</Box>
 	);
-}
+});

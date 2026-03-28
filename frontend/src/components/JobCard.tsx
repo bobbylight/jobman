@@ -108,11 +108,15 @@ function FitScoreBars({ score }: { score: FitScore }) {
 
 interface Props {
 	job: Job;
-	onClick: () => void;
+	onCardClick: (job: Job) => void;
 	onToggleFavorite: (job: Job) => void;
 }
 
-export default function JobCard({ job, onClick, onToggleFavorite }: Props) {
+const JobCard = React.memo(function JobCard({
+	job,
+	onCardClick,
+	onToggleFavorite,
+}: Props) {
 	const { attributes, listeners, setNodeRef, transform, isDragging } =
 		useDraggable({
 			id: String(job.id),
@@ -219,7 +223,7 @@ export default function JobCard({ job, onClick, onToggleFavorite }: Props) {
 			{/* Card body — clickable to open edit dialog */}
 			<CardActionArea
 				onPointerDown={(e) => e.stopPropagation()}
-				onClick={onClick}
+				onClick={() => onCardClick(job)}
 				sx={{ p: 0 }}
 			>
 				<CardContent sx={{ pt: 1, pb: "10px !important", px: 1.5 }}>
@@ -290,4 +294,6 @@ export default function JobCard({ job, onClick, onToggleFavorite }: Props) {
 			</CardActionArea>
 		</Card>
 	);
-}
+});
+
+export default JobCard;

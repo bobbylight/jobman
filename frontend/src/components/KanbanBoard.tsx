@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, memo } from "react";
 import { DndContext, DragOverlay, pointerWithin } from "@dnd-kit/core";
 import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
 import { Box } from "@mui/material";
@@ -14,7 +14,7 @@ interface Props {
 	onToggleFavorite: (job: Job) => void;
 }
 
-export default function KanbanBoard({
+export default memo(function KanbanBoard({
 	jobs,
 	onStatusChange,
 	onCardClick,
@@ -22,12 +22,16 @@ export default function KanbanBoard({
 }: Props) {
 	const [activeJob, setActiveJob] = useState<Job | null>(null);
 
-	const byStatus = STATUSES.reduce<Record<JobStatus, Job[]>>(
-		(acc, s) => {
-			acc[s] = jobs.filter((j) => j.status === s);
-			return acc;
-		},
-		{} as Record<JobStatus, Job[]>,
+	const byStatus = useMemo(
+		() =>
+			STATUSES.reduce<Record<JobStatus, Job[]>>(
+				(acc, s) => {
+					acc[s] = jobs.filter((j) => j.status === s);
+					return acc;
+				},
+				{} as Record<JobStatus, Job[]>,
+			),
+		[jobs],
 	);
 
 	function handleDragStart({ active }: DragStartEvent) {
@@ -78,11 +82,11 @@ export default function KanbanBoard({
 				{activeJob ? (
 					<JobCard
 						job={activeJob}
-						onClick={() => {}}
+						onCardClick={() => {}}
 						onToggleFavorite={() => {}}
 					/>
 				) : null}
 			</DragOverlay>
 		</DndContext>
 	);
-}
+});
