@@ -1,8 +1,8 @@
 export type JobStatus =
 	| "Not started"
 	| "Resume submitted"
-	| "Initial interview"
-	| "Final round interview"
+	| "Phone screen"
+	| "Interviewing"
 	| "Offer!"
 	| "Rejected/Withdrawn";
 

@@ -241,7 +241,7 @@ describe("JobDialog", () => {
 						initialValues={terminalJob("Offer!", "Offer accepted")}
 					/>,
 				);
-				changeSelect(/^Status$/i, "Final round interview");
+				changeSelect(/^Status$/i, "Interviewing");
 				expect(screen.getByLabelText(/Final Resolution/i)).toHaveAttribute(
 					"aria-disabled",
 					"true",
@@ -349,7 +349,7 @@ describe("JobDialog", () => {
 					screen.getByText("Required for this status"),
 				).toBeInTheDocument();
 
-				changeSelect(/^Status$/i, "Initial interview");
+				changeSelect(/^Status$/i, "Phone screen");
 
 				expect(
 					screen.queryByText("Required for this status"),

@@ -243,30 +243,26 @@ describe("computeDateUpdates", () => {
 	};
 	const jobNoDates = { date_phone_screen: null, date_last_onsite: null };
 
-	it("sets date_phone_screen to now and clears date_last_onsite when moving to Initial interview", () => {
-		const result = computeDateUpdates(jobWithDates, "Initial interview", NOW);
+	it("sets date_phone_screen to now and clears date_last_onsite when moving to Phone screen", () => {
+		const result = computeDateUpdates(jobWithDates, "Phone screen", NOW);
 		expect(result.date_phone_screen).toBe(NOW);
 		expect(result.date_last_onsite).toBeNull();
 	});
 
-	it("sets date_phone_screen to now when moving to Initial interview from a job with no prior dates", () => {
-		const result = computeDateUpdates(jobNoDates, "Initial interview", NOW);
+	it("sets date_phone_screen to now when moving to Phone screen from a job with no prior dates", () => {
+		const result = computeDateUpdates(jobNoDates, "Phone screen", NOW);
 		expect(result.date_phone_screen).toBe(NOW);
 		expect(result.date_last_onsite).toBeNull();
 	});
 
-	it("sets date_last_onsite to now and preserves date_phone_screen when moving to Final round interview", () => {
-		const result = computeDateUpdates(
-			jobWithDates,
-			"Final round interview",
-			NOW,
-		);
+	it("sets date_last_onsite to now and preserves date_phone_screen when moving to Interviewing", () => {
+		const result = computeDateUpdates(jobWithDates, "Interviewing", NOW);
 		expect(result.date_last_onsite).toBe(NOW);
 		expect(result.date_phone_screen).toBe(jobWithDates.date_phone_screen);
 	});
 
-	it("sets date_last_onsite to now when moving to Final round interview with no prior phone screen", () => {
-		const result = computeDateUpdates(jobNoDates, "Final round interview", NOW);
+	it("sets date_last_onsite to now when moving to Interviewing with no prior phone screen", () => {
+		const result = computeDateUpdates(jobNoDates, "Interviewing", NOW);
 		expect(result.date_last_onsite).toBe(NOW);
 		expect(result.date_phone_screen).toBeNull();
 	});

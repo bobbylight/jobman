@@ -56,10 +56,10 @@ export function computeDateUpdates(
 	newStatus: JobStatus,
 	now: string,
 ): Pick<Job, "date_phone_screen" | "date_last_onsite"> {
-	if (newStatus === "Initial interview") {
+	if (newStatus === "Phone screen") {
 		return { date_phone_screen: now, date_last_onsite: null };
 	}
-	if (newStatus === "Final round interview") {
+	if (newStatus === "Interviewing") {
 		return { date_phone_screen: job.date_phone_screen, date_last_onsite: now };
 	}
 	if (newStatus === "Not started" || newStatus === "Resume submitted") {

@@ -42,11 +42,11 @@ const STATUS_DATE_LABEL: Record<
 		label: "Applied",
 		getDate: (job) => formatDate(job.date_applied),
 	},
-	"Initial interview": {
+	"Phone screen": {
 		label: "Phone screen",
 		getDate: (job) => formatDate(job.date_phone_screen),
 	},
-	"Final round interview": {
+	Interviewing: {
 		label: "Last onsite",
 		getDate: (job) => formatDate(job.date_last_onsite),
 	},
