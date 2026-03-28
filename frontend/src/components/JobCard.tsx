@@ -17,6 +17,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PeopleIcon from "@mui/icons-material/People";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import type { FitScore, Job, JobStatus } from "../types";
+import { STATUS_COLORS } from "../constants";
 
 function formatDate(dateStr: string | null): string | null {
 	if (!dateStr) return null;
@@ -118,8 +119,6 @@ export default function JobCard({ job, onClick, onToggleFavorite }: Props) {
 			data: { job },
 		});
 
-	const hasChips = job.salary || job.referred_by;
-
 	const style = {
 		transform: CSS.Translate.toString(transform),
 		opacity: isDragging ? 0.4 : 1,
@@ -148,8 +147,12 @@ export default function JobCard({ job, onClick, onToggleFavorite }: Props) {
 					gap: 0.5,
 					px: 1,
 					py: 0.5,
-					bgcolor: "rgba(0,0,0,0.035)",
-					borderBottom: "1px solid rgba(0,0,0,0.07)",
+					bgcolor: isDragging
+						? "rgba(0,0,0,0.035)"
+						: `${STATUS_COLORS[job.status]}26`,
+					borderBottom: isDragging
+						? "1px solid rgba(0,0,0,0.07)"
+						: `1px solid ${STATUS_COLORS[job.status]}40`,
 					cursor: isDragging ? "grabbing" : "grab",
 					touchAction: "none",
 				}}
@@ -224,35 +227,40 @@ export default function JobCard({ job, onClick, onToggleFavorite }: Props) {
 						variant="body2"
 						color="text.secondary"
 						noWrap
-						sx={{ mb: hasChips || job.recruiter ? 0.75 : 0 }}
+						sx={{ mb: job.recruiter ? 0.75 : 0 }}
 					>
 						{job.role}
 					</Typography>
 
-					{hasChips && (
-						<Box
-							sx={{
-								display: "flex",
-								flexWrap: "wrap",
-								gap: 0.5,
-								alignItems: "center",
-								mb: job.recruiter ? 0.5 : 0,
-							}}
-						>
-							{job.salary && (
-								<Chip label={job.salary} size="small" variant="filled" />
-							)}
-							{job.referred_by && (
-								<Chip
-									icon={<PeopleIcon />}
-									label={job.referred_by}
-									size="small"
-									variant="outlined"
-									sx={{ maxWidth: 120 }}
-								/>
-							)}
-						</Box>
-					)}
+					<Box
+						sx={{
+							display: "flex",
+							flexWrap: "wrap",
+							gap: 0.5,
+							alignItems: "center",
+							mb: job.recruiter ? 0.5 : 0,
+						}}
+					>
+						<Chip
+							label={job.salary ?? "$???"}
+							size="small"
+							variant="filled"
+							sx={
+								job.salary
+									? { bgcolor: "#c8e6c9", color: "#1b5e20" }
+									: { bgcolor: "#e0e0e0", color: "#757575" }
+							}
+						/>
+						{job.referred_by && (
+							<Chip
+								icon={<PeopleIcon />}
+								label={job.referred_by}
+								size="small"
+								variant="outlined"
+								sx={{ maxWidth: 120 }}
+							/>
+						)}
+					</Box>
 
 					{job.recruiter && (
 						<Typography
@@ -267,14 +275,14 @@ export default function JobCard({ job, onClick, onToggleFavorite }: Props) {
 					{(() => {
 						const { label, getDate } = STATUS_DATE_LABEL[job.status];
 						const date = getDate(job);
-						if (!date) return null;
 						return (
 							<Typography
 								variant="caption"
 								color="text.disabled"
 								sx={{ display: "block", mt: 0.5 }}
 							>
-								{label} {date}
+								{label}
+								{date ? ` ${date}` : ""}
 							</Typography>
 						);
 					})()}

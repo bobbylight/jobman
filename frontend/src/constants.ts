@@ -38,7 +38,7 @@ export const STATUS_COLORS = {
 	"Not started": "#90a4ae",
 	"Resume submitted": "#ffa726",
 	"Initial interview": "#ab47bc",
-	"Final round interview": "#7e57c2",
+	"Final round interview": "#1e88e5",
 	"Offer!": "#66bb6a",
 	"Rejected/Withdrawn": "#ef5350",
 } satisfies Record<JobStatus, string>;
