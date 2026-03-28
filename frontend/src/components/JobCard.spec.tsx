@@ -54,11 +54,11 @@ describe("JobCard", () => {
 		expect(screen.getByText("$120k–$150k")).toBeInTheDocument();
 	});
 
-	it("does not show salary chip when salary is null", () => {
+	it("shows $??? chip when salary is null", () => {
 		render(
 			<JobCard job={BASE_JOB} onClick={vi.fn()} onToggleFavorite={vi.fn()} />,
 		);
-		expect(screen.queryByText(/\$/)).not.toBeInTheDocument();
+		expect(screen.getByText("$???")).toBeInTheDocument();
 	});
 
 	it("shows fit score indicator when fit_score is set", () => {

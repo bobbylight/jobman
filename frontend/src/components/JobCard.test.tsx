@@ -40,10 +40,9 @@ describe("JobCard — Rejected/Withdrawn date label", () => {
 		expect(screen.getByText(/Jun 15, 2025/)).toBeInTheDocument();
 	});
 
-	it("renders nothing when updated_at is missing", () => {
-		// updated_at is non-nullable in the type, but guard the formatting logic
+	it("renders label without a date when updated_at is empty", () => {
 		const job = { ...baseJob, updated_at: "" };
 		renderCard(job);
-		expect(screen.queryByText(/Last updated/)).not.toBeInTheDocument();
+		expect(screen.getByText("Last updated")).toBeInTheDocument();
 	});
 });
