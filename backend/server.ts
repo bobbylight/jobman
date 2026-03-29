@@ -1,6 +1,30 @@
 import express from "express";
 import cors from "cors";
+import session from "express-session";
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import SqliteStoreFactory from "better-sqlite3-session-store";
 import type Database from "better-sqlite3"; // type-only: erased at compile time
+
+// Augment express-session to include our custom fields
+declare module "express-session" {
+	interface SessionData {
+		userId: number;
+	}
+}
+
+// Augment passport's req.user type
+declare global {
+	// eslint-disable-next-line @typescript-eslint/no-namespace
+	namespace Express {
+		interface User {
+			id: number;
+			email: string;
+			display_name: string | null;
+			avatar_url: string | null;
+		}
+	}
+}
 
 const PORT = 3001;
 
@@ -23,6 +47,13 @@ interface JobRow {
 	favorite: number;
 	created_at: string;
 	updated_at: string;
+}
+
+interface UserRow {
+	id: number;
+	email: string;
+	display_name: string | null;
+	avatar_url: string | null;
 }
 
 // TODO: Share types with frontend
@@ -62,8 +93,147 @@ function toClient(row: unknown) {
 export function createApp(db: Database) {
 	const app = express();
 
-	app.use(cors());
+	app.use(
+		cors({
+			origin: process.env["FRONTEND_URL"] ?? "http://localhost:5173",
+			credentials: true,
+		}),
+	);
 	app.use(express.json());
+
+	// Session middleware backed by SQLite
+	const SqliteStore = SqliteStoreFactory(session);
+	app.use(
+		session({
+			secret: process.env["SESSION_SECRET"] ?? "dev-secret",
+			resave: false,
+			saveUninitialized: false,
+			store: new SqliteStore({ client: db }),
+			cookie: {
+				httpOnly: true,
+				secure: process.env["NODE_ENV"] === "production",
+				sameSite: "lax",
+				maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+			},
+		}),
+	);
+
+	// Passport strategy — only registered when credentials are present.
+	// Auth routes exist in all environments but are non-functional in tests
+	// (no credentials → no strategy registered → passport.authenticate returns 500).
+	if (process.env["GOOGLE_CLIENT_ID"]) {
+		passport.use(
+			new GoogleStrategy(
+				{
+					clientID: process.env["GOOGLE_CLIENT_ID"],
+					clientSecret: process.env["GOOGLE_CLIENT_SECRET"] ?? "",
+					callbackURL: process.env["GOOGLE_CALLBACK_URL"] ?? "",
+				},
+				(_accessToken, _refreshToken, profile, done) => {
+					const existing = db
+						.prepare(
+							`SELECT u.id, u.email, u.display_name, u.avatar_url
+               FROM users u
+               JOIN user_identities ui ON ui.user_id = u.id
+               WHERE ui.provider = 'google' AND ui.provider_user_id = ?`,
+						)
+						.get(profile.id) as UserRow | undefined;
+
+					if (existing) {
+						db.prepare(
+							`UPDATE user_identities
+               SET access_token = ?, refresh_token = ?,
+                   updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+               WHERE provider = 'google' AND provider_user_id = ?`,
+						).run(_accessToken, _refreshToken ?? null, profile.id);
+						return done(null, existing);
+					}
+
+					const email = profile.emails?.[0]?.value ?? "";
+					const displayName = profile.displayName ?? null;
+					const avatarUrl = profile.photos?.[0]?.value ?? null;
+
+					const insertUser = db.prepare(
+						"INSERT INTO users (email, display_name, avatar_url) VALUES (?, ?, ?) RETURNING id",
+					);
+					const insertIdentity = db.prepare(
+						`INSERT INTO user_identities
+               (user_id, provider, provider_user_id, email, access_token, refresh_token)
+             VALUES (?, 'google', ?, ?, ?, ?)`,
+					);
+
+					const newUser = db.transaction(() => {
+						const row = insertUser.get(email, displayName, avatarUrl) as {
+							id: number;
+						};
+						insertIdentity.run(
+							row.id,
+							profile.id,
+							email,
+							_accessToken,
+							_refreshToken ?? null,
+						);
+						return {
+							id: row.id,
+							email,
+							display_name: displayName,
+							avatar_url: avatarUrl,
+						};
+					})();
+
+					return done(null, newUser);
+				},
+			),
+		);
+	}
+
+	app.use(passport.initialize());
+
+	// --- Auth routes ---
+
+	app.get(
+		"/api/auth/google",
+		passport.authenticate("google", { scope: ["openid", "email", "profile"] }),
+	);
+
+	app.get(
+		"/api/auth/google/callback",
+		passport.authenticate("google", {
+			session: false,
+			failureRedirect: `${process.env["FRONTEND_URL"] ?? "http://localhost:5173"}/?error=auth_failed`,
+		}),
+		(req, res) => {
+			req.session.userId = req.user!.id;
+			res.redirect(process.env["FRONTEND_URL"] ?? "http://localhost:5173");
+		},
+	);
+
+	app.post("/api/auth/logout", (req, res) => {
+		req.session.destroy((err) => {
+			if (err) return res.status(500).json({ error: "Logout failed" });
+			res.clearCookie("connect.sid");
+			return res.json({ success: true });
+		});
+	});
+
+	app.get("/api/auth/me", (req, res) => {
+		if (!req.session.userId)
+			return res.status(401).json({ error: "Unauthorized" });
+		const user = db
+			.prepare(
+				"SELECT id, email, display_name, avatar_url FROM users WHERE id = ?",
+			)
+			.get(req.session.userId) as UserRow | undefined;
+		if (!user) return res.status(401).json({ error: "Unauthorized" });
+		return res.json({
+			id: user.id,
+			email: user.email,
+			displayName: user.display_name,
+			avatarUrl: user.avatar_url,
+		});
+	});
+
+	// --- Job routes ---
 
 	// GET all jobs
 	app.get("/api/jobs", (_req, res) => {
@@ -168,9 +338,11 @@ export function createApp(db: Database) {
 	return app;
 }
 
-// Production startup — dynamic import keeps db.ts (and node:sqlite) out of
-// the module graph when server.ts is imported by tests.
+// Production startup — dynamic import keeps db.ts out of the module graph
+// when server.ts is imported by tests. dotenv is loaded first so env vars
+// are available before db.ts runs its seed migration.
 if (process.env["NODE_ENV"] !== "test") {
+	await import("dotenv/config");
 	const { default: db } = await import("./db.js");
 	const app = createApp(db);
 	app.listen(PORT, () => {
