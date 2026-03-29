@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import type { DatabaseSync } from "node:sqlite"; // type-only: erased at compile time
+import type Database from "better-sqlite3"; // type-only: erased at compile time
 
 const PORT = 3001;
 
@@ -59,7 +59,7 @@ function toClient(row: unknown) {
 	return { ...job, favorite: !!job.favorite };
 }
 
-export function createApp(db: DatabaseSync) {
+export function createApp(db: Database) {
 	const app = express();
 
 	app.use(cors());

@@ -1,7 +1,7 @@
-import { DatabaseSync } from "node:sqlite";
+import Database from "better-sqlite3";
 import { join } from "node:path";
 
-const db = new DatabaseSync(join(import.meta.dirname, "jobman.db"));
+const db = new Database(join(import.meta.dirname, "jobman.db"));
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS jobs (
