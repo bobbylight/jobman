@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { DatabaseSync } from "node:sqlite";
+import Database from "better-sqlite3";
 import request from "supertest";
 import {
 	createApp,
@@ -7,7 +7,7 @@ import {
 	VALID_ENDING_SUBSTATUSES,
 } from "./server.js";
 
-const testDb = new DatabaseSync(":memory:");
+const testDb = new Database(":memory:");
 testDb.exec(`
   CREATE TABLE IF NOT EXISTS jobs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
