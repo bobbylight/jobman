@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { api } from "./api";
+import { api, setUnauthorizedHandler } from "./api";
 import type { Job, JobFormData } from "./types";
 
 const makeResponse = (body: unknown, ok = true) => ({
@@ -87,6 +87,35 @@ describe("api", () => {
 				expect.objectContaining({ method: "POST" }),
 			);
 			expect(result.success).toBe(true);
+		});
+	});
+
+	describe("setUnauthorizedHandler", () => {
+		afterEach(() => {
+			// Reset so the handler doesn't leak into other tests
+			setUnauthorizedHandler(() => {});
+		});
+
+		it("calls the registered handler when any request receives a 401", async () => {
+			const handler = vi.fn();
+			setUnauthorizedHandler(handler);
+			mockFetch.mockResolvedValue({
+				ok: false,
+				status: 401,
+				json: () => Promise.resolve({}),
+			});
+			await expect(api.getJobs()).rejects.toThrow("API error 401");
+			expect(handler).toHaveBeenCalledOnce();
+		});
+
+		it("does not call the handler for non-401 errors", async () => {
+			const handler = vi.fn();
+			setUnauthorizedHandler(handler);
+			mockFetch.mockResolvedValue(
+				makeResponse({ error: "Server error" }, false),
+			);
+			await expect(api.getJobs()).rejects.toThrow("API error 400");
+			expect(handler).not.toHaveBeenCalled();
 		});
 	});
 

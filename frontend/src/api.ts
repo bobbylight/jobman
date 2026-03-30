@@ -2,12 +2,22 @@ import type { Job, JobFormData, User } from "./types";
 
 const BASE = "/api";
 
+let unauthorizedHandler: (() => void) | null = null;
+
+/** Register a callback invoked whenever any API request receives a 401. */
+export function setUnauthorizedHandler(handler: () => void): void {
+	unauthorizedHandler = handler;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 	const res = await fetch(`${BASE}${path}`, {
 		headers: { "Content-Type": "application/json" },
 		credentials: "include",
 		...options,
 	});
+	if (res.status === 401) {
+		unauthorizedHandler?.();
+	}
 	if (!res.ok) throw new Error(`API error ${res.status}`);
 	return res.json() as Promise<T>;
 }
