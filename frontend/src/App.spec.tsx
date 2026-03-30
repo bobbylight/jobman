@@ -1,11 +1,22 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+	act,
+	render,
+	screen,
+	fireEvent,
+	waitFor,
+} from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import App, { computeDateUpdates } from "./App";
-import { api } from "./api";
+import { api, setUnauthorizedHandler } from "./api";
 import type { Job } from "./types";
 
+let capturedUnauthorizedHandler: (() => void) | null = null;
+
 vi.mock("./api", () => ({
+	setUnauthorizedHandler: vi.fn((handler: () => void) => {
+		capturedUnauthorizedHandler = handler;
+	}),
 	api: {
 		getMe: vi.fn(),
 		logout: vi.fn(),
@@ -69,6 +80,7 @@ const makeJob = (overrides: Partial<Job> & Pick<Job, "id">): Job => ({
 describe("App", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		capturedUnauthorizedHandler = null;
 		// Default: authenticated. Individual tests can override.
 		mockGetMe.mockResolvedValue(MOCK_USER);
 		mockLogout.mockResolvedValue({ success: true });
@@ -129,6 +141,30 @@ describe("App", () => {
 					screen.getByRole("link", { name: "Continue with Google" }),
 				).toBeInTheDocument();
 			});
+		});
+
+		it("registers an unauthorized handler on mount", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			render(<App />);
+			await waitFor(() => {
+				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+			});
+			expect(vi.mocked(setUnauthorizedHandler)).toHaveBeenCalledOnce();
+		});
+
+		it("shows the login page when a mid-session API call returns 401", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			render(<App />);
+			await waitFor(() => {
+				expect(screen.getByText("Not started")).toBeInTheDocument();
+			});
+
+			// Simulate a 401 coming back from any job API call
+			act(() => capturedUnauthorizedHandler!());
+
+			expect(
+				screen.getByRole("link", { name: "Continue with Google" }),
+			).toBeInTheDocument();
 		});
 	});
 
