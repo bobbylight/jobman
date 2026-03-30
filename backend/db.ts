@@ -50,50 +50,12 @@ db.exec(`
     date_last_onsite TEXT,
     updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TRIGGER IF NOT EXISTS jobs_updated_at
+  AFTER UPDATE ON jobs FOR EACH ROW
+  BEGIN
+    UPDATE jobs SET updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = OLD.id;
+  END;
 `);
-
-// Add user_id column to jobs if it doesn't exist yet (existing databases)
-const jobColumns = db.pragma("table_info(jobs)") as { name: string }[];
-if (!jobColumns.some((col) => col.name === "user_id")) {
-	db.exec("ALTER TABLE jobs ADD COLUMN user_id INTEGER REFERENCES users(id)");
-}
-
-// Seed user migration: if no users exist and SEED_GOOGLE_SUB is set,
-// create the owner user and reassign all existing jobs to them.
-const userCount = (
-	db.prepare("SELECT COUNT(*) as count FROM users").get() as {
-		count: number;
-	}
-).count;
-
-if (userCount === 0) {
-	const sub = process.env["SEED_GOOGLE_SUB"];
-	const email = process.env["SEED_EMAIL"];
-
-	if (sub && email) {
-		const insertUser = db.prepare(
-			"INSERT INTO users (email) VALUES (?) RETURNING id",
-		);
-		const insertIdentity = db.prepare(
-			"INSERT INTO user_identities (user_id, provider, provider_user_id, email) VALUES (?, 'google', ?, ?)",
-		);
-		const assignJobs = db.prepare(
-			"UPDATE jobs SET user_id = ? WHERE user_id IS NULL",
-		);
-
-		const migrate = db.transaction(() => {
-			const user = insertUser.get(email) as { id: number };
-			insertIdentity.run(user.id, sub, email);
-			assignJobs.run(user.id);
-			return user.id;
-		});
-
-		const userId = migrate();
-		// eslint-disable-next-line no-console
-		console.log(
-			`Seed migration: created user ${userId} (${email}) and assigned existing jobs`,
-		);
-	}
-}
 
 export default db;

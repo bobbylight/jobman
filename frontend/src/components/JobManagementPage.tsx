@@ -33,11 +33,19 @@ import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import { api } from "../api";
-import type { Job, JobFormData, JobStatus, FitScore, User } from "../types";
-import { FIT_SCORES } from "../constants";
+import type {
+	Job,
+	JobFormData,
+	JobStatus,
+	FitScore,
+	EndingSubstatus,
+	User,
+} from "../types";
+import { FIT_SCORES, TERMINAL_STATUSES } from "../constants";
 import { computeDateUpdates } from "../jobUtils";
 import KanbanBoard from "./KanbanBoard";
 import JobDialog from "./JobDialog";
+import EndingStatusDialog from "./EndingStatusDialog";
 
 type Severity = "success" | "error" | "info" | "warning";
 
@@ -86,6 +94,10 @@ export default function JobManagementPage({ currentUser, onLogout }: Props) {
 	const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(
 		null,
 	);
+	const [pendingTerminalChange, setPendingTerminalChange] = useState<{
+		job: Job;
+		newStatus: JobStatus;
+	} | null>(null);
 	const [snack, setSnack] = useState<{
 		open: boolean;
 		message: string;
@@ -160,20 +172,26 @@ export default function JobManagementPage({ currentUser, onLogout }: Props) {
 		[closeDialog],
 	);
 
-	const handleStatusChange = useCallback(
-		async (job: Job, newStatus: JobStatus) => {
+	const applyStatusChange = useCallback(
+		async (job: Job, newStatus: JobStatus, extraUpdates?: Partial<Job>) => {
 			const dateUpdates = computeDateUpdates(
 				job,
 				newStatus,
 				nowDatetimeLocal(),
 			);
-			const optimistic = { ...job, status: newStatus, ...dateUpdates };
+			const optimistic = {
+				...job,
+				status: newStatus,
+				...dateUpdates,
+				...extraUpdates,
+			};
 			setJobs((prev) => prev.map((j) => (j.id === job.id ? optimistic : j)));
 			try {
 				const updated = await api.updateJob(job.id, {
 					...job,
 					status: newStatus,
 					...dateUpdates,
+					...extraUpdates,
 				});
 				setJobs((prev) => prev.map((j) => (j.id === updated.id ? updated : j)));
 				const lines = ["Job status updated successfully"];
@@ -198,6 +216,30 @@ export default function JobManagementPage({ currentUser, onLogout }: Props) {
 			}
 		},
 		[],
+	);
+
+	const handleStatusChange = useCallback(
+		(job: Job, newStatus: JobStatus) => {
+			if (TERMINAL_STATUSES.has(newStatus)) {
+				setPendingTerminalChange({ job, newStatus });
+				return;
+			}
+			void applyStatusChange(job, newStatus, { ending_substatus: null });
+		},
+		[applyStatusChange],
+	);
+
+	const handleTerminalConfirm = useCallback(
+		(substatus: EndingSubstatus, notes: string | null) => {
+			if (!pendingTerminalChange) return;
+			const { job, newStatus } = pendingTerminalChange;
+			setPendingTerminalChange(null);
+			void applyStatusChange(job, newStatus, {
+				ending_substatus: substatus,
+				notes,
+			});
+		},
+		[pendingTerminalChange, applyStatusChange],
 	);
 
 	const handleToggleFavorite = useCallback(async (job: Job) => {
@@ -465,6 +507,14 @@ export default function JobManagementPage({ currentUser, onLogout }: Props) {
 				onSave={handleSave}
 				onDelete={handleDelete}
 				initialValues={dialog.job}
+			/>
+
+			<EndingStatusDialog
+				open={pendingTerminalChange !== null}
+				job={pendingTerminalChange?.job ?? null}
+				newStatus={pendingTerminalChange?.newStatus ?? null}
+				onConfirm={handleTerminalConfirm}
+				onCancel={() => setPendingTerminalChange(null)}
 			/>
 
 			<Snackbar
