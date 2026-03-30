@@ -24,6 +24,13 @@ const MOCK_JOB: Job = {
 	created_at: "2024-01-01T00:00:00.000Z",
 };
 
+const MOCK_USER = {
+	id: 1,
+	email: "test@example.com",
+	displayName: "Test User",
+	avatarUrl: null,
+};
+
 describe("api", () => {
 	let mockFetch: ReturnType<typeof vi.fn>;
 
@@ -34,6 +41,53 @@ describe("api", () => {
 
 	afterEach(() => {
 		vi.unstubAllGlobals();
+	});
+
+	describe("getMe", () => {
+		it("fetches GET /api/auth/me and returns the user when authenticated", async () => {
+			mockFetch.mockResolvedValue({
+				ok: true,
+				status: 200,
+				json: () => Promise.resolve(MOCK_USER),
+			});
+			const result = await api.getMe();
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/auth/me",
+				expect.objectContaining({ credentials: "include" }),
+			);
+			expect(result).toEqual(MOCK_USER);
+		});
+
+		it("returns null when the response is 401 (not authenticated)", async () => {
+			mockFetch.mockResolvedValue({
+				ok: false,
+				status: 401,
+				json: () => Promise.resolve(null),
+			});
+			const result = await api.getMe();
+			expect(result).toBeNull();
+		});
+
+		it("throws when the response is an unexpected error status", async () => {
+			mockFetch.mockResolvedValue({
+				ok: false,
+				status: 500,
+				json: () => Promise.resolve({}),
+			});
+			await expect(api.getMe()).rejects.toThrow("API error 500");
+		});
+	});
+
+	describe("logout", () => {
+		it("POSTs to /api/auth/logout and returns success", async () => {
+			mockFetch.mockResolvedValue(makeResponse({ success: true }));
+			const result = await api.logout();
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/auth/logout",
+				expect.objectContaining({ method: "POST" }),
+			);
+			expect(result.success).toBe(true);
+		});
 	});
 
 	describe("getJobs", () => {
