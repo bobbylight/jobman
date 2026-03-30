@@ -35,7 +35,7 @@ import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import theme from "./theme";
-import { api } from "./api";
+import { api, setUnauthorizedHandler } from "./api";
 import type { Job, JobFormData, JobStatus, FitScore, User } from "./types";
 import { FIT_SCORES } from "./constants";
 import KanbanBoard from "./components/KanbanBoard";
@@ -131,6 +131,14 @@ export default function App() {
 		} finally {
 			setLoading(false);
 		}
+	}, []);
+
+	// Register a global handler so any 401 mid-session clears the user and shows LoginPage
+	useEffect(() => {
+		setUnauthorizedHandler(() => {
+			setCurrentUser(null);
+			setJobs([]);
+		});
 	}, []);
 
 	// Check session on mount; load jobs only if authenticated
