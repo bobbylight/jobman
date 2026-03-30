@@ -2,6 +2,7 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import JobManagementPage from "./JobManagementPage";
+import KanbanBoard from "./KanbanBoard";
 import { api } from "../api";
 import type { Job, User } from "../types";
 
@@ -13,6 +14,8 @@ vi.mock("../api", () => ({
 		deleteJob: vi.fn(),
 	},
 }));
+
+vi.mock("./KanbanBoard", () => ({ default: vi.fn() }));
 
 vi.mock("@dnd-kit/core", () => ({
 	DndContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -33,6 +36,7 @@ vi.mock("@dnd-kit/utilities", () => ({
 }));
 
 const mockGetJobs = vi.mocked(api.getJobs);
+const MockKanbanBoard = vi.mocked(KanbanBoard);
 
 const MOCK_USER: User = {
 	id: 1,
@@ -70,6 +74,13 @@ const makeJob = (overrides: Partial<Job> & Pick<Job, "id">): Job => ({
 describe("JobManagementPage", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		MockKanbanBoard.mockImplementation(({ jobs }) => (
+			<>
+				{jobs.map((j) => (
+					<span key={j.id}>{j.company}</span>
+				))}
+			</>
+		));
 	});
 
 	it("shows a loading spinner while jobs are being fetched", () => {
@@ -78,14 +89,13 @@ describe("JobManagementPage", () => {
 		expect(screen.getByRole("progressbar")).toBeInTheDocument();
 	});
 
-	it("hides the spinner and shows the board after jobs load", async () => {
+	it("hides the spinner and renders the board after jobs load", async () => {
 		mockGetJobs.mockResolvedValue([]);
 		render(<JobManagementPage {...DEFAULT_PROPS} />);
 		await waitFor(() => {
 			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
 		});
-		expect(screen.getByText("Not started")).toBeInTheDocument();
-		expect(screen.getByText("Offer!")).toBeInTheDocument();
+		expect(MockKanbanBoard).toHaveBeenCalled();
 	});
 
 	it("shows an error snackbar when loading jobs fails", async () => {
@@ -242,6 +252,38 @@ describe("JobManagementPage", () => {
 		expect(
 			screen.getByRole("heading", { name: "Add Job" }),
 		).toBeInTheDocument();
+	});
+
+	describe("status change", () => {
+		it("clears ending_substatus when dragging a job to a non-terminal status", async () => {
+			const job = makeJob({
+				id: 1,
+				status: "Rejected/Withdrawn",
+				ending_substatus: "Rejected",
+			});
+			mockGetJobs.mockResolvedValue([job]);
+			vi.mocked(api.updateJob).mockResolvedValue({
+				...job,
+				status: "Resume submitted",
+				ending_substatus: null,
+			});
+
+			render(<JobManagementPage {...DEFAULT_PROPS} />);
+			await waitFor(() => expect(MockKanbanBoard).toHaveBeenCalled());
+
+			const { onStatusChange } = MockKanbanBoard.mock.lastCall![0];
+			onStatusChange(job, "Resume submitted");
+
+			await waitFor(() => {
+				expect(vi.mocked(api.updateJob)).toHaveBeenCalledWith(
+					1,
+					expect.objectContaining({
+						status: "Resume submitted",
+						ending_substatus: null,
+					}),
+				);
+			});
+		});
 	});
 
 	describe("user menu", () => {
