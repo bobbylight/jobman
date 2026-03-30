@@ -1,3 +1,10 @@
+export interface User {
+	id: number;
+	email: string;
+	displayName: string | null;
+	avatarUrl: string | null;
+}
+
 export type JobStatus =
 	| "Not started"
 	| "Resume submitted"

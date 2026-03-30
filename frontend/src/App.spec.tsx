@@ -7,6 +7,8 @@ import type { Job } from "./types";
 
 vi.mock("./api", () => ({
 	api: {
+		getMe: vi.fn(),
+		logout: vi.fn(),
 		getJobs: vi.fn(),
 		createJob: vi.fn(),
 		updateJob: vi.fn(),
@@ -32,7 +34,16 @@ vi.mock("@dnd-kit/utilities", () => ({
 	CSS: { Translate: { toString: () => "" } },
 }));
 
+const mockGetMe = vi.mocked(api.getMe);
+const mockLogout = vi.mocked(api.logout);
 const mockGetJobs = vi.mocked(api.getJobs);
+
+const MOCK_USER = {
+	id: 1,
+	email: "test@example.com",
+	displayName: "Test User",
+	avatarUrl: "https://example.com/avatar.jpg",
+};
 
 const makeJob = (overrides: Partial<Job> & Pick<Job, "id">): Job => ({
 	company: "Acme",
@@ -58,6 +69,67 @@ const makeJob = (overrides: Partial<Job> & Pick<Job, "id">): Job => ({
 describe("App", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		// Default: authenticated. Individual tests can override.
+		mockGetMe.mockResolvedValue(MOCK_USER);
+		mockLogout.mockResolvedValue({ success: true });
+	});
+
+	describe("authentication", () => {
+		it("shows a loading spinner while the auth check is pending", () => {
+			mockGetMe.mockReturnValue(new Promise(() => {}));
+			render(<App />);
+			expect(screen.getByRole("progressbar")).toBeInTheDocument();
+		});
+
+		it("shows the login page when the user is not authenticated", async () => {
+			mockGetMe.mockResolvedValue(null);
+			render(<App />);
+			await waitFor(() => {
+				expect(
+					screen.getByRole("link", { name: "Continue with Google" }),
+				).toBeInTheDocument();
+			});
+		});
+
+		it("shows the kanban board when the user is authenticated", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			render(<App />);
+			await waitFor(() => {
+				expect(screen.getByText("Not started")).toBeInTheDocument();
+			});
+		});
+
+		it("opens a user menu when the avatar button is clicked", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			render(<App />);
+			await waitFor(() => {
+				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+			});
+
+			fireEvent.click(screen.getByRole("button", { name: "Test User" }));
+
+			expect(screen.getByText("View Profile")).toBeInTheDocument();
+			expect(screen.getByText("Settings")).toBeInTheDocument();
+			expect(screen.getByText("Sign Out")).toBeInTheDocument();
+		});
+
+		it("calls logout and shows the login page when Sign Out is clicked", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			render(<App />);
+			await waitFor(() => {
+				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+			});
+
+			fireEvent.click(screen.getByRole("button", { name: "Test User" }));
+			fireEvent.click(screen.getByText("Sign Out"));
+
+			expect(mockLogout).toHaveBeenCalledOnce();
+			await waitFor(() => {
+				expect(
+					screen.getByRole("link", { name: "Continue with Google" }),
+				).toBeInTheDocument();
+			});
+		});
 	});
 
 	it("shows a loading spinner while jobs are being fetched", () => {
