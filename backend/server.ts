@@ -90,6 +90,17 @@ function toClient(row: unknown) {
 	return { ...job, favorite: !!job.favorite };
 }
 
+function requireAuth(
+	req: express.Request,
+	res: express.Response,
+	next: express.NextFunction,
+) {
+	if (!req.session.userId) {
+		return res.status(401).json({ error: "Unauthorized" });
+	}
+	next();
+}
+
 export function createApp(db: Database) {
 	const app = express();
 
@@ -235,17 +246,20 @@ export function createApp(db: Database) {
 
 	// --- Job routes ---
 
+	app.use("/api/jobs", requireAuth);
+
 	// GET all jobs
-	app.get("/api/jobs", (_req, res) => {
+	app.get("/api/jobs", (req, res) => {
 		const jobs = db
-			.prepare("SELECT * FROM jobs ORDER BY created_at DESC")
-			.all();
+			.prepare("SELECT * FROM jobs WHERE user_id = ? ORDER BY created_at DESC")
+			.all(req.session.userId);
 		res.json(jobs.map(toClient));
 	});
 
 	// POST create job
 	app.post("/api/jobs", (req, res) => {
 		const f = req.body;
+		const userId = req.session.userId;
 		const substatusError = validateEndingSubstatus(
 			f.status ?? "Not started",
 			f.ending_substatus ?? null,
@@ -253,18 +267,21 @@ export function createApp(db: Database) {
 		if (substatusError) return res.status(422).json({ error: substatusError });
 		if (f.company && f.link) {
 			const existing = db
-				.prepare("SELECT id FROM jobs WHERE company = ? AND link = ? LIMIT 1")
-				.get(f.company, f.link);
+				.prepare(
+					"SELECT id FROM jobs WHERE company = ? AND link = ? AND user_id = ? LIMIT 1",
+				)
+				.get(f.company, f.link, userId);
 			if (existing) {
 				return res.status(409).json({ error: "Job already exists" });
 			}
 		}
 		const result = db
 			.prepare(`
-      INSERT INTO jobs (date_applied, company, role, link, salary, fit_score, referred_by, status, recruiter, notes, job_description, ending_substatus, date_phone_screen, date_last_onsite, favorite)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO jobs (user_id, date_applied, company, role, link, salary, fit_score, referred_by, status, recruiter, notes, job_description, ending_substatus, date_phone_screen, date_last_onsite, favorite)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
 			.run(
+				userId,
 				f.date_applied ?? null,
 				f.company,
 				f.role,
@@ -301,7 +318,7 @@ export function createApp(db: Database) {
       UPDATE jobs SET
         date_applied = ?, company = ?, role = ?, link = ?, salary = ?,
         fit_score = ?, referred_by = ?, status = ?, recruiter = ?, notes = ?, job_description = ?, ending_substatus = ?, date_phone_screen = ?, date_last_onsite = ?, favorite = ?
-      WHERE id = ?
+      WHERE id = ? AND user_id = ?
     `)
 			.run(
 				f.date_applied ?? null,
@@ -320,6 +337,7 @@ export function createApp(db: Database) {
 				f.date_last_onsite ?? null,
 				f.favorite ? 1 : 0,
 				id,
+				req.session.userId,
 			);
 		if (info.changes === 0)
 			return res.status(404).json({ error: "Job not found" });
@@ -329,7 +347,9 @@ export function createApp(db: Database) {
 
 	// DELETE job
 	app.delete("/api/jobs/:id", (req, res) => {
-		const info = db.prepare("DELETE FROM jobs WHERE id = ?").run(req.params.id);
+		const info = db
+			.prepare("DELETE FROM jobs WHERE id = ? AND user_id = ?")
+			.run(req.params.id, req.session.userId);
 		if (info.changes === 0)
 			return res.status(404).json({ error: "Job not found" });
 		return res.json({ success: true });
