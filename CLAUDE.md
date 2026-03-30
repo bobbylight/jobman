@@ -87,6 +87,15 @@ interface Job {
 - **Optimistic updates:** Favorite toggles and status drag-and-drops update UI immediately, reverting on API error with a Snackbar notification.
 - **Drag handle:** Only the `DragIndicatorIcon` on each card is draggable — not the full card — to avoid conflicts with the click-to-edit behavior.
 - **Search:** Case-insensitive substring match on company or role, applied before passing jobs to KanbanBoard.
-- **No tests:** No testing framework is set up.
 - **No migrations:** Schema is defined inline in `db.ts` and auto-created on server start.
 - **CORS:** Open to all origins (dev convenience).
+
+## Frontend Unit Test Conventions
+
+- One `.spec.tsx` / `.spec.ts` file per component/module
+- Always import Vitest globals explicitly (`describe`, `it`, `expect`, `vi`, `beforeEach`)
+- Mock `@dnd-kit/core` and `@dnd-kit/utilities` at the module level — never wrap renders in `<DndContext>`
+- `SCREAMING_SNAKE_CASE` for shared fixtures and props (`BASE_JOB`, `DEFAULT_PROPS`, `MOCK_USER`)
+- `makeJob(overrides)` factory pattern for per-test job variants; always include all required `Job` fields
+- `beforeEach(() => vi.clearAllMocks())` in every top-level `describe`
+- `fireEvent` for interactions; MUI `Select` needs a `changeSelect` helper using `mouseDown` + `click`

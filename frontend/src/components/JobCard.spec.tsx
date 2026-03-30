@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import JobCard from "./JobCard";
 import type { Job } from "../types";
 
@@ -29,12 +29,21 @@ const BASE_JOB: Job = {
 	date_applied: null,
 	recruiter: null,
 	notes: null,
+	job_description: null,
+	ending_substatus: null,
 	referred_by: null,
+	date_phone_screen: null,
+	date_last_onsite: null,
 	favorite: false,
 	created_at: "2024-01-01T00:00:00.000Z",
+	updated_at: "2024-01-01T00:00:00.000Z",
 };
 
 describe("JobCard", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
 	it("renders company name and role", () => {
 		render(
 			<JobCard
@@ -178,5 +187,34 @@ describe("JobCard", () => {
 		// MUI v7 Tooltip sets aria-label on the child element instead of title
 		const link = screen.getByRole("link", { name: "Open job listing" });
 		expect(link).toHaveAttribute("href", "https://acme.example.com/job");
+	});
+
+	describe("Rejected/Withdrawn date label", () => {
+		it("displays 'Last updated' with the formatted updated_at date", () => {
+			render(
+				<JobCard
+					job={{
+						...BASE_JOB,
+						status: "Rejected/Withdrawn",
+						updated_at: "2025-06-15T00:00:00",
+					}}
+					onCardClick={vi.fn()}
+					onToggleFavorite={vi.fn()}
+				/>,
+			);
+			expect(screen.getByText(/Last updated/)).toBeInTheDocument();
+			expect(screen.getByText(/Jun 15, 2025/)).toBeInTheDocument();
+		});
+
+		it("renders label without a date when updated_at is empty", () => {
+			render(
+				<JobCard
+					job={{ ...BASE_JOB, status: "Rejected/Withdrawn", updated_at: "" }}
+					onCardClick={vi.fn()}
+					onToggleFavorite={vi.fn()}
+				/>,
+			);
+			expect(screen.getByText("Last updated")).toBeInTheDocument();
+		});
 	});
 });
