@@ -12,6 +12,9 @@ import {
 	Toolbar,
 	Button,
 	Box,
+	Avatar,
+	IconButton,
+	Menu,
 	CircularProgress,
 	Snackbar,
 	Alert,
@@ -21,17 +24,23 @@ import {
 	Select,
 	MenuItem,
 	Divider,
+	ListItemIcon,
+	ListItemText,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import StarIcon from "@mui/icons-material/Star";
 import CloseIcon from "@mui/icons-material/Close";
+import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import theme from "./theme";
 import { api } from "./api";
-import type { Job, JobFormData, JobStatus, FitScore } from "./types";
+import type { Job, JobFormData, JobStatus, FitScore, User } from "./types";
 import { FIT_SCORES } from "./constants";
 import KanbanBoard from "./components/KanbanBoard";
 import JobDialog from "./components/JobDialog";
+import LoginPage from "./components/LoginPage";
 
 type Severity = "success" | "error" | "info" | "warning";
 
@@ -82,6 +91,10 @@ const MIN_FIT_SCORE_OPTIONS: { label: string; value: FitScore | null }[] = [
 ];
 
 export default function App() {
+	// undefined = auth check in progress, null = unauthenticated, User = authenticated
+	const [currentUser, setCurrentUser] = useState<User | null | undefined>(
+		undefined,
+	);
 	const [jobs, setJobs] = useState<Job[]>([]);
 	const [search, setSearch] = useState("");
 	const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -92,6 +105,10 @@ export default function App() {
 		open: false,
 		job: null,
 	});
+	const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(
+		null,
+	);
+
 	const [snack, setSnack] = useState<{
 		open: boolean;
 		message: string;
@@ -116,9 +133,27 @@ export default function App() {
 		}
 	}, []);
 
+	// Check session on mount; load jobs only if authenticated
 	useEffect(() => {
-		loadJobs();
+		async function init() {
+			try {
+				const user = await api.getMe();
+				setCurrentUser(user);
+				if (user) loadJobs();
+				else setLoading(false);
+			} catch {
+				setCurrentUser(null);
+				setLoading(false);
+			}
+		}
+		void init();
 	}, [loadJobs]);
+
+	const handleLogout = useCallback(async () => {
+		await api.logout();
+		setCurrentUser(null);
+		setJobs([]);
+	}, []);
 
 	const openAdd = useCallback(() => setDialog({ open: true, job: null }), []);
 	const openEdit = useCallback(
@@ -263,6 +298,28 @@ export default function App() {
 		],
 	);
 
+	// Auth check still in progress
+	if (currentUser === undefined) {
+		return (
+			<ThemeProvider theme={theme}>
+				<CssBaseline />
+				<Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
+					<CircularProgress />
+				</Box>
+			</ThemeProvider>
+		);
+	}
+
+	// Not authenticated
+	if (currentUser === null) {
+		return (
+			<ThemeProvider theme={theme}>
+				<CssBaseline />
+				<LoginPage />
+			</ThemeProvider>
+		);
+	}
+
 	return (
 		<ThemeProvider theme={theme}>
 			<CssBaseline />
@@ -279,6 +336,50 @@ export default function App() {
 					<Button variant="contained" startIcon={<AddIcon />} onClick={openAdd}>
 						Add Job
 					</Button>
+					<IconButton
+						onClick={(e) => setUserMenuAnchor(e.currentTarget)}
+						size="small"
+						sx={{ p: 0 }}
+					>
+						<Avatar
+							src={currentUser.avatarUrl ?? undefined}
+							alt={currentUser.displayName ?? currentUser.email}
+							sx={{ width: 32, height: 32 }}
+						/>
+					</IconButton>
+					<Menu
+						anchorEl={userMenuAnchor}
+						open={Boolean(userMenuAnchor)}
+						onClose={() => setUserMenuAnchor(null)}
+						anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+						transformOrigin={{ vertical: "top", horizontal: "right" }}
+						slotProps={{ paper: { sx: { mt: 0.5, minWidth: 160 } } }}
+					>
+						<MenuItem onClick={() => setUserMenuAnchor(null)}>
+							<ListItemIcon>
+								<AccountCircleOutlinedIcon fontSize="small" />
+							</ListItemIcon>
+							<ListItemText>View Profile</ListItemText>
+						</MenuItem>
+						<MenuItem onClick={() => setUserMenuAnchor(null)}>
+							<ListItemIcon>
+								<SettingsOutlinedIcon fontSize="small" />
+							</ListItemIcon>
+							<ListItemText>Settings</ListItemText>
+						</MenuItem>
+						<Divider />
+						<MenuItem
+							onClick={() => {
+								setUserMenuAnchor(null);
+								void handleLogout();
+							}}
+						>
+							<ListItemIcon>
+								<LogoutOutlinedIcon fontSize="small" />
+							</ListItemIcon>
+							<ListItemText>Sign Out</ListItemText>
+						</MenuItem>
+					</Menu>
 				</Toolbar>
 
 				{/* Filter strip */}
