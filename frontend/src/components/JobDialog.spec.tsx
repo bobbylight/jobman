@@ -1,5 +1,11 @@
 import React from "react";
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import {
+	render,
+	screen,
+	fireEvent,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import JobDialog from "./JobDialog";
 import type { Job, JobStatus, EndingSubstatus } from "../types";
@@ -18,8 +24,11 @@ const BASE_JOB: Job = {
 	referred_by: "Alice",
 	job_description: null,
 	ending_substatus: null,
+	date_phone_screen: null,
+	date_last_onsite: null,
 	favorite: false,
 	created_at: "2024-01-01T00:00:00.000Z",
+	updated_at: "2024-01-01T00:00:00.000Z",
 };
 
 const terminalJob = (
@@ -64,6 +73,16 @@ describe("JobDialog", () => {
 			expect(
 				screen.getByRole("button", { name: "Add Job" }),
 			).toBeInTheDocument();
+		});
+
+		it("shows a text field for the link", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
+			expect(screen.getByPlaceholderText("https://...")).toBeInTheDocument();
+		});
+
+		it("does not show a hyperlink", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
+			expect(screen.queryByRole("link")).not.toBeInTheDocument();
 		});
 
 		it("shows validation errors when required fields are empty on save", () => {
@@ -187,6 +206,106 @@ describe("JobDialog", () => {
 
 			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
 				expect.objectContaining({ company: "Updated Corp" }),
+			);
+		});
+	});
+
+	describe("link field (edit mode)", () => {
+		it("shows the link as a hyperlink", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+			const link = screen.getByRole("link", { name: BASE_JOB.link });
+			expect(link).toHaveAttribute("href", BASE_JOB.link);
+		});
+
+		it("opens the link in a new tab", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+			expect(screen.getByRole("link", { name: BASE_JOB.link })).toHaveAttribute(
+				"target",
+				"_blank",
+			);
+		});
+
+		it("does not show the link text field initially", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+			expect(
+				screen.queryByPlaceholderText("https://..."),
+			).not.toBeInTheDocument();
+		});
+
+		it("shows an edit button for the link", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+			expect(
+				screen.getByRole("button", { name: "Edit link" }),
+			).toBeInTheDocument();
+		});
+
+		it("switches to text field when Edit link button is clicked", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+			fireEvent.click(screen.getByRole("button", { name: "Edit link" }));
+			const input = screen.getByPlaceholderText("https://...");
+			expect(input).toBeInTheDocument();
+			expect(input).toHaveValue(BASE_JOB.link);
+		});
+
+		it("hides the hyperlink after clicking Edit link", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+			fireEvent.click(screen.getByRole("button", { name: "Edit link" }));
+			expect(
+				screen.queryByRole("link", { name: BASE_JOB.link }),
+			).not.toBeInTheDocument();
+		});
+
+		it("resets to hyperlink view when modal is reopened", async () => {
+			const { rerender } = render(
+				<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />,
+			);
+
+			// Switch to text field
+			fireEvent.click(screen.getByRole("button", { name: "Edit link" }));
+			expect(screen.getByPlaceholderText("https://...")).toBeInTheDocument();
+
+			// Close and reopen
+			rerender(
+				<JobDialog {...DEFAULT_PROPS} open={false} initialValues={BASE_JOB} />,
+			);
+			rerender(<JobDialog {...DEFAULT_PROPS} open initialValues={BASE_JOB} />);
+
+			await waitFor(() => {
+				expect(
+					screen.queryByPlaceholderText("https://..."),
+				).not.toBeInTheDocument();
+				expect(
+					screen.getByRole("link", { name: BASE_JOB.link }),
+				).toBeInTheDocument();
+			});
+		});
+
+		it("includes the original link value in onSave when link is not edited", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+
+			fireEvent.change(screen.getByLabelText(/Company/), {
+				target: { value: "New Corp" },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledOnce();
+			const saved = DEFAULT_PROPS.onSave.mock.calls[0][0];
+			expect(saved.link).toBe(BASE_JOB.link);
+			expect(saved.company).toBe("New Corp");
+		});
+
+		it("includes updated link value when link was edited", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+
+			fireEvent.click(screen.getByRole("button", { name: "Edit link" }));
+			fireEvent.change(screen.getByPlaceholderText("https://..."), {
+				target: { value: "https://newjob.example.com" },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledOnce();
+			expect(DEFAULT_PROPS.onSave.mock.calls[0][0].link).toBe(
+				"https://newjob.example.com",
 			);
 		});
 	});

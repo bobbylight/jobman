@@ -19,9 +19,14 @@ const MOCK_JOB: Job = {
 	date_applied: null,
 	recruiter: null,
 	notes: null,
+	job_description: null,
+	ending_substatus: null,
 	referred_by: null,
+	date_phone_screen: null,
+	date_last_onsite: null,
 	favorite: false,
 	created_at: "2024-01-01T00:00:00.000Z",
+	updated_at: "2024-01-01T00:00:00.000Z",
 };
 
 const MOCK_USER = {
