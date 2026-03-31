@@ -10,7 +10,8 @@
     "format": "biome format frontend/src backend/*.ts",
     "format:fix": "biome format --write frontend/src backend/*.ts",
     "install:all": "npm install --prefix backend && npm install --prefix frontend",
-    "test": "npm test --prefix backend && npm test --prefix frontend"
+    "test": "npm test --prefix backend && npm test --prefix frontend",
+    "tsc": "npm run tsc --prefix backend && npm run tsc --prefix frontend"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.8",

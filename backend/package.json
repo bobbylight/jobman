@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch server.ts",
     "start": "tsx server.ts",
-    "test": "vitest run --coverage"
+    "test": "vitest run --coverage",
+    "tsc": "tsc --noEmit"
   },
   "dependencies": {
     "better-sqlite3": "^12.8.0",
@@ -22,7 +23,10 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.6",
+    "@types/express-session": "^1.18.2",
     "@types/node": "^25.5.0",
+    "@types/passport": "^1.0.17",
+    "@types/passport-google-oauth20": "^2.0.17",
     "@types/supertest": "^7.2.0",
     "@vitest/coverage-v8": "^4.1.1",
     "supertest": "^7.0.0",

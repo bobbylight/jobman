@@ -181,7 +181,7 @@ describe("JobDialog", () => {
 			// Click the confirm Delete button inside the confirmation dialog
 			const confirmDialog = screen
 				.getByText("Delete job?")
-				.closest('[role="dialog"]')!;
+				.closest('[role="dialog"]') as HTMLElement;
 			fireEvent.click(
 				within(confirmDialog).getByRole("button", { name: "Delete" }),
 			);
@@ -289,7 +289,7 @@ describe("JobDialog", () => {
 			fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
 			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledOnce();
-			const saved = DEFAULT_PROPS.onSave.mock.calls[0][0];
+			const saved = DEFAULT_PROPS.onSave.mock.calls[0]![0];
 			expect(saved.link).toBe(BASE_JOB.link);
 			expect(saved.company).toBe("New Corp");
 		});
@@ -304,7 +304,7 @@ describe("JobDialog", () => {
 			fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
 			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledOnce();
-			expect(DEFAULT_PROPS.onSave.mock.calls[0][0].link).toBe(
+			expect(DEFAULT_PROPS.onSave.mock.calls[0]![0].link).toBe(
 				"https://newjob.example.com",
 			);
 		});

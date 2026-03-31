@@ -101,7 +101,7 @@ function requireAuth(
 	next();
 }
 
-export function createApp(db: Database) {
+export function createApp(db: Database.Database) {
 	const app = express();
 
 	app.use(

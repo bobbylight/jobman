@@ -1,11 +1,12 @@
-import type { Store } from "express-session";
-import type Database from "better-sqlite3";
+declare module "better-sqlite3-session-store" {
+	import type session from "express-session";
+	import type Database from "better-sqlite3";
 
-declare function SqliteStoreFactory(session: {
-	Store: typeof Store;
-}): new (options: {
-	client: Database;
-	expired?: { clear?: boolean; intervalMs?: number };
-}) => Store;
+	function factory(
+		session: typeof session,
+	): new (options: {
+		client: Database.Database;
+	}) => session.Store;
 
-export = SqliteStoreFactory;
+	export = factory;
+}

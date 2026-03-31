@@ -159,6 +159,11 @@ describe("api", () => {
 				recruiter: null,
 				notes: null,
 				referred_by: null,
+				job_description: null,
+				ending_substatus: null,
+				date_phone_screen: null,
+				date_last_onsite: null,
+				updated_at: "",
 				favorite: false,
 			};
 			const result = await api.createJob(formData);

@@ -47,6 +47,7 @@ const EMPTY: JobFormData = {
 	ending_substatus: null,
 	date_phone_screen: null,
 	date_last_onsite: null,
+	updated_at: "",
 	favorite: false,
 };
 
