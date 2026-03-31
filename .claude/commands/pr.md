@@ -11,15 +11,18 @@ Create a branch (if needed), commit staged/unstaged changes, push, and open/upda
      - Run `git checkout -b <branch-name>`
    - If already on a feature branch, continue on that branch
 
-2. **Fix linting errors** by running `npm run lint:fix`. If there are any failures,
+2. **Fix static type errors** by running `npm run tsc`. If there are any failures, fix
+   them and rerun this check to verify your changes.
+
+3. **Fix linting errors** by running `npm run lint:fix`. If there are any failures,
    stop here and let the user fix them.
 
-3. **Fix formatting errors** by running `npm run format:fix`. If there are any failures,
+4. **Fix formatting errors** by running `npm run format:fix`. If there are any failures,
    stop here and let the user fix them.
 
-4. **Review changes**: Run `git status` and `git diff` to understand what will be committed
+5. **Review changes**: Run `git status` and `git diff` to understand what will be committed
 
-5. **Stage and commit**:
+6. **Stage and commit**:
    - Stage relevant files (prefer specific files over `git add -A`)
    - Determine the commit strategy:
      - If the feature branch has no prior commits: create a new commit
@@ -34,11 +37,11 @@ Create a branch (if needed), commit staged/unstaged changes, push, and open/upda
    - Do NOT run `npm run test`; let the CI run it for you
    - Include `Co-Authored-By: Claude <noreply@anthropic.com>` in the commit message
 
-6. **Push**:
+7. **Push**:
    - If the commit was amended: `git push --force-with-lease`
    - Otherwise: `git push -u origin <branch-name>`
 
-7. **Create or update PR**:
+8. **Create or update PR**:
    - Check if a PR already exists for this branch with `gh pr view`
    - If no PR exists: use `gh pr create --draft` with the title, body, and labels below
    - If a PR exists: use `gh pr edit` to update the title, body, and labels
@@ -48,5 +51,3 @@ Create a branch (if needed), commit staged/unstaged changes, push, and open/upda
    - Labels — add any that are relevant:
      - `bug`, `build`, `ci/cd`, `dependencies`, `enhancement`, `refactor`
      - Only add a `tests` label if the PR is *only* adding test coverage
-
-If any step fails, report the error and ask how to proceed.
