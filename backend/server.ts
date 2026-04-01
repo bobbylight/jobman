@@ -427,7 +427,8 @@ export function createApp(db: Database.Database) {
 		}
 
 		const validationError = validateInterview(f);
-		if (validationError) return res.status(422).json({ error: validationError });
+		if (validationError)
+			return res.status(422).json({ error: validationError });
 
 		const result = db
 			.prepare(
@@ -465,7 +466,8 @@ export function createApp(db: Database.Database) {
 		}
 
 		const validationError = validateInterview(f);
-		if (validationError) return res.status(422).json({ error: validationError });
+		if (validationError)
+			return res.status(422).json({ error: validationError });
 
 		const info = db
 			.prepare(

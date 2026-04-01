@@ -561,7 +561,9 @@ describe("POST /api/jobs/:jobId/interviews", () => {
 		const jobRes = await req("post", "/api/jobs").send(BASE_JOB);
 		const jobId: number = jobRes.body.id;
 
-		const res = await req("post", `/api/jobs/${jobId}/interviews`).send(BASE_INTERVIEW);
+		const res = await req("post", `/api/jobs/${jobId}/interviews`).send(
+			BASE_INTERVIEW,
+		);
 		expect(res.status).toBe(201);
 		expect(res.body.interview_interviewers).toBeNull();
 		expect(res.body.interview_vibe).toBeNull();
@@ -573,7 +575,9 @@ describe("POST /api/jobs/:jobId/interviews", () => {
 		const jobId: number = jobRes.body.id;
 		const { interview_type: _t, ...withoutType } = BASE_INTERVIEW;
 
-		const res = await req("post", `/api/jobs/${jobId}/interviews`).send(withoutType);
+		const res = await req("post", `/api/jobs/${jobId}/interviews`).send(
+			withoutType,
+		);
 		expect(res.status).toBe(422);
 		expect(res.body.error).toMatch(/interview_type/);
 	});
@@ -595,7 +599,9 @@ describe("POST /api/jobs/:jobId/interviews", () => {
 		const jobId: number = jobRes.body.id;
 		const { interview_dttm: _d, ...withoutDttm } = BASE_INTERVIEW;
 
-		const res = await req("post", `/api/jobs/${jobId}/interviews`).send(withoutDttm);
+		const res = await req("post", `/api/jobs/${jobId}/interviews`).send(
+			withoutDttm,
+		);
 		expect(res.status).toBe(422);
 		expect(res.body.error).toMatch(/interview_dttm/);
 	});
@@ -612,7 +618,9 @@ describe("POST /api/jobs/:jobId/interviews", () => {
 		expect(res.body.error).toMatch(/interview_vibe/);
 	});
 
-	it.each([...VALID_INTERVIEW_TYPES])('accepts interview_type "%s"', async (interview_type) => {
+	it.each([
+		...VALID_INTERVIEW_TYPES,
+	])('accepts interview_type "%s"', async (interview_type) => {
 		const jobRes = await req("post", "/api/jobs").send(BASE_JOB);
 		const jobId: number = jobRes.body.id;
 
@@ -624,7 +632,9 @@ describe("POST /api/jobs/:jobId/interviews", () => {
 		expect(res.body.interview_type).toBe(interview_type);
 	});
 
-	it.each([...VALID_INTERVIEW_VIBES])('accepts interview_vibe "%s"', async (interview_vibe) => {
+	it.each([
+		...VALID_INTERVIEW_VIBES,
+	])('accepts interview_vibe "%s"', async (interview_vibe) => {
 		const jobRes = await req("post", "/api/jobs").send(BASE_JOB);
 		const jobId: number = jobRes.body.id;
 
@@ -637,7 +647,9 @@ describe("POST /api/jobs/:jobId/interviews", () => {
 	});
 
 	it("returns 404 when the job does not exist", async () => {
-		const res = await req("post", "/api/jobs/99999/interviews").send(BASE_INTERVIEW);
+		const res = await req("post", "/api/jobs/99999/interviews").send(
+			BASE_INTERVIEW,
+		);
 		expect(res.status).toBe(404);
 	});
 
@@ -658,10 +670,15 @@ describe("PUT /api/jobs/:jobId/interviews/:interviewId", () => {
 	it("updates an interview and returns the updated record", async () => {
 		const jobRes = await req("post", "/api/jobs").send(BASE_JOB);
 		const jobId: number = jobRes.body.id;
-		const createRes = await req("post", `/api/jobs/${jobId}/interviews`).send(BASE_INTERVIEW);
+		const createRes = await req("post", `/api/jobs/${jobId}/interviews`).send(
+			BASE_INTERVIEW,
+		);
 		const interviewId: number = createRes.body.id;
 
-		const res = await req("put", `/api/jobs/${jobId}/interviews/${interviewId}`).send({
+		const res = await req(
+			"put",
+			`/api/jobs/${jobId}/interviews/${interviewId}`,
+		).send({
 			...BASE_INTERVIEW,
 			interview_type: "onsite",
 			interview_vibe: "intense",
@@ -678,23 +695,32 @@ describe("PUT /api/jobs/:jobId/interviews/:interviewId", () => {
 		const jobRes = await req("post", "/api/jobs").send(BASE_JOB);
 		const jobId: number = jobRes.body.id;
 
-		const res = await req("put", `/api/jobs/${jobId}/interviews/99999`).send(BASE_INTERVIEW);
+		const res = await req("put", `/api/jobs/${jobId}/interviews/99999`).send(
+			BASE_INTERVIEW,
+		);
 		expect(res.status).toBe(404);
 		expect(res.body.error).toBe("Interview not found");
 	});
 
 	it("returns 404 when the job does not exist", async () => {
-		const res = await req("put", "/api/jobs/99999/interviews/1").send(BASE_INTERVIEW);
+		const res = await req("put", "/api/jobs/99999/interviews/1").send(
+			BASE_INTERVIEW,
+		);
 		expect(res.status).toBe(404);
 	});
 
 	it("returns 422 when interview_type is invalid", async () => {
 		const jobRes = await req("post", "/api/jobs").send(BASE_JOB);
 		const jobId: number = jobRes.body.id;
-		const createRes = await req("post", `/api/jobs/${jobId}/interviews`).send(BASE_INTERVIEW);
+		const createRes = await req("post", `/api/jobs/${jobId}/interviews`).send(
+			BASE_INTERVIEW,
+		);
 		const interviewId: number = createRes.body.id;
 
-		const res = await req("put", `/api/jobs/${jobId}/interviews/${interviewId}`).send({
+		const res = await req(
+			"put",
+			`/api/jobs/${jobId}/interviews/${interviewId}`,
+		).send({
 			...BASE_INTERVIEW,
 			interview_type: "video_call",
 		});
@@ -706,10 +732,15 @@ describe("DELETE /api/jobs/:jobId/interviews/:interviewId", () => {
 	it("deletes an interview and returns success", async () => {
 		const jobRes = await req("post", "/api/jobs").send(BASE_JOB);
 		const jobId: number = jobRes.body.id;
-		const createRes = await req("post", `/api/jobs/${jobId}/interviews`).send(BASE_INTERVIEW);
+		const createRes = await req("post", `/api/jobs/${jobId}/interviews`).send(
+			BASE_INTERVIEW,
+		);
 		const interviewId: number = createRes.body.id;
 
-		const res = await req("delete", `/api/jobs/${jobId}/interviews/${interviewId}`);
+		const res = await req(
+			"delete",
+			`/api/jobs/${jobId}/interviews/${interviewId}`,
+		);
 		expect(res.status).toBe(200);
 		expect(res.body.success).toBe(true);
 
