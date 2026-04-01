@@ -49,6 +49,16 @@ interface JobRow {
 	updated_at: string;
 }
 
+interface InterviewRow {
+	id: number;
+	job_id: number;
+	interview_type: string;
+	interview_dttm: string;
+	interview_interviewers: string | null;
+	interview_vibe: string | null;
+	interview_notes: string | null;
+}
+
 interface UserRow {
 	id: number;
 	email: string;
@@ -58,6 +68,8 @@ interface UserRow {
 
 // TODO: Share types with frontend
 export const TERMINAL_STATUSES = new Set(["Rejected/Withdrawn", "Offer!"]);
+export const VALID_INTERVIEW_TYPES = new Set(["phone_screen", "onsite"]);
+export const VALID_INTERVIEW_VIBES = new Set(["casual", "intense"]);
 export const VALID_ENDING_SUBSTATUSES = new Set([
 	"Withdrawn",
 	"Rejected",
@@ -352,6 +364,147 @@ export function createApp(db: Database.Database) {
 			.run(req.params.id, req.session.userId);
 		if (info.changes === 0)
 			return res.status(404).json({ error: "Job not found" });
+		return res.json({ success: true });
+	});
+
+	// GET one job
+	app.get("/api/jobs/:jobId", (req, res) => {
+		const job = db
+			.prepare("SELECT * FROM jobs WHERE id = ? AND user_id = ?")
+			.get(req.params.jobId, req.session.userId);
+		if (!job) return res.status(404).json({ error: "Job not found" });
+		return res.json(toClient(job));
+	});
+
+	// --- Interview routes ---
+
+	function validateInterview(body: Record<string, unknown>): string | null {
+		if (!body.interview_type || typeof body.interview_type !== "string") {
+			return "interview_type is required";
+		}
+		if (!VALID_INTERVIEW_TYPES.has(body.interview_type)) {
+			return `interview_type must be one of: ${[...VALID_INTERVIEW_TYPES].join(", ")}`;
+		}
+		if (!body.interview_dttm || typeof body.interview_dttm !== "string") {
+			return "interview_dttm is required";
+		}
+		if (
+			body.interview_vibe != null &&
+			(typeof body.interview_vibe !== "string" ||
+				!VALID_INTERVIEW_VIBES.has(body.interview_vibe))
+		) {
+			return `interview_vibe must be one of: ${[...VALID_INTERVIEW_VIBES].join(", ")}`;
+		}
+		return null;
+	}
+
+	// GET all interviews for a job
+	app.get("/api/jobs/:jobId/interviews", (req, res) => {
+		const job = db
+			.prepare("SELECT id FROM jobs WHERE id = ? AND user_id = ?")
+			.get(req.params.jobId, req.session.userId);
+		if (!job) return res.status(404).json({ error: "Job not found" });
+		const interviews = db
+			.prepare("SELECT * FROM interviews WHERE job_id = ?")
+			.all(req.params.jobId);
+		return res.json(interviews);
+	});
+
+	// POST create interview for a job
+	app.post("/api/jobs/:jobId/interviews", (req, res) => {
+		const { jobId } = req.params;
+		const f = req.body as Record<string, unknown>;
+
+		const job = db
+			.prepare("SELECT id FROM jobs WHERE id = ? AND user_id = ?")
+			.get(jobId, req.session.userId);
+		if (!job) return res.status(404).json({ error: "Job not found" });
+
+		if (f.job_id != null && String(f.job_id) !== jobId) {
+			return res
+				.status(422)
+				.json({ error: "job_id in body must match :jobId in route" });
+		}
+
+		const validationError = validateInterview(f);
+		if (validationError) return res.status(422).json({ error: validationError });
+
+		const result = db
+			.prepare(
+				`INSERT INTO interviews (job_id, interview_type, interview_dttm, interview_interviewers, interview_vibe, interview_notes)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+			)
+			.run(
+				jobId,
+				f.interview_type,
+				f.interview_dttm,
+				f.interview_interviewers ?? null,
+				f.interview_vibe ?? null,
+				f.interview_notes ?? null,
+			);
+		const interview = db
+			.prepare("SELECT * FROM interviews WHERE id = ?")
+			.get(result.lastInsertRowid) as InterviewRow;
+		return res.status(201).json(interview);
+	});
+
+	// PUT update interview
+	app.put("/api/jobs/:jobId/interviews/:interviewId", (req, res) => {
+		const { jobId, interviewId } = req.params;
+		const f = req.body as Record<string, unknown>;
+
+		const job = db
+			.prepare("SELECT id FROM jobs WHERE id = ? AND user_id = ?")
+			.get(jobId, req.session.userId);
+		if (!job) return res.status(404).json({ error: "Job not found" });
+
+		if (f.job_id != null && String(f.job_id) !== jobId) {
+			return res
+				.status(422)
+				.json({ error: "job_id in body must match :jobId in route" });
+		}
+
+		const validationError = validateInterview(f);
+		if (validationError) return res.status(422).json({ error: validationError });
+
+		const info = db
+			.prepare(
+				`UPDATE interviews SET
+           interview_type = ?, interview_dttm = ?, interview_interviewers = ?,
+           interview_vibe = ?, interview_notes = ?
+         WHERE id = ? AND job_id = ?`,
+			)
+			.run(
+				f.interview_type,
+				f.interview_dttm,
+				f.interview_interviewers ?? null,
+				f.interview_vibe ?? null,
+				f.interview_notes ?? null,
+				interviewId,
+				jobId,
+			);
+		if (info.changes === 0)
+			return res.status(404).json({ error: "Interview not found" });
+		const interview = db
+			.prepare("SELECT * FROM interviews WHERE id = ?")
+			.get(interviewId) as InterviewRow;
+		return res.json(interview);
+	});
+
+	// DELETE interview
+	app.delete("/api/jobs/:jobId/interviews/:interviewId", (req, res) => {
+		const { jobId, interviewId } = req.params;
+
+		const job = db
+			.prepare("SELECT id FROM jobs WHERE id = ? AND user_id = ?")
+			.get(jobId, req.session.userId);
+		if (!job) return res.status(404).json({ error: "Job not found" });
+
+		const info = db
+			.prepare("DELETE FROM interviews WHERE id = ? AND job_id = ?")
+			.run(interviewId, jobId);
+		if (info.changes === 0)
+			return res.status(404).json({ error: "Interview not found" });
 		return res.json({ success: true });
 	});
 
