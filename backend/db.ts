@@ -56,6 +56,16 @@ db.exec(`
   BEGIN
     UPDATE jobs SET updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = OLD.id;
   END;
+
+  CREATE TABLE IF NOT EXISTS interviews (
+    id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_id                 INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    interview_type         TEXT NOT NULL,
+    interview_dttm         TEXT NOT NULL,
+    interview_interviewers TEXT,
+    interview_vibe         TEXT,
+    interview_notes        TEXT
+  );
 `);
 
 export default db;
