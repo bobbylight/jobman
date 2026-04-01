@@ -24,6 +24,7 @@ import {
 	ENDING_SUBSTATUSES,
 	TERMINAL_STATUSES,
 } from "../constants";
+import MarkdownField from "./MarkdownField";
 import type {
 	Job,
 	JobFormData,
@@ -358,27 +359,19 @@ export default function JobDialog({
 						</Grid>
 
 						<Grid size={12}>
-							<TextField
+							<MarkdownField
 								label="Job Description"
-								value={form.job_description ?? ""}
-								onChange={(e) => set("job_description", e.target.value || null)}
-								fullWidth
-								size="small"
-								multiline
-								rows={5}
+								value={form.job_description}
+								onChange={(v) => set("job_description", v)}
 								placeholder="Paste the job description here in case the posting gets removed..."
 							/>
 						</Grid>
 
 						<Grid size={12}>
-							<TextField
+							<MarkdownField
 								label="Notes"
-								value={form.notes ?? ""}
-								onChange={(e) => set("notes", e.target.value || null)}
-								fullWidth
-								size="small"
-								multiline
-								rows={3}
+								value={form.notes}
+								onChange={(v) => set("notes", v)}
 							/>
 						</Grid>
 
