@@ -8,15 +8,16 @@ import {
 	TextField,
 	MenuItem,
 	Grid,
-	FormControlLabel,
-	Checkbox,
 	IconButton,
+	Tooltip,
 	Typography,
 	Box,
 	Link,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import CloseIcon from "@mui/icons-material/Close";
+import StarIcon from "@mui/icons-material/Star";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
 	STATUSES,
@@ -156,9 +157,24 @@ export default function JobDialog({
 					}}
 				>
 					{isEdit ? "Edit Job" : "Add Job"}
-					<IconButton onClick={onClose} size="small">
-						<CloseIcon />
-					</IconButton>
+					<Box sx={{ display: "flex", alignItems: "center" }}>
+						<Tooltip title={form.favorite ? "Unfavorite" : "Favorite"}>
+							<IconButton
+								size="small"
+								onClick={() => set("favorite", !form.favorite)}
+								sx={{ color: form.favorite ? "warning.main" : "text.disabled" }}
+							>
+								{form.favorite ? (
+									<StarIcon fontSize="small" />
+								) : (
+									<StarBorderIcon fontSize="small" />
+								)}
+							</IconButton>
+						</Tooltip>
+						<IconButton onClick={onClose} size="small">
+							<CloseIcon />
+						</IconButton>
+					</Box>
 				</DialogTitle>
 
 				<DialogContent dividers>
@@ -383,17 +399,6 @@ export default function JobDialog({
 								fullWidth
 								size="small"
 								placeholder="Name of referrer"
-							/>
-						</Grid>
-						<Grid size={{ xs: 12, sm: 6 }}>
-							<FormControlLabel
-								control={
-									<Checkbox
-										checked={!!form.favorite}
-										onChange={(e) => set("favorite", e.target.checked)}
-									/>
-								}
-								label="Favorite"
 							/>
 						</Grid>
 					</Grid>
