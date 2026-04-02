@@ -10,7 +10,6 @@ import {
 	Tooltip,
 	Typography,
 } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddIcon from "@mui/icons-material/Add";
 import BusinessIcon from "@mui/icons-material/Business";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -88,10 +87,9 @@ function formatDttm(dttm: string): string {
 interface Props {
 	jobId: number;
 	interview: Interview;
-	onBack: () => void;
 }
 
-export default function QuestionSubView({ jobId, interview, onBack }: Props) {
+export default function QuestionSubView({ jobId, interview }: Props) {
 	const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [mode, setMode] = useState<QuestionMode>("list");
@@ -185,16 +183,6 @@ export default function QuestionSubView({ jobId, interview, onBack }: Props) {
 
 	return (
 		<Box>
-			{/* Back button */}
-			<Button
-				size="small"
-				startIcon={<ArrowBackIcon />}
-				onClick={onBack}
-				sx={{ mb: 1 }}
-			>
-				Back to interviews
-			</Button>
-
 			{/* Interview summary header */}
 			<Box
 				sx={{
