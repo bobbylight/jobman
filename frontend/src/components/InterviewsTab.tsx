@@ -15,6 +15,7 @@ import BusinessIcon from "@mui/icons-material/Business";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import PhoneIcon from "@mui/icons-material/Phone";
+import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import { api } from "../api";
 import type {
 	Interview,
@@ -23,6 +24,7 @@ import type {
 	InterviewVibe,
 } from "../types";
 import MarkdownField from "./MarkdownField";
+import QuestionSubView from "./QuestionSubView";
 
 const INTERVIEW_TYPE_LABELS: Record<InterviewType, string> = {
 	phone_screen: "Phone Screen",
@@ -73,6 +75,11 @@ export default function InterviewsTab({ jobId, onCountChange }: Props) {
 	const [form, setForm] = useState<InterviewFormData>(EMPTY_FORM);
 	const [formError, setFormError] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
+	const [viewingQuestionsFor, setViewingQuestionsFor] =
+		useState<Interview | null>(null);
+	const [questionCounts, setQuestionCounts] = useState<Record<number, number>>(
+		{},
+	);
 
 	useEffect(() => {
 		void load();
@@ -87,9 +94,25 @@ export default function InterviewsTab({ jobId, onCountChange }: Props) {
 			);
 			setInterviews(sorted);
 			onCountChange(sorted.length);
+			// Fetch question counts in parallel
+			void Promise.all(
+				sorted.map(async (iv) => {
+					const qs = await api.getQuestions(jobId, iv.id);
+					setQuestionCounts((prev) => ({ ...prev, [iv.id]: qs.length }));
+				}),
+			);
 		} finally {
 			setLoading(false);
 		}
+	}
+
+	function refreshQuestionCounts(ivList: Interview[]) {
+		void Promise.all(
+			ivList.map(async (iv) => {
+				const qs = await api.getQuestions(jobId, iv.id);
+				setQuestionCounts((prev) => ({ ...prev, [iv.id]: qs.length }));
+			}),
+		);
 	}
 
 	function setField<K extends keyof InterviewFormData>(
@@ -160,6 +183,19 @@ export default function InterviewsTab({ jobId, onCountChange }: Props) {
 			<Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
 				<CircularProgress size={28} />
 			</Box>
+		);
+	}
+
+	if (viewingQuestionsFor) {
+		return (
+			<QuestionSubView
+				jobId={jobId}
+				interview={viewingQuestionsFor}
+				onBack={() => {
+					setViewingQuestionsFor(null);
+					refreshQuestionCounts(interviews);
+				}}
+			/>
 		);
 	}
 
@@ -251,8 +287,10 @@ export default function InterviewsTab({ jobId, onCountChange }: Props) {
 					<InterviewCard
 						key={interview.id}
 						interview={interview}
+						questionCount={questionCounts[interview.id] ?? 0}
 						onEdit={() => handleEditClick(interview)}
 						onDelete={() => setMode({ confirmDeleteId: interview.id })}
+						onViewQuestions={() => setViewingQuestionsFor(interview)}
 					/>
 				);
 			})}
@@ -283,12 +321,16 @@ export default function InterviewsTab({ jobId, onCountChange }: Props) {
 
 function InterviewCard({
 	interview,
+	questionCount,
 	onEdit,
 	onDelete,
+	onViewQuestions,
 }: {
 	interview: Interview;
+	questionCount: number;
 	onEdit: () => void;
 	onDelete: () => void;
+	onViewQuestions: () => void;
 }) {
 	const TypeIcon =
 		interview.interview_type === "phone_screen" ? PhoneIcon : BusinessIcon;
@@ -360,6 +402,14 @@ function InterviewCard({
 							{interview.interview_notes.split("\n")[0]}
 						</Typography>
 					)}
+					<Button
+						size="small"
+						startIcon={<QuizOutlinedIcon sx={{ fontSize: 14 }} />}
+						onClick={onViewQuestions}
+						sx={{ mt: 0.5, p: 0, minWidth: 0, textTransform: "none" }}
+					>
+						{questionCount > 0 ? `Questions (${questionCount})` : "Questions"}
+					</Button>
 				</Box>
 				<Box sx={{ display: "flex", flexShrink: 0 }}>
 					<Tooltip title="Edit interview">

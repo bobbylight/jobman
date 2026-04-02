@@ -4,6 +4,8 @@ import type {
 	User,
 	Interview,
 	InterviewFormData,
+	InterviewQuestion,
+	InterviewQuestionFormData,
 } from "./types";
 
 const BASE = "/api";
@@ -69,4 +71,34 @@ export const api = {
 		request<{ success: boolean }>(`/jobs/${jobId}/interviews/${interviewId}`, {
 			method: "DELETE",
 		}),
+
+	// Interview Questions
+	getQuestions: (jobId: number, interviewId: number) =>
+		request<InterviewQuestion[]>(
+			`/jobs/${jobId}/interviews/${interviewId}/questions`,
+		),
+	createQuestion: (
+		jobId: number,
+		interviewId: number,
+		data: InterviewQuestionFormData,
+	) =>
+		request<InterviewQuestion>(
+			`/jobs/${jobId}/interviews/${interviewId}/questions`,
+			{ method: "POST", body: JSON.stringify(data) },
+		),
+	updateQuestion: (
+		jobId: number,
+		interviewId: number,
+		questionId: number,
+		data: InterviewQuestionFormData,
+	) =>
+		request<InterviewQuestion>(
+			`/jobs/${jobId}/interviews/${interviewId}/questions/${questionId}`,
+			{ method: "PUT", body: JSON.stringify(data) },
+		),
+	deleteQuestion: (jobId: number, interviewId: number, questionId: number) =>
+		request<{ success: boolean }>(
+			`/jobs/${jobId}/interviews/${interviewId}/questions/${questionId}`,
+			{ method: "DELETE" },
+		),
 };
