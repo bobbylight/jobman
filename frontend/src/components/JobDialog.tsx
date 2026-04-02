@@ -18,6 +18,7 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import InterviewsTab from "./InterviewsTab";
 import EditIcon from "@mui/icons-material/Edit";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
@@ -35,6 +36,7 @@ import type {
 	FitScore,
 	JobStatus,
 	EndingSubstatus,
+	Interview,
 } from "../types";
 
 const EMPTY: JobFormData = {
@@ -80,6 +82,8 @@ export default function JobDialog({
 	const [linkEditing, setLinkEditing] = useState(false);
 	const [activeTab, setActiveTab] = useState(0);
 	const [interviewCount, setInterviewCount] = useState<number | null>(null);
+	const [viewingQuestionsFor, setViewingQuestionsFor] =
+		useState<Interview | null>(null);
 
 	useEffect(() => {
 		if (open) {
@@ -89,6 +93,7 @@ export default function JobDialog({
 			setLinkEditing(false);
 			setActiveTab(0);
 			setInterviewCount(null);
+			setViewingQuestionsFor(null);
 		}
 	}, [open, initialValues]);
 
@@ -435,6 +440,8 @@ export default function JobDialog({
 						<InterviewsTab
 							jobId={initialValues!.id}
 							onCountChange={setInterviewCount}
+							viewingQuestionsFor={viewingQuestionsFor}
+							onViewingQuestionsChange={setViewingQuestionsFor}
 						/>
 					)}
 				</DialogContent>
@@ -445,7 +452,9 @@ export default function JobDialog({
 						py: 2,
 						justifyContent:
 							activeTab === 1
-								? "flex-end"
+								? viewingQuestionsFor
+									? "space-between"
+									: "flex-end"
 								: isEdit
 									? "space-between"
 									: "flex-end",
@@ -468,7 +477,19 @@ export default function JobDialog({
 							</div>
 						</>
 					)}
-					{activeTab === 1 && <Button onClick={onClose}>Close</Button>}
+					{activeTab === 1 && (
+						<>
+							{viewingQuestionsFor && (
+								<Button
+									startIcon={<ArrowBackIcon />}
+									onClick={() => setViewingQuestionsFor(null)}
+								>
+									Back to interviews
+								</Button>
+							)}
+							<Button onClick={onClose}>Close</Button>
+						</>
+					)}
 				</DialogActions>
 			</Dialog>
 

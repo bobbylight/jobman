@@ -45,12 +45,15 @@ const INTERVIEW_B = makeInterview({
 const DEFAULT_PROPS = {
 	jobId: 42,
 	onCountChange: vi.fn(),
+	viewingQuestionsFor: null,
+	onViewingQuestionsChange: vi.fn(),
 };
 
 describe("InterviewsTab", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.mocked(api.getInterviews).mockResolvedValue([]);
+		vi.mocked(api.getQuestions).mockResolvedValue([]);
 	});
 
 	describe("loading state", () => {

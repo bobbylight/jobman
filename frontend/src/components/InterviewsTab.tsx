@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
 	Box,
 	Button,
@@ -66,24 +66,39 @@ function formatDttm(dttm: string): string {
 interface Props {
 	jobId: number;
 	onCountChange: (count: number) => void;
+	viewingQuestionsFor: Interview | null;
+	onViewingQuestionsChange: (interview: Interview | null) => void;
 }
 
-export default function InterviewsTab({ jobId, onCountChange }: Props) {
+export default function InterviewsTab({
+	jobId,
+	onCountChange,
+	viewingQuestionsFor,
+	onViewingQuestionsChange,
+}: Props) {
 	const [interviews, setInterviews] = useState<Interview[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [mode, setMode] = useState<Mode>("list");
 	const [form, setForm] = useState<InterviewFormData>(EMPTY_FORM);
 	const [formError, setFormError] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
-	const [viewingQuestionsFor, setViewingQuestionsFor] =
-		useState<Interview | null>(null);
 	const [questionCounts, setQuestionCounts] = useState<Record<number, number>>(
 		{},
 	);
+	const prevViewingRef = useRef<Interview | null>(null);
 
 	useEffect(() => {
 		void load();
 	}, [jobId]);
+
+	// Refresh question counts when returning from the question sub-view
+	useEffect(() => {
+		const wasViewing = prevViewingRef.current;
+		prevViewingRef.current = viewingQuestionsFor;
+		if (wasViewing !== null && viewingQuestionsFor === null) {
+			refreshQuestionCounts(interviews);
+		}
+	}, [viewingQuestionsFor]);
 
 	async function load() {
 		setLoading(true);
@@ -187,16 +202,7 @@ export default function InterviewsTab({ jobId, onCountChange }: Props) {
 	}
 
 	if (viewingQuestionsFor) {
-		return (
-			<QuestionSubView
-				jobId={jobId}
-				interview={viewingQuestionsFor}
-				onBack={() => {
-					setViewingQuestionsFor(null);
-					refreshQuestionCounts(interviews);
-				}}
-			/>
-		);
+		return <QuestionSubView jobId={jobId} interview={viewingQuestionsFor} />;
 	}
 
 	const isFormMode =
@@ -290,7 +296,7 @@ export default function InterviewsTab({ jobId, onCountChange }: Props) {
 						questionCount={questionCounts[interview.id] ?? 0}
 						onEdit={() => handleEditClick(interview)}
 						onDelete={() => setMode({ confirmDeleteId: interview.id })}
-						onViewQuestions={() => setViewingQuestionsFor(interview)}
+						onViewQuestions={() => onViewingQuestionsChange(interview)}
 					/>
 				);
 			})}
