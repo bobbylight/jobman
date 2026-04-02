@@ -66,6 +66,18 @@ db.exec(`
     interview_vibe         TEXT,
     interview_notes        TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS interview_questions (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    interview_id   INTEGER NOT NULL REFERENCES interviews(id) ON DELETE CASCADE,
+    question_type  TEXT NOT NULL,
+    question_text  TEXT NOT NULL,
+    question_notes TEXT,
+    difficulty     INTEGER NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_interview_questions_interview_id
+    ON interview_questions(interview_id);
 `);
 
 export default db;

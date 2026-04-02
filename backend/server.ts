@@ -59,6 +59,15 @@ interface InterviewRow {
 	interview_notes: string | null;
 }
 
+interface InterviewQuestionRow {
+	id: number;
+	interview_id: number;
+	question_type: string;
+	question_text: string;
+	question_notes: string | null;
+	difficulty: number;
+}
+
 interface UserRow {
 	id: number;
 	email: string;
@@ -70,6 +79,13 @@ interface UserRow {
 export const TERMINAL_STATUSES = new Set(["Rejected/Withdrawn", "Offer!"]);
 export const VALID_INTERVIEW_TYPES = new Set(["phone_screen", "onsite"]);
 export const VALID_INTERVIEW_VIBES = new Set(["casual", "intense"]);
+export const VALID_QUESTION_TYPES = new Set([
+	"behavioral",
+	"technical",
+	"system_design",
+	"coding",
+	"culture_fit",
+]);
 export const VALID_ENDING_SUBSTATUSES = new Set([
 	"Withdrawn",
 	"Rejected",
@@ -398,6 +414,28 @@ export function createApp(db: Database.Database) {
 		return null;
 	}
 
+	function validateInterviewQuestion(
+		body: Record<string, unknown>,
+	): string | null {
+		if (!body.question_type || typeof body.question_type !== "string") {
+			return "question_type is required";
+		}
+		if (!VALID_QUESTION_TYPES.has(body.question_type)) {
+			return `question_type must be one of: ${[...VALID_QUESTION_TYPES].join(", ")}`;
+		}
+		if (!body.question_text || typeof body.question_text !== "string") {
+			return "question_text is required";
+		}
+		if (body.difficulty == null) {
+			return "difficulty is required";
+		}
+		const difficulty = Number(body.difficulty);
+		if (!Number.isInteger(difficulty) || difficulty < 1 || difficulty > 5) {
+			return "difficulty must be an integer between 1 and 5";
+		}
+		return null;
+	}
+
 	// GET all interviews for a job
 	app.get("/api/jobs/:jobId/interviews", (req, res) => {
 		const job = db
@@ -509,6 +547,138 @@ export function createApp(db: Database.Database) {
 			return res.status(404).json({ error: "Interview not found" });
 		return res.json({ success: true });
 	});
+
+	// --- Interview question routes ---
+
+	// Helper: verify job belongs to user and interview belongs to job
+	function resolveInterview(
+		jobId: string,
+		interviewId: string,
+		userId: number | undefined,
+		res: express.Response,
+	): InterviewRow | null {
+		const job = db
+			.prepare("SELECT id FROM jobs WHERE id = ? AND user_id = ?")
+			.get(jobId, userId);
+		if (!job) {
+			res.status(404).json({ error: "Job not found" });
+			return null;
+		}
+		const interview = db
+			.prepare("SELECT * FROM interviews WHERE id = ? AND job_id = ?")
+			.get(interviewId, jobId) as InterviewRow | undefined;
+		if (!interview) {
+			res.status(404).json({ error: "Interview not found" });
+			return null;
+		}
+		return interview;
+	}
+
+	// GET all questions for an interview
+	app.get("/api/jobs/:jobId/interviews/:interviewId/questions", (req, res) => {
+		const { jobId, interviewId } = req.params;
+		if (!resolveInterview(jobId, interviewId, req.session.userId, res)) return;
+		const questions = db
+			.prepare("SELECT * FROM interview_questions WHERE interview_id = ?")
+			.all(interviewId);
+		return res.json(questions);
+	});
+
+	// GET a single question
+	app.get(
+		"/api/jobs/:jobId/interviews/:interviewId/questions/:questionId",
+		(req, res) => {
+			const { jobId, interviewId, questionId } = req.params;
+			if (!resolveInterview(jobId, interviewId, req.session.userId, res))
+				return;
+			const question = db
+				.prepare(
+					"SELECT * FROM interview_questions WHERE id = ? AND interview_id = ?",
+				)
+				.get(questionId, interviewId) as InterviewQuestionRow | undefined;
+			if (!question)
+				return res.status(404).json({ error: "Question not found" });
+			return res.json(question);
+		},
+	);
+
+	// POST create a question
+	app.post("/api/jobs/:jobId/interviews/:interviewId/questions", (req, res) => {
+		const { jobId, interviewId } = req.params;
+		if (!resolveInterview(jobId, interviewId, req.session.userId, res)) return;
+		const f = req.body as Record<string, unknown>;
+		const validationError = validateInterviewQuestion(f);
+		if (validationError)
+			return res.status(422).json({ error: validationError });
+		const result = db
+			.prepare(
+				`INSERT INTO interview_questions (interview_id, question_type, question_text, question_notes, difficulty)
+           VALUES (?, ?, ?, ?, ?)`,
+			)
+			.run(
+				interviewId,
+				f.question_type,
+				f.question_text,
+				f.question_notes ?? null,
+				Number(f.difficulty),
+			);
+		const question = db
+			.prepare("SELECT * FROM interview_questions WHERE id = ?")
+			.get(result.lastInsertRowid) as InterviewQuestionRow;
+		return res.status(201).json(question);
+	});
+
+	// PUT update a question
+	app.put(
+		"/api/jobs/:jobId/interviews/:interviewId/questions/:questionId",
+		(req, res) => {
+			const { jobId, interviewId, questionId } = req.params;
+			if (!resolveInterview(jobId, interviewId, req.session.userId, res))
+				return;
+			const f = req.body as Record<string, unknown>;
+			const validationError = validateInterviewQuestion(f);
+			if (validationError)
+				return res.status(422).json({ error: validationError });
+			const info = db
+				.prepare(
+					`UPDATE interview_questions SET
+             question_type = ?, question_text = ?, question_notes = ?, difficulty = ?
+           WHERE id = ? AND interview_id = ?`,
+				)
+				.run(
+					f.question_type,
+					f.question_text,
+					f.question_notes ?? null,
+					Number(f.difficulty),
+					questionId,
+					interviewId,
+				);
+			if (info.changes === 0)
+				return res.status(404).json({ error: "Question not found" });
+			const question = db
+				.prepare("SELECT * FROM interview_questions WHERE id = ?")
+				.get(questionId) as InterviewQuestionRow;
+			return res.json(question);
+		},
+	);
+
+	// DELETE a question
+	app.delete(
+		"/api/jobs/:jobId/interviews/:interviewId/questions/:questionId",
+		(req, res) => {
+			const { jobId, interviewId, questionId } = req.params;
+			if (!resolveInterview(jobId, interviewId, req.session.userId, res))
+				return;
+			const info = db
+				.prepare(
+					"DELETE FROM interview_questions WHERE id = ? AND interview_id = ?",
+				)
+				.run(questionId, interviewId);
+			if (info.changes === 0)
+				return res.status(404).json({ error: "Question not found" });
+			return res.json({ success: true });
+		},
+	);
 
 	return app;
 }
