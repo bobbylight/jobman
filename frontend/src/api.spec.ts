@@ -210,4 +210,97 @@ describe("api", () => {
 			await expect(api.deleteJob(99)).rejects.toThrow("API error 400");
 		});
 	});
+
+	describe("getInterviews", () => {
+		it("GETs /api/jobs/:jobId/interviews and returns the list", async () => {
+			const mockInterviews = [
+				{
+					id: 1,
+					job_id: 1,
+					interview_type: "phone_screen",
+					interview_dttm: "2024-03-12T14:00",
+					interview_interviewers: "Jane",
+					interview_vibe: "casual",
+					interview_notes: null,
+				},
+			];
+			mockFetch.mockResolvedValue(makeResponse(mockInterviews));
+			const result = await api.getInterviews(1);
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/jobs/1/interviews",
+				expect.objectContaining({
+					headers: { "Content-Type": "application/json" },
+				}),
+			);
+			expect(result).toEqual(mockInterviews);
+		});
+
+		it("throws when the response is not ok", async () => {
+			mockFetch.mockResolvedValue(makeResponse({ error: "Not found" }, false));
+			await expect(api.getInterviews(99)).rejects.toThrow("API error 400");
+		});
+	});
+
+	describe("createInterview", () => {
+		it("POSTs to /api/jobs/:jobId/interviews with JSON body and returns the created interview", async () => {
+			const formData = {
+				interview_type: "onsite" as const,
+				interview_dttm: "2024-03-19T10:00",
+				interview_interviewers: "Alice",
+				interview_vibe: "intense" as const,
+				interview_notes: null,
+			};
+			const created = { id: 2, job_id: 1, ...formData };
+			mockFetch.mockResolvedValue(makeResponse(created));
+			const result = await api.createInterview(1, formData);
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/jobs/1/interviews",
+				expect.objectContaining({
+					method: "POST",
+					body: JSON.stringify(formData),
+				}),
+			);
+			expect(result).toEqual(created);
+		});
+	});
+
+	describe("updateInterview", () => {
+		it("PUTs to /api/jobs/:jobId/interviews/:interviewId and returns the updated interview", async () => {
+			const formData = {
+				interview_type: "onsite" as const,
+				interview_dttm: "2024-03-19T10:00",
+				interview_interviewers: "Bob",
+				interview_vibe: null,
+				interview_notes: "Updated notes",
+			};
+			const updated = { id: 5, job_id: 1, ...formData };
+			mockFetch.mockResolvedValue(makeResponse(updated));
+			const result = await api.updateInterview(1, 5, formData);
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/jobs/1/interviews/5",
+				expect.objectContaining({
+					method: "PUT",
+					body: JSON.stringify(formData),
+				}),
+			);
+			expect(result).toEqual(updated);
+		});
+	});
+
+	describe("deleteInterview", () => {
+		it("DELETEs /api/jobs/:jobId/interviews/:interviewId and returns success", async () => {
+			mockFetch.mockResolvedValue(makeResponse({ success: true }));
+			const result = await api.deleteInterview(1, 5);
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/jobs/1/interviews/5",
+				expect.objectContaining({ method: "DELETE" }),
+			);
+			expect(result.success).toBe(true);
+		});
+
+		it("throws when the response is not ok", async () => {
+			mockFetch.mockResolvedValue(makeResponse({ error: "Not found" }, false));
+			await expect(api.deleteInterview(1, 99)).rejects.toThrow("API error 400");
+		});
+	});
 });

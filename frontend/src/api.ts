@@ -1,4 +1,10 @@
-import type { Job, JobFormData, User } from "./types";
+import type {
+	Job,
+	JobFormData,
+	User,
+	Interview,
+	InterviewFormData,
+} from "./types";
 
 const BASE = "/api";
 
@@ -41,4 +47,26 @@ export const api = {
 		request<Job>(`/jobs/${id}`, { method: "PUT", body: JSON.stringify(data) }),
 	deleteJob: (id: number) =>
 		request<{ success: boolean }>(`/jobs/${id}`, { method: "DELETE" }),
+
+	// Interviews
+	getInterviews: (jobId: number) =>
+		request<Interview[]>(`/jobs/${jobId}/interviews`),
+	createInterview: (jobId: number, data: InterviewFormData) =>
+		request<Interview>(`/jobs/${jobId}/interviews`, {
+			method: "POST",
+			body: JSON.stringify(data),
+		}),
+	updateInterview: (
+		jobId: number,
+		interviewId: number,
+		data: InterviewFormData,
+	) =>
+		request<Interview>(`/jobs/${jobId}/interviews/${interviewId}`, {
+			method: "PUT",
+			body: JSON.stringify(data),
+		}),
+	deleteInterview: (jobId: number, interviewId: number) =>
+		request<{ success: boolean }>(`/jobs/${jobId}/interviews/${interviewId}`, {
+			method: "DELETE",
+		}),
 };

@@ -8,7 +8,10 @@ import {
 } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import JobDialog from "./JobDialog";
-import type { Job, JobStatus, EndingSubstatus } from "../types";
+import type { Job, JobStatus, EndingSubstatus, Interview } from "../types";
+import { api } from "../api";
+
+vi.mock("../api");
 
 const BASE_JOB: Job = {
 	id: 42,
@@ -31,6 +34,16 @@ const BASE_JOB: Job = {
 	updated_at: "2024-01-01T00:00:00.000Z",
 };
 
+const MOCK_INTERVIEW: Interview = {
+	id: 1,
+	job_id: 42,
+	interview_type: "phone_screen",
+	interview_dttm: "2024-03-12T14:00",
+	interview_interviewers: "Jane Smith",
+	interview_vibe: "casual",
+	interview_notes: null,
+};
+
 const terminalJob = (
 	status: JobStatus,
 	ending_substatus: EndingSubstatus | null,
@@ -51,6 +64,7 @@ const DEFAULT_PROPS = {
 describe("JobDialog", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		vi.mocked(api.getInterviews).mockResolvedValue([]);
 	});
 
 	describe("add mode (no initialValues)", () => {
@@ -508,6 +522,84 @@ describe("JobDialog", () => {
 				fireEvent.click(screen.getByRole("button", { name: "Add Job" }));
 				expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
 					expect.objectContaining({ ending_substatus: null }),
+				);
+			});
+		});
+	});
+
+	describe("tabs", () => {
+		it("does not show tabs in add mode", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
+			expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+		});
+
+		it("shows Details and Interviews tabs in edit mode", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+			expect(screen.getByRole("tab", { name: "Details" })).toBeInTheDocument();
+			expect(
+				screen.getByRole("tab", { name: "Interviews" }),
+			).toBeInTheDocument();
+		});
+
+		it("starts on the Details tab in edit mode", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+			expect(screen.getByRole("tab", { name: "Details" })).toHaveAttribute(
+				"aria-selected",
+				"true",
+			);
+		});
+
+		it("shows Save and Delete buttons on the Details tab", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+			expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: "Delete" }),
+			).toBeInTheDocument();
+		});
+
+		it("hides Save and Delete and shows Close when on the Interviews tab", async () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+			fireEvent.click(screen.getByRole("tab", { name: "Interviews" }));
+			await waitFor(() => {
+				expect(
+					screen.queryByRole("button", { name: "Save" }),
+				).not.toBeInTheDocument();
+				expect(
+					screen.queryByRole("button", { name: "Delete" }),
+				).not.toBeInTheDocument();
+				expect(
+					screen.getByRole("button", { name: "Close" }),
+				).toBeInTheDocument();
+			});
+		});
+
+		it("updates the Interviews tab label with the count after loading", async () => {
+			vi.mocked(api.getInterviews).mockResolvedValue([MOCK_INTERVIEW]);
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+			fireEvent.click(screen.getByRole("tab", { name: "Interviews" }));
+			await waitFor(() => {
+				expect(
+					screen.getByRole("tab", { name: "Interviews (1)" }),
+				).toBeInTheDocument();
+			});
+		});
+
+		it("resets to Details tab when the dialog is reopened", async () => {
+			const { rerender } = render(
+				<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />,
+			);
+			fireEvent.click(screen.getByRole("tab", { name: "Interviews" }));
+			await waitFor(() => screen.getByRole("tab", { name: "Interviews" }));
+
+			rerender(
+				<JobDialog {...DEFAULT_PROPS} open={false} initialValues={BASE_JOB} />,
+			);
+			rerender(<JobDialog {...DEFAULT_PROPS} open initialValues={BASE_JOB} />);
+
+			await waitFor(() => {
+				expect(screen.getByRole("tab", { name: "Details" })).toHaveAttribute(
+					"aria-selected",
+					"true",
 				);
 			});
 		});
