@@ -123,40 +123,40 @@ describe("computeDateUpdates", () => {
 	};
 	const jobNoDates = { date_phone_screen: null, date_last_onsite: null };
 
-	it("sets date_phone_screen to now and clears date_last_onsite when moving to Phone screen", () => {
+	it("preserves both dates when moving to Phone screen", () => {
 		const result = computeDateUpdates(jobWithDates, "Phone screen", NOW);
-		expect(result.date_phone_screen).toBe(NOW);
-		expect(result.date_last_onsite).toBeNull();
-	});
-
-	it("sets date_phone_screen to now when moving to Phone screen from a job with no prior dates", () => {
-		const result = computeDateUpdates(jobNoDates, "Phone screen", NOW);
-		expect(result.date_phone_screen).toBe(NOW);
-		expect(result.date_last_onsite).toBeNull();
-	});
-
-	it("sets date_last_onsite to now and preserves date_phone_screen when moving to Interviewing", () => {
-		const result = computeDateUpdates(jobWithDates, "Interviewing", NOW);
-		expect(result.date_last_onsite).toBe(NOW);
 		expect(result.date_phone_screen).toBe(jobWithDates.date_phone_screen);
+		expect(result.date_last_onsite).toBe(jobWithDates.date_last_onsite);
 	});
 
-	it("sets date_last_onsite to now when moving to Interviewing with no prior phone screen", () => {
+	it("preserves null dates when moving to Phone screen with no prior dates", () => {
+		const result = computeDateUpdates(jobNoDates, "Phone screen", NOW);
+		expect(result.date_phone_screen).toBeNull();
+		expect(result.date_last_onsite).toBeNull();
+	});
+
+	it("preserves both dates when moving to Interviewing", () => {
+		const result = computeDateUpdates(jobWithDates, "Interviewing", NOW);
+		expect(result.date_phone_screen).toBe(jobWithDates.date_phone_screen);
+		expect(result.date_last_onsite).toBe(jobWithDates.date_last_onsite);
+	});
+
+	it("preserves null dates when moving to Interviewing with no prior dates", () => {
 		const result = computeDateUpdates(jobNoDates, "Interviewing", NOW);
-		expect(result.date_last_onsite).toBe(NOW);
 		expect(result.date_phone_screen).toBeNull();
+		expect(result.date_last_onsite).toBeNull();
 	});
 
-	it("clears both dates when moving back to Not started", () => {
+	it("preserves both dates when moving back to Not started", () => {
 		const result = computeDateUpdates(jobWithDates, "Not started", NOW);
-		expect(result.date_phone_screen).toBeNull();
-		expect(result.date_last_onsite).toBeNull();
+		expect(result.date_phone_screen).toBe(jobWithDates.date_phone_screen);
+		expect(result.date_last_onsite).toBe(jobWithDates.date_last_onsite);
 	});
 
-	it("clears both dates when moving back to Resume submitted", () => {
+	it("preserves both dates when moving back to Resume submitted", () => {
 		const result = computeDateUpdates(jobWithDates, "Resume submitted", NOW);
-		expect(result.date_phone_screen).toBeNull();
-		expect(result.date_last_onsite).toBeNull();
+		expect(result.date_phone_screen).toBe(jobWithDates.date_phone_screen);
+		expect(result.date_last_onsite).toBe(jobWithDates.date_last_onsite);
 	});
 
 	it("preserves both dates when moving to Offer!", () => {
