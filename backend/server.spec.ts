@@ -8,6 +8,7 @@ import {
 	VALID_ENDING_SUBSTATUSES,
 	VALID_INTERVIEW_TYPES,
 	VALID_INTERVIEW_VIBES,
+	VALID_QUESTION_TYPES,
 } from "./server.js";
 
 const testDb = new Database(":memory:");
@@ -52,6 +53,15 @@ testDb.exec(`
     interview_interviewers TEXT,
     interview_vibe         TEXT,
     interview_notes        TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS interview_questions (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    interview_id   INTEGER NOT NULL,
+    question_type  TEXT NOT NULL,
+    question_text  TEXT NOT NULL,
+    question_notes TEXT,
+    difficulty     INTEGER NOT NULL
   )
 `);
 
@@ -92,6 +102,7 @@ function req(method: "get" | "post" | "put" | "delete", url: string) {
 }
 
 afterEach(() => {
+	testDb.exec("DELETE FROM interview_questions");
 	testDb.exec("DELETE FROM interviews");
 	testDb.exec("DELETE FROM jobs");
 });
@@ -759,6 +770,363 @@ describe("DELETE /api/jobs/:jobId/interviews/:interviewId", () => {
 
 	it("returns 404 when the job does not exist", async () => {
 		const res = await req("delete", "/api/jobs/99999/interviews/1");
+		expect(res.status).toBe(404);
+	});
+});
+
+const BASE_QUESTION = {
+	question_type: "behavioral",
+	question_text: "Tell me about a time you led a project.",
+	difficulty: 3,
+};
+
+async function createJobAndInterview() {
+	const jobRes = await req("post", "/api/jobs").send(BASE_JOB);
+	const jobId: number = jobRes.body.id;
+	const interviewRes = await req("post", `/api/jobs/${jobId}/interviews`).send(
+		BASE_INTERVIEW,
+	);
+	const interviewId: number = interviewRes.body.id;
+	return { jobId, interviewId };
+}
+
+describe("GET /api/jobs/:jobId/interviews/:interviewId/questions", () => {
+	it("returns an empty array when no questions exist", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const res = await req(
+			"get",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+		);
+		expect(res.status).toBe(200);
+		expect(res.body).toEqual([]);
+	});
+
+	it("returns all questions for an interview", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		await req(
+			"post",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+		).send(BASE_QUESTION);
+		await req(
+			"post",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+		).send({ ...BASE_QUESTION, question_type: "technical" });
+
+		const res = await req(
+			"get",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+		);
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(2);
+	});
+
+	it("returns 404 when the job does not exist", async () => {
+		const res = await req("get", "/api/jobs/99999/interviews/1/questions");
+		expect(res.status).toBe(404);
+		expect(res.body.error).toBe("Job not found");
+	});
+
+	it("returns 404 when the interview does not exist", async () => {
+		const jobRes = await req("post", "/api/jobs").send(BASE_JOB);
+		const jobId: number = jobRes.body.id;
+		const res = await req(
+			"get",
+			`/api/jobs/${jobId}/interviews/99999/questions`,
+		);
+		expect(res.status).toBe(404);
+		expect(res.body.error).toBe("Interview not found");
+	});
+});
+
+describe("GET /api/jobs/:jobId/interviews/:interviewId/questions/:questionId", () => {
+	it("returns a single question by id", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const createRes = await req(
+			"post",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+		).send(BASE_QUESTION);
+		const questionId: number = createRes.body.id;
+
+		const res = await req(
+			"get",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions/${questionId}`,
+		);
+		expect(res.status).toBe(200);
+		expect(res.body.id).toBe(questionId);
+		expect(res.body.question_type).toBe("behavioral");
+		expect(res.body.question_text).toBe(BASE_QUESTION.question_text);
+		expect(res.body.difficulty).toBe(3);
+	});
+
+	it("returns 404 when the question does not exist", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const res = await req(
+			"get",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions/99999`,
+		);
+		expect(res.status).toBe(404);
+		expect(res.body.error).toBe("Question not found");
+	});
+
+	it("returns 404 when the job does not exist", async () => {
+		const res = await req("get", "/api/jobs/99999/interviews/1/questions/1");
+		expect(res.status).toBe(404);
+	});
+
+	it("returns 404 when the interview does not exist", async () => {
+		const jobRes = await req("post", "/api/jobs").send(BASE_JOB);
+		const jobId: number = jobRes.body.id;
+		const res = await req(
+			"get",
+			`/api/jobs/${jobId}/interviews/99999/questions/1`,
+		);
+		expect(res.status).toBe(404);
+	});
+});
+
+describe("POST /api/jobs/:jobId/interviews/:interviewId/questions", () => {
+	it("creates a question and returns 201 with the record", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const res = await req(
+			"post",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+		).send({
+			...BASE_QUESTION,
+			question_notes: "Answered poorly, need to practice STAR method",
+		});
+
+		expect(res.status).toBe(201);
+		expect(res.body.id).toBeTypeOf("number");
+		expect(res.body.interview_id).toBe(interviewId);
+		expect(res.body.question_type).toBe("behavioral");
+		expect(res.body.question_text).toBe(BASE_QUESTION.question_text);
+		expect(res.body.question_notes).toBe(
+			"Answered poorly, need to practice STAR method",
+		);
+		expect(res.body.difficulty).toBe(3);
+	});
+
+	it("stores null for question_notes when omitted", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const res = await req(
+			"post",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+		).send(BASE_QUESTION);
+
+		expect(res.status).toBe(201);
+		expect(res.body.question_notes).toBeNull();
+	});
+
+	it("returns 422 when question_type is missing", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const { question_type: _t, ...withoutType } = BASE_QUESTION;
+		const res = await req(
+			"post",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+		).send(withoutType);
+		expect(res.status).toBe(422);
+		expect(res.body.error).toMatch(/question_type/);
+	});
+
+	it("returns 422 when question_type is invalid", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const res = await req(
+			"post",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+		).send({ ...BASE_QUESTION, question_type: "brainteaser" });
+		expect(res.status).toBe(422);
+		expect(res.body.error).toMatch(/question_type/);
+	});
+
+	it("returns 422 when question_text is missing", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const { question_text: _qt, ...withoutText } = BASE_QUESTION;
+		const res = await req(
+			"post",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+		).send(withoutText);
+		expect(res.status).toBe(422);
+		expect(res.body.error).toMatch(/question_text/);
+	});
+
+	it("returns 422 when difficulty is missing", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const { difficulty: _d, ...withoutDifficulty } = BASE_QUESTION;
+		const res = await req(
+			"post",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+		).send(withoutDifficulty);
+		expect(res.status).toBe(422);
+		expect(res.body.error).toMatch(/difficulty/);
+	});
+
+	it("returns 422 when difficulty is out of range", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const res = await req(
+			"post",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+		).send({ ...BASE_QUESTION, difficulty: 6 });
+		expect(res.status).toBe(422);
+		expect(res.body.error).toMatch(/difficulty/);
+	});
+
+	it.each([1, 2, 3, 4, 5])("accepts difficulty %d", async (difficulty) => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const res = await req(
+			"post",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+		).send({ ...BASE_QUESTION, difficulty });
+		expect(res.status).toBe(201);
+		expect(res.body.difficulty).toBe(difficulty);
+	});
+
+	it.each([
+		...VALID_QUESTION_TYPES,
+	])('accepts question_type "%s"', async (question_type) => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const res = await req(
+			"post",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+		).send({ ...BASE_QUESTION, question_type });
+		expect(res.status).toBe(201);
+		expect(res.body.question_type).toBe(question_type);
+	});
+
+	it("returns 404 when the job does not exist", async () => {
+		const res = await req(
+			"post",
+			"/api/jobs/99999/interviews/1/questions",
+		).send(BASE_QUESTION);
+		expect(res.status).toBe(404);
+	});
+
+	it("returns 404 when the interview does not exist", async () => {
+		const jobRes = await req("post", "/api/jobs").send(BASE_JOB);
+		const jobId: number = jobRes.body.id;
+		const res = await req(
+			"post",
+			`/api/jobs/${jobId}/interviews/99999/questions`,
+		).send(BASE_QUESTION);
+		expect(res.status).toBe(404);
+	});
+});
+
+describe("PUT /api/jobs/:jobId/interviews/:interviewId/questions/:questionId", () => {
+	it("updates a question and returns the updated record", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const createRes = await req(
+			"post",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+		).send(BASE_QUESTION);
+		const questionId: number = createRes.body.id;
+
+		const res = await req(
+			"put",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions/${questionId}`,
+		).send({
+			...BASE_QUESTION,
+			question_type: "technical",
+			question_text: "Explain the CAP theorem.",
+			question_notes: "Studied this",
+			difficulty: 5,
+		});
+
+		expect(res.status).toBe(200);
+		expect(res.body.question_type).toBe("technical");
+		expect(res.body.question_text).toBe("Explain the CAP theorem.");
+		expect(res.body.question_notes).toBe("Studied this");
+		expect(res.body.difficulty).toBe(5);
+	});
+
+	it("returns 404 when the question does not exist", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const res = await req(
+			"put",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions/99999`,
+		).send(BASE_QUESTION);
+		expect(res.status).toBe(404);
+		expect(res.body.error).toBe("Question not found");
+	});
+
+	it("returns 404 when the job does not exist", async () => {
+		const res = await req(
+			"put",
+			"/api/jobs/99999/interviews/1/questions/1",
+		).send(BASE_QUESTION);
+		expect(res.status).toBe(404);
+	});
+
+	it("returns 404 when the interview does not exist", async () => {
+		const jobRes = await req("post", "/api/jobs").send(BASE_JOB);
+		const jobId: number = jobRes.body.id;
+		const res = await req(
+			"put",
+			`/api/jobs/${jobId}/interviews/99999/questions/1`,
+		).send(BASE_QUESTION);
+		expect(res.status).toBe(404);
+	});
+
+	it("returns 422 when question_type is invalid", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const createRes = await req(
+			"post",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+		).send(BASE_QUESTION);
+		const questionId: number = createRes.body.id;
+
+		const res = await req(
+			"put",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions/${questionId}`,
+		).send({ ...BASE_QUESTION, question_type: "brainteaser" });
+		expect(res.status).toBe(422);
+	});
+});
+
+describe("DELETE /api/jobs/:jobId/interviews/:interviewId/questions/:questionId", () => {
+	it("deletes a question and returns success", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const createRes = await req(
+			"post",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+		).send(BASE_QUESTION);
+		const questionId: number = createRes.body.id;
+
+		const res = await req(
+			"delete",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions/${questionId}`,
+		);
+		expect(res.status).toBe(200);
+		expect(res.body.success).toBe(true);
+
+		const getRes = await req(
+			"get",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+		);
+		expect(getRes.body).toHaveLength(0);
+	});
+
+	it("returns 404 when the question does not exist", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const res = await req(
+			"delete",
+			`/api/jobs/${jobId}/interviews/${interviewId}/questions/99999`,
+		);
+		expect(res.status).toBe(404);
+		expect(res.body.error).toBe("Question not found");
+	});
+
+	it("returns 404 when the job does not exist", async () => {
+		const res = await req("delete", "/api/jobs/99999/interviews/1/questions/1");
+		expect(res.status).toBe(404);
+	});
+
+	it("returns 404 when the interview does not exist", async () => {
+		const jobRes = await req("post", "/api/jobs").send(BASE_JOB);
+		const jobId: number = jobRes.body.id;
+		const res = await req(
+			"delete",
+			`/api/jobs/${jobId}/interviews/99999/questions/1`,
+		);
 		expect(res.status).toBe(404);
 	});
 });
