@@ -66,3 +66,24 @@ export interface Interview {
 }
 
 export type InterviewFormData = Omit<Interview, "id" | "job_id">;
+
+export type QuestionType =
+	| "behavioral"
+	| "technical"
+	| "system_design"
+	| "coding"
+	| "culture_fit";
+
+export interface InterviewQuestion {
+	id: number;
+	interview_id: number;
+	question_type: QuestionType;
+	question_text: string;
+	question_notes: string | null;
+	difficulty: number;
+}
+
+export type InterviewQuestionFormData = Omit<
+	InterviewQuestion,
+	"id" | "interview_id"
+>;
