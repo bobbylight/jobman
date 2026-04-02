@@ -42,28 +42,11 @@ import type {
 	User,
 } from "../types";
 import { FIT_SCORES, TERMINAL_STATUSES } from "../constants";
-import { computeDateUpdates } from "../jobUtils";
 import KanbanBoard from "./KanbanBoard";
 import JobDialog from "./JobDialog";
 import EndingStatusDialog from "./EndingStatusDialog";
 
 type Severity = "success" | "error" | "info" | "warning";
-
-function formatDatetime(value: string) {
-	return new Date(value).toLocaleString(undefined, {
-		month: "short",
-		day: "numeric",
-		year: "numeric",
-		hour: "numeric",
-		minute: "2-digit",
-	});
-}
-
-function nowDatetimeLocal() {
-	const d = new Date();
-	const pad = (n: number) => String(n).padStart(2, "0");
-	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 // Minimum fit score filter: show jobs at or above this threshold
 // "Not sure" is excluded when any threshold is set
@@ -174,42 +157,16 @@ export default function JobManagementPage({ currentUser, onLogout }: Props) {
 
 	const applyStatusChange = useCallback(
 		async (job: Job, newStatus: JobStatus, extraUpdates?: Partial<Job>) => {
-			const dateUpdates = computeDateUpdates(
-				job,
-				newStatus,
-				nowDatetimeLocal(),
-			);
-			const optimistic = {
-				...job,
-				status: newStatus,
-				...dateUpdates,
-				...extraUpdates,
-			};
+			const optimistic = { ...job, status: newStatus, ...extraUpdates };
 			setJobs((prev) => prev.map((j) => (j.id === job.id ? optimistic : j)));
 			try {
 				const updated = await api.updateJob(job.id, {
 					...job,
 					status: newStatus,
-					...dateUpdates,
 					...extraUpdates,
 				});
 				setJobs((prev) => prev.map((j) => (j.id === updated.id ? updated : j)));
-				const lines = ["Job status updated successfully"];
-				if (dateUpdates.date_phone_screen !== job.date_phone_screen) {
-					lines.push(
-						dateUpdates.date_phone_screen
-							? `Phone screen date set to ${formatDatetime(dateUpdates.date_phone_screen)}`
-							: "Phone screen date cleared",
-					);
-				}
-				if (dateUpdates.date_last_onsite !== job.date_last_onsite) {
-					lines.push(
-						dateUpdates.date_last_onsite
-							? `Last onsite date set to ${formatDatetime(dateUpdates.date_last_onsite)}`
-							: "Last onsite date cleared",
-					);
-				}
-				notify(lines.join("\n"));
+				notify("Job status updated successfully");
 			} catch {
 				setJobs((prev) => prev.map((j) => (j.id === job.id ? job : j)));
 				notify("Failed to move job", "error");
