@@ -1,0 +1,117 @@
+import React, { useEffect, useState } from "react";
+import {
+	Box,
+	Card,
+	CardContent,
+	CircularProgress,
+	Typography,
+} from "@mui/material";
+import { api } from "../api";
+import type { StatsResponse, StatsWindow } from "../types";
+import StatCard from "./stats/StatCard";
+import StatusDonutChart from "./stats/StatusDonutChart";
+import LookbackToggle from "./stats/LookbackToggle";
+
+function formatPercent(rate: number | null): string {
+	if (rate === null) return "—";
+	return `${Math.round(rate * 100)}%`;
+}
+
+export default function StatsPage() {
+	const [window, setWindow] = useState<StatsWindow>("all");
+	const [data, setData] = useState<StatsResponse | null>(null);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState(false);
+
+	useEffect(() => {
+		setLoading(true);
+		setError(false);
+		api
+			.getStats(window)
+			.then(setData)
+			.catch(() => setError(true))
+			.finally(() => setLoading(false));
+	}, [window]);
+
+	return (
+		<Box sx={{ maxWidth: 1100, mx: "auto", px: 3, py: 4 }}>
+			{/* Header row */}
+			<Box
+				sx={{
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "space-between",
+					mb: 3,
+					flexWrap: "wrap",
+					gap: 2,
+				}}
+			>
+				<Typography variant="h5" fontWeight={700}>
+					Job Search Stats
+				</Typography>
+				<LookbackToggle value={window} onChange={setWindow} />
+			</Box>
+
+			{error && (
+				<Typography color="error" sx={{ mb: 2 }}>
+					Failed to load stats. Please try again.
+				</Typography>
+			)}
+
+			{loading ? (
+				<Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
+					<CircularProgress />
+				</Box>
+			) : data ? (
+				<>
+					{/* Metric cards */}
+					<Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 4 }}>
+						<StatCard
+							label="Total Applications"
+							value={data.totalApplications}
+							subtitle="Excluding withdrawn"
+						/>
+						<StatCard
+							label="Active Pipeline"
+							value={data.activePipeline}
+							subtitle="Not yet terminal"
+						/>
+						<StatCard label="Offers Received" value={data.offersReceived} />
+						<StatCard
+							label="Response Rate"
+							value={formatPercent(data.responseRate)}
+							subtitle={
+								data.responseRate !== null
+									? "Of submitted apps that got a reply"
+									: "Not enough data"
+							}
+						/>
+					</Box>
+
+					{/* Charts row */}
+					<Box
+						sx={{
+							display: "flex",
+							gap: 2,
+							flexWrap: "wrap",
+							alignItems: "flex-start",
+						}}
+					>
+						<Card sx={{ flex: "1 1 340px" }}>
+							<CardContent>
+								<Typography
+									variant="subtitle2"
+									color="text.secondary"
+									gutterBottom
+								>
+									Status Breakdown
+								</Typography>
+								<StatusDonutChart byStatus={data.byStatus} />
+							</CardContent>
+						</Card>
+					</Box>
+				</>
+			) : null}
+		</Box>
+	);
+}

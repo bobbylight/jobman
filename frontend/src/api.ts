@@ -6,6 +6,8 @@ import type {
 	InterviewFormData,
 	InterviewQuestion,
 	InterviewQuestionFormData,
+	StatsResponse,
+	StatsWindow,
 } from "./types";
 
 const BASE = "/api";
@@ -49,6 +51,10 @@ export const api = {
 		request<Job>(`/jobs/${id}`, { method: "PUT", body: JSON.stringify(data) }),
 	deleteJob: (id: number) =>
 		request<{ success: boolean }>(`/jobs/${id}`, { method: "DELETE" }),
+
+	// Stats
+	getStats: (window: StatsWindow) =>
+		request<StatsResponse>(`/stats?window=${window}`),
 
 	// Interviews
 	getInterviews: (jobId: number) =>

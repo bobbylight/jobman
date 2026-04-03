@@ -33,6 +33,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import InsightsIcon from "@mui/icons-material/Insights";
+import ViewKanbanOutlinedIcon from "@mui/icons-material/ViewKanbanOutlined";
 import { api } from "../api";
 import type {
 	Job,
@@ -46,8 +48,10 @@ import { FIT_SCORES, TERMINAL_STATUSES } from "../constants";
 import KanbanBoard from "./KanbanBoard";
 import JobDialog from "./JobDialog";
 import EndingStatusDialog from "./EndingStatusDialog";
+import StatsPage from "./StatsPage";
 
 type Severity = "success" | "error" | "info" | "warning";
+type View = "board" | "stats";
 
 // Minimum fit score filter: show jobs at or above this threshold
 // "Not sure" is excluded when any threshold is set
@@ -65,6 +69,7 @@ interface Props {
 }
 
 export default function JobManagementPage({ currentUser, onLogout }: Props) {
+	const [currentView, setCurrentView] = useState<View>("board");
 	const [jobs, setJobs] = useState<Job[]>([]);
 	const [search, setSearch] = useState("");
 	const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -287,9 +292,29 @@ export default function JobManagementPage({ currentUser, onLogout }: Props) {
 						sx={{ height: 52 }}
 					/>
 					<Box sx={{ flexGrow: 1 }} />
-					<Button variant="contained" startIcon={<AddIcon />} onClick={openAdd}>
-						Add Job
-					</Button>
+					{currentView === "board" && (
+						<Button
+							variant="contained"
+							startIcon={<AddIcon />}
+							onClick={openAdd}
+						>
+							Add Job
+						</Button>
+					)}
+					<IconButton
+						onClick={() =>
+							setCurrentView((v) => (v === "board" ? "stats" : "board"))
+						}
+						size="small"
+						title={currentView === "board" ? "View stats" : "View board"}
+						sx={{ color: "text.secondary" }}
+					>
+						{currentView === "board" ? (
+							<InsightsIcon />
+						) : (
+							<ViewKanbanOutlinedIcon />
+						)}
+					</IconButton>
 					<IconButton
 						onClick={(e) => setUserMenuAnchor(e.currentTarget)}
 						size="small"
@@ -336,136 +361,148 @@ export default function JobManagementPage({ currentUser, onLogout }: Props) {
 					</Menu>
 				</Toolbar>
 
-				{/* Filter strip */}
-				<Box
-					sx={{
-						px: 2,
-						py: 0.5,
-						display: "flex",
-						gap: 1,
-						alignItems: "center",
-						flexWrap: "wrap",
-						borderTop: "1px solid rgba(99,102,241,0.15)",
-					}}
-				>
-					<TextField
-						placeholder="Search company or role… ( / )"
-						size="small"
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-						slotProps={{
-							input: {
-								inputRef: searchRef,
-								startAdornment: (
-									<InputAdornment position="start">
-										<SearchIcon
-											fontSize="small"
-											sx={{ color: "text.disabled" }}
-										/>
-									</InputAdornment>
-								),
-							},
-						}}
+				{/* Filter strip — only shown on board view */}
+				{currentView === "board" && (
+					<Box
 						sx={{
-							width: 280,
-							"& .MuiOutlinedInput-root": {
-								bgcolor: "rgba(255,255,255,0.7)",
-								borderRadius: 2,
-							},
-						}}
-					/>
-
-					<Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
-
-					<Chip
-						icon={<StarIcon fontSize="small" />}
-						label="Favorites"
-						onClick={() => setFavoritesOnly((v) => !v)}
-						color={favoritesOnly ? "warning" : "default"}
-						variant={favoritesOnly ? "filled" : "outlined"}
-						sx={{
-							fontWeight: 500,
-							bgcolor: favoritesOnly ? undefined : "rgba(255,255,255,0.7)",
-						}}
-					/>
-
-					<Select
-						size="small"
-						value={minFitScore ?? ""}
-						onChange={(e) =>
-							setMinFitScore((e.target.value as FitScore) || null)
-						}
-						displayEmpty
-						renderValue={(val) =>
-							val
-								? (MIN_FIT_SCORE_OPTIONS.find((o) => o.value === val)?.label ??
-									"Fit score")
-								: "Fit score"
-						}
-						sx={{
-							height: 32,
-							bgcolor: minFitScore ? "primary.main" : "rgba(255,255,255,0.7)",
-							color: minFitScore ? "primary.contrastText" : "text.primary",
-							borderRadius: "16px",
-							fontWeight: 500,
-							fontSize: "0.8125rem",
-							"& .MuiSelect-icon": {
-								color: minFitScore ? "primary.contrastText" : "action.active",
-							},
-							"& .MuiOutlinedInput-notchedOutline": {
-								borderColor: minFitScore ? "primary.main" : "rgba(0,0,0,0.23)",
-							},
-							"&:hover .MuiOutlinedInput-notchedOutline": {
-								borderColor: minFitScore ? "primary.dark" : "rgba(0,0,0,0.87)",
-							},
-							minWidth: 120,
+							px: 2,
+							py: 0.5,
+							display: "flex",
+							gap: 1,
+							alignItems: "center",
+							flexWrap: "wrap",
+							borderTop: "1px solid rgba(99,102,241,0.15)",
 						}}
 					>
-						{MIN_FIT_SCORE_OPTIONS.map(({ label, value }) => (
-							<MenuItem key={label} value={value ?? ""}>
-								{label}
-							</MenuItem>
-						))}
-					</Select>
+						<TextField
+							placeholder="Search company or role… ( / )"
+							size="small"
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+							slotProps={{
+								input: {
+									inputRef: searchRef,
+									startAdornment: (
+										<InputAdornment position="start">
+											<SearchIcon
+												fontSize="small"
+												sx={{ color: "text.disabled" }}
+											/>
+										</InputAdornment>
+									),
+								},
+							}}
+							sx={{
+								width: 280,
+								"& .MuiOutlinedInput-root": {
+									bgcolor: "rgba(255,255,255,0.7)",
+									borderRadius: 2,
+								},
+							}}
+						/>
 
-					<Chip
-						label="Hide Withdrawn"
-						onClick={() => setHideWithdrawn((v) => !v)}
-						color={hideWithdrawn ? "primary" : "default"}
-						variant={hideWithdrawn ? "filled" : "outlined"}
-						sx={{
-							fontWeight: 500,
-							bgcolor: hideWithdrawn ? undefined : "rgba(255,255,255,0.7)",
-						}}
-					/>
+						<Divider
+							orientation="vertical"
+							flexItem
+							sx={{ mx: 0.5, my: 0.5 }}
+						/>
 
-					{hasAnyFilter && (
-						<>
-							<Divider
-								orientation="vertical"
-								flexItem
-								sx={{ mx: 0.5, my: 0.5 }}
-							/>
-							<Chip
-								icon={<CloseIcon fontSize="small" />}
-								label="Clear"
-								onClick={clearFilters}
-								size="small"
-								sx={{ fontWeight: 500, bgcolor: "rgba(255,255,255,0.7)" }}
-							/>
-						</>
-					)}
-				</Box>
+						<Chip
+							icon={<StarIcon fontSize="small" />}
+							label="Favorites"
+							onClick={() => setFavoritesOnly((v) => !v)}
+							color={favoritesOnly ? "warning" : "default"}
+							variant={favoritesOnly ? "filled" : "outlined"}
+							sx={{
+								fontWeight: 500,
+								bgcolor: favoritesOnly ? undefined : "rgba(255,255,255,0.7)",
+							}}
+						/>
+
+						<Select
+							size="small"
+							value={minFitScore ?? ""}
+							onChange={(e) =>
+								setMinFitScore((e.target.value as FitScore) || null)
+							}
+							displayEmpty
+							renderValue={(val) =>
+								val
+									? (MIN_FIT_SCORE_OPTIONS.find((o) => o.value === val)
+											?.label ?? "Fit score")
+									: "Fit score"
+							}
+							sx={{
+								height: 32,
+								bgcolor: minFitScore ? "primary.main" : "rgba(255,255,255,0.7)",
+								color: minFitScore ? "primary.contrastText" : "text.primary",
+								borderRadius: "16px",
+								fontWeight: 500,
+								fontSize: "0.8125rem",
+								"& .MuiSelect-icon": {
+									color: minFitScore ? "primary.contrastText" : "action.active",
+								},
+								"& .MuiOutlinedInput-notchedOutline": {
+									borderColor: minFitScore
+										? "primary.main"
+										: "rgba(0,0,0,0.23)",
+								},
+								"&:hover .MuiOutlinedInput-notchedOutline": {
+									borderColor: minFitScore
+										? "primary.dark"
+										: "rgba(0,0,0,0.87)",
+								},
+								minWidth: 120,
+							}}
+						>
+							{MIN_FIT_SCORE_OPTIONS.map(({ label, value }) => (
+								<MenuItem key={label} value={value ?? ""}>
+									{label}
+								</MenuItem>
+							))}
+						</Select>
+
+						<Chip
+							label="Hide Withdrawn"
+							onClick={() => setHideWithdrawn((v) => !v)}
+							color={hideWithdrawn ? "primary" : "default"}
+							variant={hideWithdrawn ? "filled" : "outlined"}
+							sx={{
+								fontWeight: 500,
+								bgcolor: hideWithdrawn ? undefined : "rgba(255,255,255,0.7)",
+							}}
+						/>
+
+						{hasAnyFilter && (
+							<>
+								<Divider
+									orientation="vertical"
+									flexItem
+									sx={{ mx: 0.5, my: 0.5 }}
+								/>
+								<Chip
+									icon={<CloseIcon fontSize="small" />}
+									label="Clear"
+									onClick={clearFilters}
+									size="small"
+									sx={{ fontWeight: 500, bgcolor: "rgba(255,255,255,0.7)" }}
+								/>
+							</>
+						)}
+					</Box>
+				)}
 			</AppBar>
 
 			<Box
 				sx={{
 					bgcolor: "background.default",
 					minHeight: "calc(100vh - 64px)",
-					pt: 3,
+					pt: currentView === "board" ? 3 : 0,
 				}}
 			>
-				{loading ? (
+				{currentView === "stats" ? (
+					<StatsPage />
+				) : loading ? (
 					<Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
 						<CircularProgress />
 					</Box>
