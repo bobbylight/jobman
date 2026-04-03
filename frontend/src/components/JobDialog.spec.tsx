@@ -65,6 +65,7 @@ describe("JobDialog", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.mocked(api.getInterviews).mockResolvedValue([]);
+		vi.mocked(api.getQuestions).mockResolvedValue([]);
 	});
 
 	describe("add mode (no initialValues)", () => {
