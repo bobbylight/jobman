@@ -85,6 +85,9 @@ export default function InterviewsTab({
 	const [questionCounts, setQuestionCounts] = useState<Record<number, number>>(
 		{},
 	);
+	// Tracks what's mounted in the questions panel; cleared after slide-back animation
+	const [displayedInterview, setDisplayedInterview] =
+		useState<Interview | null>(null);
 	const prevViewingRef = useRef<Interview | null>(null);
 
 	useEffect(() => {
@@ -97,6 +100,16 @@ export default function InterviewsTab({
 		prevViewingRef.current = viewingQuestionsFor;
 		if (wasViewing !== null && viewingQuestionsFor === null) {
 			refreshQuestionCounts(interviews);
+		}
+	}, [viewingQuestionsFor]);
+
+	// Keep the questions panel mounted during the slide-back animation, then unmount
+	useEffect(() => {
+		if (viewingQuestionsFor !== null) {
+			setDisplayedInterview(viewingQuestionsFor);
+		} else {
+			const timer = setTimeout(() => setDisplayedInterview(null), 350);
+			return () => clearTimeout(timer);
 		}
 	}, [viewingQuestionsFor]);
 
@@ -201,126 +214,144 @@ export default function InterviewsTab({
 		);
 	}
 
-	if (viewingQuestionsFor) {
-		return <QuestionSubView jobId={jobId} interview={viewingQuestionsFor} />;
-	}
-
 	const isFormMode =
 		mode === "add" || (typeof mode === "object" && "editId" in mode);
 
 	return (
-		<Box>
+		<Box sx={{ overflow: "hidden" }}>
 			<Box
 				sx={{
 					display: "flex",
-					justifyContent: "flex-end",
-					alignItems: "center",
-					mb: 1.5,
+					width: "200%",
+					transform: viewingQuestionsFor
+						? "translateX(-50%)"
+						: "translateX(0%)",
+					transition: "transform 0.3s ease-in-out",
 				}}
 			>
-				{!isFormMode && (
-					<Button
-						size="small"
-						startIcon={<AddIcon />}
-						onClick={handleAddClick}
-						variant="outlined"
+				{/* Panel 1: Interview list */}
+				<Box sx={{ width: "50%", minWidth: "50%" }}>
+					<Box
+						sx={{
+							display: "flex",
+							justifyContent: "flex-end",
+							alignItems: "center",
+							mb: 1.5,
+						}}
 					>
-						Add Interview
-					</Button>
-				)}
-			</Box>
-
-			{interviews.map((interview) => {
-				const isEditing =
-					typeof mode === "object" &&
-					"editId" in mode &&
-					mode.editId === interview.id;
-				const isConfirmingDelete =
-					typeof mode === "object" &&
-					"confirmDeleteId" in mode &&
-					mode.confirmDeleteId === interview.id;
-
-				if (isConfirmingDelete) {
-					return (
-						<Box
-							key={interview.id}
-							sx={{
-								border: "1px solid",
-								borderColor: "error.light",
-								borderRadius: 1,
-								p: 1.5,
-								mb: 1,
-								display: "flex",
-								alignItems: "center",
-								gap: 2,
-							}}
-						>
-							<Typography variant="body2" sx={{ flex: 1 }}>
-								Delete this interview?
-							</Typography>
-							<Button size="small" onClick={handleCancel}>
-								Cancel
-							</Button>
+						{!isFormMode && (
 							<Button
 								size="small"
-								color="error"
-								variant="contained"
-								disabled={saving}
-								onClick={() => void handleDeleteConfirm(interview.id)}
+								startIcon={<AddIcon />}
+								onClick={handleAddClick}
+								variant="outlined"
 							>
-								Delete
+								Add Interview
 							</Button>
-						</Box>
-					);
-				}
+						)}
+					</Box>
 
-				if (isEditing) {
-					return (
-						<Box key={interview.id} sx={{ mb: 1 }}>
-							<InterviewForm
-								data={form}
-								onChange={setField}
-								onSave={() => void handleSave()}
-								onCancel={handleCancel}
-								saving={saving}
-								error={formError}
+					{interviews.map((interview) => {
+						const isEditing =
+							typeof mode === "object" &&
+							"editId" in mode &&
+							mode.editId === interview.id;
+						const isConfirmingDelete =
+							typeof mode === "object" &&
+							"confirmDeleteId" in mode &&
+							mode.confirmDeleteId === interview.id;
+
+						if (isConfirmingDelete) {
+							return (
+								<Box
+									key={interview.id}
+									sx={{
+										border: "1px solid",
+										borderColor: "error.light",
+										borderRadius: 1,
+										p: 1.5,
+										mb: 1,
+										display: "flex",
+										alignItems: "center",
+										gap: 2,
+									}}
+								>
+									<Typography variant="body2" sx={{ flex: 1 }}>
+										Delete this interview?
+									</Typography>
+									<Button size="small" onClick={handleCancel}>
+										Cancel
+									</Button>
+									<Button
+										size="small"
+										color="error"
+										variant="contained"
+										disabled={saving}
+										onClick={() => void handleDeleteConfirm(interview.id)}
+									>
+										Delete
+									</Button>
+								</Box>
+							);
+						}
+
+						if (isEditing) {
+							return (
+								<Box key={interview.id} sx={{ mb: 1 }}>
+									<InterviewForm
+										data={form}
+										onChange={setField}
+										onSave={() => void handleSave()}
+										onCancel={handleCancel}
+										saving={saving}
+										error={formError}
+									/>
+								</Box>
+							);
+						}
+
+						return (
+							<InterviewCard
+								key={interview.id}
+								interview={interview}
+								questionCount={questionCounts[interview.id] ?? 0}
+								onEdit={() => handleEditClick(interview)}
+								onDelete={() => setMode({ confirmDeleteId: interview.id })}
+								onViewQuestions={() => onViewingQuestionsChange(interview)}
 							/>
-						</Box>
-					);
-				}
+						);
+					})}
 
-				return (
-					<InterviewCard
-						key={interview.id}
-						interview={interview}
-						questionCount={questionCounts[interview.id] ?? 0}
-						onEdit={() => handleEditClick(interview)}
-						onDelete={() => setMode({ confirmDeleteId: interview.id })}
-						onViewQuestions={() => onViewingQuestionsChange(interview)}
-					/>
-				);
-			})}
+					{interviews.length === 0 && !isFormMode && (
+						<Typography
+							variant="body2"
+							color="text.disabled"
+							sx={{ textAlign: "center", py: 3 }}
+						>
+							No interviews yet. Click &ldquo;Add Interview&rdquo; to get
+							started.
+						</Typography>
+					)}
 
-			{interviews.length === 0 && !isFormMode && (
-				<Typography
-					variant="body2"
-					color="text.disabled"
-					sx={{ textAlign: "center", py: 3 }}
-				>
-					No interviews yet. Click &ldquo;Add Interview&rdquo; to get started.
-				</Typography>
-			)}
+					{mode === "add" && (
+						<InterviewForm
+							data={form}
+							onChange={setField}
+							onSave={() => void handleSave()}
+							onCancel={handleCancel}
+							saving={saving}
+							error={formError}
+						/>
+					)}
+				</Box>
 
-			{mode === "add" && (
-				<InterviewForm
-					data={form}
-					onChange={setField}
-					onSave={() => void handleSave()}
-					onCancel={handleCancel}
-					saving={saving}
-					error={formError}
-				/>
-			)}
+				{/* Panel 2: Questions sub-view */}
+				<Box sx={{ width: "50%", minWidth: "50%" }}>
+					{displayedInterview && (
+						<QuestionSubView jobId={jobId} interview={displayedInterview} />
+					)}
+				</Box>
+			</Box>
 		</Box>
 	);
 }
