@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api, setUnauthorizedHandler } from "./api";
-import type { Job, JobFormData } from "./types";
+import type {
+	Job,
+	JobFormData,
+	InterviewQuestion,
+	InterviewQuestionFormData,
+} from "./types";
 
 const makeResponse = (body: unknown, ok = true) => ({
 	ok,
@@ -301,6 +306,97 @@ describe("api", () => {
 		it("throws when the response is not ok", async () => {
 			mockFetch.mockResolvedValue(makeResponse({ error: "Not found" }, false));
 			await expect(api.deleteInterview(1, 99)).rejects.toThrow("API error 400");
+		});
+	});
+
+	const MOCK_QUESTION: InterviewQuestion = {
+		id: 1,
+		interview_id: 10,
+		question_type: "behavioral",
+		question_text: "Tell me about yourself",
+		question_notes: null,
+		difficulty: 3,
+	};
+
+	describe("getQuestions", () => {
+		it("GETs /api/jobs/:jobId/interviews/:interviewId/questions and returns the list", async () => {
+			mockFetch.mockResolvedValue(makeResponse([MOCK_QUESTION]));
+			const result = await api.getQuestions(1, 10);
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/jobs/1/interviews/10/questions",
+				expect.objectContaining({
+					headers: { "Content-Type": "application/json" },
+				}),
+			);
+			expect(result).toEqual([MOCK_QUESTION]);
+		});
+
+		it("throws when the response is not ok", async () => {
+			mockFetch.mockResolvedValue(makeResponse({ error: "Not found" }, false));
+			await expect(api.getQuestions(1, 99)).rejects.toThrow("API error 400");
+		});
+	});
+
+	describe("createQuestion", () => {
+		it("POSTs to /api/jobs/:jobId/interviews/:interviewId/questions with JSON body and returns the created question", async () => {
+			const formData: InterviewQuestionFormData = {
+				question_type: "technical",
+				question_text: "Explain closures in JavaScript",
+				question_notes: null,
+				difficulty: 4,
+			};
+			const created = { id: 2, interview_id: 10, ...formData };
+			mockFetch.mockResolvedValue(makeResponse(created));
+			const result = await api.createQuestion(1, 10, formData);
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/jobs/1/interviews/10/questions",
+				expect.objectContaining({
+					method: "POST",
+					body: JSON.stringify(formData),
+				}),
+			);
+			expect(result).toEqual(created);
+		});
+	});
+
+	describe("updateQuestion", () => {
+		it("PUTs to /api/jobs/:jobId/interviews/:interviewId/questions/:questionId and returns the updated question", async () => {
+			const formData: InterviewQuestionFormData = {
+				question_type: "behavioral",
+				question_text: "Updated question text",
+				question_notes: "Some notes",
+				difficulty: 2,
+			};
+			const updated = { id: 1, interview_id: 10, ...formData };
+			mockFetch.mockResolvedValue(makeResponse(updated));
+			const result = await api.updateQuestion(1, 10, 1, formData);
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/jobs/1/interviews/10/questions/1",
+				expect.objectContaining({
+					method: "PUT",
+					body: JSON.stringify(formData),
+				}),
+			);
+			expect(result).toEqual(updated);
+		});
+	});
+
+	describe("deleteQuestion", () => {
+		it("DELETEs /api/jobs/:jobId/interviews/:interviewId/questions/:questionId and returns success", async () => {
+			mockFetch.mockResolvedValue(makeResponse({ success: true }));
+			const result = await api.deleteQuestion(1, 10, 1);
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/jobs/1/interviews/10/questions/1",
+				expect.objectContaining({ method: "DELETE" }),
+			);
+			expect(result.success).toBe(true);
+		});
+
+		it("throws when the response is not ok", async () => {
+			mockFetch.mockResolvedValue(makeResponse({ error: "Not found" }, false));
+			await expect(api.deleteQuestion(1, 10, 99)).rejects.toThrow(
+				"API error 400",
+			);
 		});
 	});
 });
