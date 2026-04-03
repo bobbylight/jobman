@@ -87,3 +87,15 @@ export type InterviewQuestionFormData = Omit<
 	InterviewQuestion,
 	"id" | "interview_id"
 >;
+
+export type StatsWindow = "all" | "90" | "30";
+
+export interface StatsResponse {
+	totalApplications: number;
+	activePipeline: number;
+	offersReceived: number;
+	/** Fraction 0–1, or null when there's no data. */
+	responseRate: number | null;
+	byStatus: { status: string; count: number }[];
+	applicationsByWeek: { week: string; count: number }[];
+}
