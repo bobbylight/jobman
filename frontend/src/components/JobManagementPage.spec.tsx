@@ -241,6 +241,41 @@ describe("JobManagementPage", () => {
 		).not.toBeInTheDocument();
 	});
 
+	it("focuses the search field when '/' is pressed outside an input", async () => {
+		mockGetJobs.mockResolvedValue([]);
+		render(<JobManagementPage {...DEFAULT_PROPS} />);
+		await waitFor(() => {
+			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+		});
+
+		const searchInput = screen.getByPlaceholderText(/Search company or role/);
+		expect(searchInput).not.toHaveFocus();
+
+		fireEvent.keyDown(document, { key: "/" });
+
+		expect(searchInput).toHaveFocus();
+	});
+
+	it("does not steal focus when '/' is pressed inside an input", async () => {
+		mockGetJobs.mockResolvedValue([]);
+		render(<JobManagementPage {...DEFAULT_PROPS} />);
+		await waitFor(() => {
+			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+		});
+
+		const searchInput = screen.getByPlaceholderText(/Search company or role/);
+
+		// Simulate pressing "/" while focused on some other input
+		const otherInput = document.createElement("input");
+		document.body.appendChild(otherInput);
+		otherInput.focus();
+
+		fireEvent.keyDown(otherInput, { key: "/" });
+
+		expect(searchInput).not.toHaveFocus();
+		document.body.removeChild(otherInput);
+	});
+
 	it("opens the add job dialog when 'Add Job' is clicked", async () => {
 		mockGetJobs.mockResolvedValue([]);
 		render(<JobManagementPage {...DEFAULT_PROPS} />);
