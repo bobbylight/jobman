@@ -11,6 +11,8 @@ import {
 	Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import BusinessIcon from "@mui/icons-material/Business";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -405,19 +407,31 @@ function QuestionCard({
 			</Box>
 			<Typography variant="body2">{question.question_text}</Typography>
 			{question.question_notes && (
-				<Typography
-					variant="caption"
-					color="text.secondary"
+				<Box
 					sx={{
-						display: "block",
 						mt: 0.5,
-						overflow: "hidden",
-						textOverflow: "ellipsis",
-						whiteSpace: "nowrap",
+						color: "text.secondary",
+						fontSize: "0.75rem",
+						lineHeight: 1.6,
+						"& p": { mt: 0, mb: 0.5 },
+						"& p:last-child": { mb: 0 },
+						"& ul, & ol": { mt: 0, mb: 0.5, pl: 2 },
+						"& li": { mb: 0 },
+						"& strong": { fontWeight: 700 },
+						"& em": { fontStyle: "italic" },
+						"& code": {
+							fontFamily: "monospace",
+							fontSize: "0.85em",
+							bgcolor: "action.hover",
+							px: 0.5,
+							borderRadius: 0.5,
+						},
 					}}
 				>
-					{question.question_notes.split("\n")[0]}
-				</Typography>
+					<ReactMarkdown remarkPlugins={[remarkGfm]}>
+						{question.question_notes}
+					</ReactMarkdown>
+				</Box>
 			)}
 		</Box>
 	);
