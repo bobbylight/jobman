@@ -4,6 +4,7 @@ import React, {
 	useCallback,
 	useDeferredValue,
 	useMemo,
+	useRef,
 } from "react";
 import {
 	AppBar,
@@ -81,6 +82,8 @@ export default function JobManagementPage({ currentUser, onLogout }: Props) {
 		job: Job;
 		newStatus: JobStatus;
 	} | null>(null);
+	const searchRef = useRef<HTMLInputElement>(null);
+
 	const [snack, setSnack] = useState<{
 		open: boolean;
 		message: string;
@@ -108,6 +111,23 @@ export default function JobManagementPage({ currentUser, onLogout }: Props) {
 	useEffect(() => {
 		void loadJobs();
 	}, [loadJobs]);
+
+	useEffect(() => {
+		function onKeyDown(e: KeyboardEvent) {
+			if (e.key !== "/") return;
+			const tag = (e.target as HTMLElement).tagName;
+			if (
+				tag === "INPUT" ||
+				tag === "TEXTAREA" ||
+				(e.target as HTMLElement).isContentEditable
+			)
+				return;
+			e.preventDefault();
+			searchRef.current?.focus();
+		}
+		document.addEventListener("keydown", onKeyDown);
+		return () => document.removeEventListener("keydown", onKeyDown);
+	}, []);
 
 	const openAdd = useCallback(() => setDialog({ open: true, job: null }), []);
 	const openEdit = useCallback(
@@ -329,12 +349,13 @@ export default function JobManagementPage({ currentUser, onLogout }: Props) {
 					}}
 				>
 					<TextField
-						placeholder="Search company or role…"
+						placeholder="Search company or role… ( / )"
 						size="small"
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
 						slotProps={{
 							input: {
+								inputRef: searchRef,
 								startAdornment: (
 									<InputAdornment position="start">
 										<SearchIcon
