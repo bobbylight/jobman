@@ -224,7 +224,7 @@ export default function QuestionSubView({ jobId, interview }: Props) {
 
 			{/* Add question button */}
 			<Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1.5 }}>
-				{!isFormMode && (
+				{!isFormMode && questions.length > 0 && (
 					<Button
 						size="small"
 						startIcon={<AddIcon />}
@@ -320,8 +320,18 @@ export default function QuestionSubView({ jobId, interview }: Props) {
 							color="text.disabled"
 							sx={{ textAlign: "center", py: 3 }}
 						>
-							No questions recorded yet. Click &ldquo;Add Question&rdquo; to get
-							started.
+							No questions recorded yet.{" "}
+							<Box
+								component="span"
+								onClick={handleAddClick}
+								sx={{
+									color: "primary.main",
+									cursor: "pointer",
+									"&:hover": { textDecoration: "underline" },
+								}}
+							>
+								Add one.
+							</Box>
 						</Typography>
 					)}
 
