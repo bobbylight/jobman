@@ -8,6 +8,7 @@ import type Database from "better-sqlite3";
 import { createAuthRouter } from "./routes/auth.js";
 import { createInterviewsRouter } from "./routes/interviews.js";
 import { createJobsRouter } from "./routes/jobs.js";
+import { createStatsRouter } from "./routes/stats.js";
 
 // Augment express-session to include our custom fields
 declare module "express-session" {
@@ -65,6 +66,7 @@ export function createApp(db: Database.Database) {
 		requireAuth,
 		createInterviewsRouter(db),
 	);
+	app.use("/api/stats", requireAuth, createStatsRouter(db));
 
 	return app;
 }
