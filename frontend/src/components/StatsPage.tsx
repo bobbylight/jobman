@@ -10,6 +10,8 @@ import { api } from "../api";
 import type { StatsResponse, StatsWindow } from "../types";
 import StatCard from "./stats/StatCard";
 import StatusDonutChart from "./stats/StatusDonutChart";
+import PipelineFunnelChart from "./stats/PipelineFunnelChart";
+import ApplicationsOverTime from "./stats/ApplicationsOverTime";
 import LookbackToggle from "./stats/LookbackToggle";
 
 function formatPercent(rate: number | null): string {
@@ -88,15 +90,28 @@ export default function StatsPage() {
 						/>
 					</Box>
 
-					{/* Charts row */}
+					{/* Charts row 1: Funnel + Donut */}
 					<Box
 						sx={{
 							display: "flex",
 							gap: 2,
 							flexWrap: "wrap",
 							alignItems: "flex-start",
+							mb: 2,
 						}}
 					>
+						<Card sx={{ flex: "1 1 340px" }}>
+							<CardContent>
+								<Typography
+									variant="subtitle2"
+									color="text.secondary"
+									gutterBottom
+								>
+									Pipeline Funnel
+								</Typography>
+								<PipelineFunnelChart byStatus={data.byStatus} />
+							</CardContent>
+						</Card>
 						<Card sx={{ flex: "1 1 340px" }}>
 							<CardContent>
 								<Typography
@@ -110,6 +125,24 @@ export default function StatsPage() {
 							</CardContent>
 						</Card>
 					</Box>
+
+					{/* Charts row 2: Applications Over Time (not shown for 30-day window) */}
+					{window !== "30" && (
+						<Card>
+							<CardContent>
+								<Typography
+									variant="subtitle2"
+									color="text.secondary"
+									gutterBottom
+								>
+									Applications Over Time
+								</Typography>
+								<ApplicationsOverTime
+									applicationsByWeek={data.applicationsByWeek}
+								/>
+							</CardContent>
+						</Card>
+					)}
 				</>
 			) : null}
 		</Box>
