@@ -5,6 +5,7 @@ import type {
 	JobFormData,
 	InterviewQuestion,
 	InterviewQuestionFormData,
+	StatsResponse,
 } from "./types";
 
 const makeResponse = (body: unknown, ok = true) => ({
@@ -397,6 +398,54 @@ describe("api", () => {
 			await expect(api.deleteQuestion(1, 10, 99)).rejects.toThrow(
 				"API error 400",
 			);
+		});
+	});
+
+	describe("getStats", () => {
+		const MOCK_STATS: StatsResponse = {
+			totalApplications: 5,
+			activePipeline: 2,
+			offersReceived: 1,
+			responseRate: 0.6,
+			byStatus: [{ status: "Not started", count: 2 }],
+			applicationsByWeek: [],
+		};
+
+		it("GETs /api/stats?window=all and returns the stats", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_STATS));
+			const result = await api.getStats("all");
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/stats?window=all",
+				expect.objectContaining({
+					headers: { "Content-Type": "application/json" },
+				}),
+			);
+			expect(result).toEqual(MOCK_STATS);
+		});
+
+		it("GETs /api/stats?window=30 when window is '30'", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_STATS));
+			await api.getStats("30");
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/stats?window=30",
+				expect.any(Object),
+			);
+		});
+
+		it("GETs /api/stats?window=90 when window is '90'", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_STATS));
+			await api.getStats("90");
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/stats?window=90",
+				expect.any(Object),
+			);
+		});
+
+		it("throws when the response is not ok", async () => {
+			mockFetch.mockResolvedValue(
+				makeResponse({ error: "Unauthorized" }, false),
+			);
+			await expect(api.getStats("all")).rejects.toThrow("API error 400");
 		});
 	});
 });
