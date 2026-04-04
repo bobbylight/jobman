@@ -12,10 +12,14 @@ vi.mock("../api", () => ({
 		createJob: vi.fn(),
 		updateJob: vi.fn(),
 		deleteJob: vi.fn(),
+		getStats: vi.fn(),
 	},
 }));
 
 vi.mock("./KanbanBoard", () => ({ default: vi.fn() }));
+vi.mock("./StatsPage", () => ({
+	default: () => <div data-testid="stats-page" />,
+}));
 
 vi.mock("@dnd-kit/core", () => ({
 	DndContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -318,6 +322,72 @@ describe("JobManagementPage", () => {
 					}),
 				);
 			});
+		});
+	});
+
+	describe("stats view", () => {
+		it("shows the stats page and hides the board when the Insights button is clicked", async () => {
+			mockGetJobs.mockResolvedValue([makeJob({ id: 1, company: "Acme" })]);
+			render(<JobManagementPage {...DEFAULT_PROPS} />);
+			await waitFor(() => expect(screen.getByText("Acme")).toBeInTheDocument());
+
+			fireEvent.click(screen.getByTitle("View stats"));
+
+			expect(screen.getByTestId("stats-page")).toBeInTheDocument();
+			expect(screen.queryByText("Acme")).not.toBeInTheDocument();
+		});
+
+		it("hides the filter strip when on the stats view", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			render(<JobManagementPage {...DEFAULT_PROPS} />);
+			await waitFor(() =>
+				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+			);
+
+			expect(
+				screen.getByPlaceholderText(/Search company or role/),
+			).toBeInTheDocument();
+
+			fireEvent.click(screen.getByTitle("View stats"));
+
+			expect(
+				screen.queryByPlaceholderText(/Search company or role/),
+			).not.toBeInTheDocument();
+		});
+
+		it("hides the Add Job button when on the stats view", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			render(<JobManagementPage {...DEFAULT_PROPS} />);
+			await waitFor(() =>
+				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+			);
+
+			expect(
+				screen.getByRole("button", { name: /Add Job/ }),
+			).toBeInTheDocument();
+
+			fireEvent.click(screen.getByTitle("View stats"));
+
+			expect(
+				screen.queryByRole("button", { name: /Add Job/ }),
+			).not.toBeInTheDocument();
+		});
+
+		it("returns to the board and shows Add Job when the board icon is clicked", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			render(<JobManagementPage {...DEFAULT_PROPS} />);
+			await waitFor(() =>
+				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+			);
+
+			fireEvent.click(screen.getByTitle("View stats"));
+			expect(screen.getByTestId("stats-page")).toBeInTheDocument();
+
+			fireEvent.click(screen.getByTitle("View board"));
+			expect(screen.queryByTestId("stats-page")).not.toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: /Add Job/ }),
+			).toBeInTheDocument();
 		});
 	});
 
