@@ -9,9 +9,15 @@ vi.mock("../api", () => ({
 	api: { getStats: vi.fn() },
 }));
 
-// Keep StatusDonutChart out of these tests — recharts isn't layout-capable in jsdom.
+// Keep chart components out of these tests — recharts isn't layout-capable in jsdom.
 vi.mock("./stats/StatusDonutChart", () => ({
 	default: () => <div data-testid="status-donut-chart" />,
+}));
+vi.mock("./stats/PipelineFunnelChart", () => ({
+	default: () => <div data-testid="pipeline-funnel-chart" />,
+}));
+vi.mock("./stats/ApplicationsOverTime", () => ({
+	default: () => <div data-testid="applications-over-time" />,
 }));
 
 const mockGetStats = vi.mocked(api.getStats);
@@ -109,6 +115,47 @@ describe("StatsPage", () => {
 		render(<StatsPage />);
 		await waitFor(() =>
 			expect(screen.getByTestId("status-donut-chart")).toBeInTheDocument(),
+		);
+	});
+
+	it("renders the pipeline funnel chart after data loads", async () => {
+		mockGetStats.mockResolvedValue(BASE_STATS);
+		render(<StatsPage />);
+		await waitFor(() =>
+			expect(screen.getByTestId("pipeline-funnel-chart")).toBeInTheDocument(),
+		);
+	});
+
+	it("renders the applications over time chart for 'all' window", async () => {
+		mockGetStats.mockResolvedValue(BASE_STATS);
+		render(<StatsPage />);
+		await waitFor(() =>
+			expect(screen.getByTestId("applications-over-time")).toBeInTheDocument(),
+		);
+	});
+
+	it("hides the applications over time chart for '30' window", async () => {
+		mockGetStats.mockResolvedValue(BASE_STATS);
+		render(<StatsPage />);
+		await waitFor(() => expect(mockGetStats).toHaveBeenCalledWith("all"));
+
+		mockGetStats.mockResolvedValue(BASE_STATS);
+		fireEvent.click(screen.getByRole("button", { name: "Last 30 days" }));
+
+		await waitFor(() => expect(mockGetStats).toHaveBeenCalledWith("30"));
+		expect(
+			screen.queryByTestId("applications-over-time"),
+		).not.toBeInTheDocument();
+	});
+
+	it("shows the applications over time chart for '90' window", async () => {
+		mockGetStats.mockResolvedValue(BASE_STATS);
+		render(<StatsPage />);
+		await waitFor(() => expect(mockGetStats).toHaveBeenCalledWith("all"));
+
+		fireEvent.click(screen.getByRole("button", { name: "Last 90 days" }));
+		await waitFor(() =>
+			expect(screen.getByTestId("applications-over-time")).toBeInTheDocument(),
 		);
 	});
 });
