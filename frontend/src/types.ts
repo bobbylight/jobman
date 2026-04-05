@@ -99,4 +99,6 @@ export interface StatsResponse {
 	byStatus: { status: string; count: number }[];
 	applicationsByWeek: { week: string; count: number }[];
 	avgDaysPerStage: { stage: string; avgDays: number }[];
+	/** Consecutive status transitions for the Sankey chart. */
+	transitions: { from: string; to: string; count: number }[];
 }

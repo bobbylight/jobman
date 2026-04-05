@@ -4,29 +4,20 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import PipelineFunnelChart from "./PipelineFunnelChart";
 
 vi.mock("recharts", () => ({
-	ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
-		<div data-testid="recharts-container">{children}</div>
+	Sankey: ({ children }: { children: React.ReactNode }) => (
+		<div data-testid="sankey-chart">{children}</div>
 	),
-	BarChart: ({ children }: { children: React.ReactNode }) => (
-		<div data-testid="bar-chart">{children}</div>
-	),
-	Bar: ({ children }: { children: React.ReactNode }) => (
-		<div data-testid="bar">{children}</div>
-	),
-	XAxis: () => null,
-	YAxis: () => null,
 	Tooltip: () => null,
-	Cell: () => null,
-	LabelList: () => null,
 }));
 
-const BY_STATUS_DATA = [
-	{ status: "Not started", count: 5 },
-	{ status: "Resume submitted", count: 3 },
-	{ status: "Phone screen", count: 2 },
-	{ status: "Interviewing", count: 1 },
-	{ status: "Offer!", count: 0 },
-	{ status: "Rejected/Withdrawn", count: 2 },
+const TRANSITIONS = [
+	{ from: "Not started", to: "Resume submitted", count: 8 },
+	{ from: "Resume submitted", to: "Phone screen", count: 5 },
+	{ from: "Resume submitted", to: "Rejected/Withdrawn", count: 3 },
+	{ from: "Phone screen", to: "Interviewing", count: 3 },
+	{ from: "Phone screen", to: "Rejected/Withdrawn", count: 2 },
+	{ from: "Interviewing", to: "Offer!", count: 1 },
+	{ from: "Interviewing", to: "Rejected/Withdrawn", count: 2 },
 ];
 
 describe("PipelineFunnelChart", () => {
@@ -34,47 +25,17 @@ describe("PipelineFunnelChart", () => {
 		vi.clearAllMocks();
 	});
 
-	it("shows empty state when byStatus is empty", () => {
-		render(<PipelineFunnelChart byStatus={[]} />);
+	it("shows empty state when transitions is empty", () => {
+		render(<PipelineFunnelChart transitions={[]} />);
 		expect(screen.getByText("No data for this period")).toBeInTheDocument();
-		expect(screen.queryByTestId("recharts-container")).not.toBeInTheDocument();
+		expect(screen.queryByTestId("sankey-chart")).not.toBeInTheDocument();
 	});
 
-	it("shows empty state when all counts are zero", () => {
-		render(
-			<PipelineFunnelChart
-				byStatus={[
-					{ status: "Not started", count: 0 },
-					{ status: "Phone screen", count: 0 },
-				]}
-			/>,
-		);
-		expect(screen.getByText("No data for this period")).toBeInTheDocument();
-	});
-
-	it("renders the bar chart when there is data", () => {
-		render(<PipelineFunnelChart byStatus={BY_STATUS_DATA} />);
-		expect(screen.getByTestId("recharts-container")).toBeInTheDocument();
-		expect(screen.getByTestId("bar-chart")).toBeInTheDocument();
+	it("renders the Sankey chart when there are transitions", () => {
+		render(<PipelineFunnelChart transitions={TRANSITIONS} />);
+		expect(screen.getByTestId("sankey-chart")).toBeInTheDocument();
 		expect(
 			screen.queryByText("No data for this period"),
 		).not.toBeInTheDocument();
-	});
-
-	it("renders a bar element for the data", () => {
-		render(<PipelineFunnelChart byStatus={BY_STATUS_DATA} />);
-		expect(screen.getByTestId("bar")).toBeInTheDocument();
-	});
-
-	it("renders when only some statuses have non-zero counts", () => {
-		render(
-			<PipelineFunnelChart
-				byStatus={[
-					{ status: "Not started", count: 0 },
-					{ status: "Interviewing", count: 3 },
-				]}
-			/>,
-		);
-		expect(screen.getByTestId("recharts-container")).toBeInTheDocument();
 	});
 });

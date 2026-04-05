@@ -1,7 +1,10 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { MemoryRouter, Routes, Route } from "react-router-dom";
+import AppShell from "./AppShell";
 import JobManagementPage from "./JobManagementPage";
+import StatsPage from "./StatsPage";
 import KanbanBoard from "./KanbanBoard";
 import { api } from "../api";
 import type { Job, User } from "../types";
@@ -18,7 +21,7 @@ vi.mock("../api", () => ({
 
 vi.mock("./KanbanBoard", () => ({ default: vi.fn() }));
 vi.mock("./StatsPage", () => ({
-	default: () => <div data-testid="stats-page" />,
+	default: vi.fn(() => <div data-testid="stats-page" />),
 }));
 
 vi.mock("@dnd-kit/core", () => ({
@@ -49,10 +52,7 @@ const MOCK_USER: User = {
 	avatarUrl: "https://example.com/avatar.jpg",
 };
 
-const DEFAULT_PROPS = {
-	currentUser: MOCK_USER,
-	onLogout: vi.fn(),
-};
+const MOCK_ON_LOGOUT = vi.fn();
 
 const makeJob = (overrides: Partial<Job> & Pick<Job, "id">): Job => ({
 	company: "Acme",
@@ -75,6 +75,23 @@ const makeJob = (overrides: Partial<Job> & Pick<Job, "id">): Job => ({
 	...overrides,
 });
 
+/** Renders JobManagementPage inside AppShell with the same route structure as App.tsx. */
+function renderPage(initialPath = "/jobs", onLogout = MOCK_ON_LOGOUT) {
+	return render(
+		<MemoryRouter initialEntries={[initialPath]}>
+			<Routes>
+				<Route
+					element={<AppShell currentUser={MOCK_USER} onLogout={onLogout} />}
+				>
+					<Route path="/jobs" element={<JobManagementPage />} />
+					<Route path="/jobs/:jobId" element={<JobManagementPage />} />
+					<Route path="/stats" element={<StatsPage />} />
+				</Route>
+			</Routes>
+		</MemoryRouter>,
+	);
+}
+
 describe("JobManagementPage", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -89,13 +106,13 @@ describe("JobManagementPage", () => {
 
 	it("shows a loading spinner while jobs are being fetched", () => {
 		mockGetJobs.mockReturnValue(new Promise(() => {}));
-		render(<JobManagementPage {...DEFAULT_PROPS} />);
+		renderPage();
 		expect(screen.getByRole("progressbar")).toBeInTheDocument();
 	});
 
 	it("hides the spinner and renders the board after jobs load", async () => {
 		mockGetJobs.mockResolvedValue([]);
-		render(<JobManagementPage {...DEFAULT_PROPS} />);
+		renderPage();
 		await waitFor(() => {
 			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
 		});
@@ -104,7 +121,7 @@ describe("JobManagementPage", () => {
 
 	it("shows an error snackbar when loading jobs fails", async () => {
 		mockGetJobs.mockRejectedValue(new Error("Network error"));
-		render(<JobManagementPage {...DEFAULT_PROPS} />);
+		renderPage();
 		await waitFor(() => {
 			expect(screen.getByText("Failed to load jobs")).toBeInTheDocument();
 		});
@@ -114,7 +131,7 @@ describe("JobManagementPage", () => {
 		mockGetJobs.mockResolvedValue([
 			makeJob({ id: 1, company: "TechCorp", role: "Dev" }),
 		]);
-		render(<JobManagementPage {...DEFAULT_PROPS} />);
+		renderPage();
 		await waitFor(() => {
 			expect(screen.getByText("TechCorp")).toBeInTheDocument();
 		});
@@ -125,7 +142,7 @@ describe("JobManagementPage", () => {
 			makeJob({ id: 1, company: "TechCorp", role: "Dev" }),
 			makeJob({ id: 2, company: "HealthCo", role: "PM" }),
 		]);
-		render(<JobManagementPage {...DEFAULT_PROPS} />);
+		renderPage();
 		await waitFor(() => {
 			expect(screen.getByText("TechCorp")).toBeInTheDocument();
 		});
@@ -143,7 +160,7 @@ describe("JobManagementPage", () => {
 			makeJob({ id: 1, company: "Acme", role: "Frontend Engineer" }),
 			makeJob({ id: 2, company: "Beta", role: "Product Manager" }),
 		]);
-		render(<JobManagementPage {...DEFAULT_PROPS} />);
+		renderPage();
 		await waitFor(() => {
 			expect(screen.getByText("Acme")).toBeInTheDocument();
 		});
@@ -161,7 +178,7 @@ describe("JobManagementPage", () => {
 			makeJob({ id: 1, company: "Starred Co", favorite: true }),
 			makeJob({ id: 2, company: "Plain Co", favorite: false }),
 		]);
-		render(<JobManagementPage {...DEFAULT_PROPS} />);
+		renderPage();
 		await waitFor(() => {
 			expect(screen.getByText("Starred Co")).toBeInTheDocument();
 		});
@@ -187,7 +204,7 @@ describe("JobManagementPage", () => {
 				ending_substatus: "Rejected",
 			}),
 		]);
-		render(<JobManagementPage {...DEFAULT_PROPS} />);
+		renderPage();
 		await waitFor(() => {
 			expect(screen.getByText("Withdrawn Co")).toBeInTheDocument();
 		});
@@ -204,12 +221,11 @@ describe("JobManagementPage", () => {
 			makeJob({ id: 2, company: "Low Co", fit_score: "Low" }),
 			makeJob({ id: 3, company: "Unsure Co", fit_score: null }),
 		]);
-		render(<JobManagementPage {...DEFAULT_PROPS} />);
+		renderPage();
 		await waitFor(() => {
 			expect(screen.getByText("High Co")).toBeInTheDocument();
 		});
 
-		// Open the fit score select and pick "High or better"
 		fireEvent.mouseDown(screen.getByRole("combobox"));
 		fireEvent.click(
 			await screen.findByRole("option", { name: "High or better" }),
@@ -225,7 +241,7 @@ describe("JobManagementPage", () => {
 			makeJob({ id: 1, company: "Starred Co", favorite: true }),
 			makeJob({ id: 2, company: "Plain Co", favorite: false }),
 		]);
-		render(<JobManagementPage {...DEFAULT_PROPS} />);
+		renderPage();
 		await waitFor(() => {
 			expect(screen.getByText("Plain Co")).toBeInTheDocument();
 		});
@@ -247,7 +263,7 @@ describe("JobManagementPage", () => {
 
 	it("focuses the search field when '/' is pressed outside an input", async () => {
 		mockGetJobs.mockResolvedValue([]);
-		render(<JobManagementPage {...DEFAULT_PROPS} />);
+		renderPage();
 		await waitFor(() => {
 			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
 		});
@@ -262,14 +278,13 @@ describe("JobManagementPage", () => {
 
 	it("does not steal focus when '/' is pressed inside an input", async () => {
 		mockGetJobs.mockResolvedValue([]);
-		render(<JobManagementPage {...DEFAULT_PROPS} />);
+		renderPage();
 		await waitFor(() => {
 			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
 		});
 
 		const searchInput = screen.getByPlaceholderText(/Search company or role/);
 
-		// Simulate pressing "/" while focused on some other input
 		const otherInput = document.createElement("input");
 		document.body.appendChild(otherInput);
 		otherInput.focus();
@@ -282,7 +297,7 @@ describe("JobManagementPage", () => {
 
 	it("opens the add job dialog when 'Add Job' is clicked", async () => {
 		mockGetJobs.mockResolvedValue([]);
-		render(<JobManagementPage {...DEFAULT_PROPS} />);
+		renderPage();
 		await waitFor(() => {
 			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
 		});
@@ -291,6 +306,36 @@ describe("JobManagementPage", () => {
 		expect(
 			screen.getByRole("heading", { name: "Add Job" }),
 		).toBeInTheDocument();
+	});
+
+	describe("URL-based edit dialog", () => {
+		it("opens the edit dialog when navigated to /jobs/:jobId", async () => {
+			const job = makeJob({ id: 42, company: "DeepLink Co" });
+			mockGetJobs.mockResolvedValue([job]);
+
+			renderPage("/jobs/42");
+
+			await waitFor(() =>
+				expect(
+					screen.getByRole("heading", { name: "Edit Job" }),
+				).toBeInTheDocument(),
+			);
+		});
+
+		it("redirects to /jobs when the jobId in the URL does not exist", async () => {
+			mockGetJobs.mockResolvedValue([makeJob({ id: 1, company: "Acme" })]);
+
+			renderPage("/jobs/999");
+
+			// Dialog should not open; board renders instead
+			await waitFor(() =>
+				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+			);
+			expect(
+				screen.queryByRole("heading", { name: "Edit Job" }),
+			).not.toBeInTheDocument();
+			expect(screen.getByText("Acme")).toBeInTheDocument();
+		});
 	});
 
 	describe("status change", () => {
@@ -307,7 +352,7 @@ describe("JobManagementPage", () => {
 				ending_substatus: null,
 			});
 
-			render(<JobManagementPage {...DEFAULT_PROPS} />);
+			renderPage();
 			await waitFor(() => expect(MockKanbanBoard).toHaveBeenCalled());
 
 			const { onStatusChange } = MockKanbanBoard.mock.lastCall![0];
@@ -328,10 +373,10 @@ describe("JobManagementPage", () => {
 	describe("stats view", () => {
 		it("shows the stats page and hides the board when the Insights button is clicked", async () => {
 			mockGetJobs.mockResolvedValue([makeJob({ id: 1, company: "Acme" })]);
-			render(<JobManagementPage {...DEFAULT_PROPS} />);
+			renderPage();
 			await waitFor(() => expect(screen.getByText("Acme")).toBeInTheDocument());
 
-			fireEvent.click(screen.getByTitle("View stats"));
+			fireEvent.click(screen.getByRole("button", { name: "Stats" }));
 
 			expect(screen.getByTestId("stats-page")).toBeInTheDocument();
 			expect(screen.queryByText("Acme")).not.toBeInTheDocument();
@@ -339,7 +384,7 @@ describe("JobManagementPage", () => {
 
 		it("hides the filter strip when on the stats view", async () => {
 			mockGetJobs.mockResolvedValue([]);
-			render(<JobManagementPage {...DEFAULT_PROPS} />);
+			renderPage();
 			await waitFor(() =>
 				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
 			);
@@ -348,7 +393,7 @@ describe("JobManagementPage", () => {
 				screen.getByPlaceholderText(/Search company or role/),
 			).toBeInTheDocument();
 
-			fireEvent.click(screen.getByTitle("View stats"));
+			fireEvent.click(screen.getByRole("button", { name: "Stats" }));
 
 			expect(
 				screen.queryByPlaceholderText(/Search company or role/),
@@ -357,7 +402,7 @@ describe("JobManagementPage", () => {
 
 		it("hides the Add Job button when on the stats view", async () => {
 			mockGetJobs.mockResolvedValue([]);
-			render(<JobManagementPage {...DEFAULT_PROPS} />);
+			renderPage();
 			await waitFor(() =>
 				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
 			);
@@ -366,7 +411,7 @@ describe("JobManagementPage", () => {
 				screen.getByRole("button", { name: /Add Job/ }),
 			).toBeInTheDocument();
 
-			fireEvent.click(screen.getByTitle("View stats"));
+			fireEvent.click(screen.getByRole("button", { name: "Stats" }));
 
 			expect(
 				screen.queryByRole("button", { name: /Add Job/ }),
@@ -375,26 +420,35 @@ describe("JobManagementPage", () => {
 
 		it("returns to the board and shows Add Job when the board icon is clicked", async () => {
 			mockGetJobs.mockResolvedValue([]);
-			render(<JobManagementPage {...DEFAULT_PROPS} />);
+			renderPage();
 			await waitFor(() =>
 				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
 			);
 
-			fireEvent.click(screen.getByTitle("View stats"));
+			fireEvent.click(screen.getByRole("button", { name: "Stats" }));
 			expect(screen.getByTestId("stats-page")).toBeInTheDocument();
 
-			fireEvent.click(screen.getByTitle("View board"));
+			fireEvent.click(screen.getByRole("button", { name: "Board" }));
 			expect(screen.queryByTestId("stats-page")).not.toBeInTheDocument();
 			expect(
 				screen.getByRole("button", { name: /Add Job/ }),
 			).toBeInTheDocument();
+		});
+
+		it("renders the stats view directly when navigated to /stats", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			renderPage("/stats");
+			expect(screen.getByTestId("stats-page")).toBeInTheDocument();
+			expect(
+				screen.queryByPlaceholderText(/Search company or role/),
+			).not.toBeInTheDocument();
 		});
 	});
 
 	describe("user menu", () => {
 		it("opens a user menu when the avatar button is clicked", async () => {
 			mockGetJobs.mockResolvedValue([]);
-			render(<JobManagementPage {...DEFAULT_PROPS} />);
+			renderPage();
 			await waitFor(() => {
 				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
 			});
@@ -409,9 +463,7 @@ describe("JobManagementPage", () => {
 		it("calls onLogout when Sign Out is clicked", async () => {
 			const mockOnLogout = vi.fn();
 			mockGetJobs.mockResolvedValue([]);
-			render(
-				<JobManagementPage currentUser={MOCK_USER} onLogout={mockOnLogout} />,
-			);
+			renderPage("/jobs", mockOnLogout);
 			await waitFor(() => {
 				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
 			});

@@ -269,6 +269,86 @@ describe("getStats", () => {
 		});
 	});
 
+	describe("transitions", () => {
+		it("returns an empty array when there is no status history", () => {
+			insertJob(db, { user_id: USER_ID, status: "Not started" });
+			expect(getStats(db, USER_ID, "all").transitions).toEqual([]);
+		});
+
+		it("counts consecutive status transitions from job_status_history", () => {
+			insertJob(db, { user_id: USER_ID, status: "Phone screen" });
+			const jobId = (
+				db
+					.prepare("SELECT last_insert_rowid() as id")
+					.get() as { id: number }
+			).id;
+
+			db.prepare(
+				"INSERT INTO job_status_history (job_id, status, entered_at) VALUES (?, ?, ?)",
+			).run(jobId, "Not started", "2025-01-01T00:00:00Z");
+			db.prepare(
+				"INSERT INTO job_status_history (job_id, status, entered_at) VALUES (?, ?, ?)",
+			).run(jobId, "Resume submitted", "2025-01-02T00:00:00Z");
+			db.prepare(
+				"INSERT INTO job_status_history (job_id, status, entered_at) VALUES (?, ?, ?)",
+			).run(jobId, "Phone screen", "2025-01-05T00:00:00Z");
+
+			const transitions = getStats(db, USER_ID, "all").transitions;
+			expect(transitions).toEqual(
+				expect.arrayContaining([
+					{ from: "Not started", to: "Resume submitted", count: 1 },
+					{ from: "Resume submitted", to: "Phone screen", count: 1 },
+				]),
+			);
+			expect(transitions).toHaveLength(2);
+		});
+
+		it("excludes withdrawn jobs from transitions", () => {
+			insertJob(db, {
+				user_id: USER_ID,
+				status: "Rejected/Withdrawn",
+				ending_substatus: "Withdrawn",
+			});
+			const jobId = (
+				db
+					.prepare("SELECT last_insert_rowid() as id")
+					.get() as { id: number }
+			).id;
+
+			db.prepare(
+				"INSERT INTO job_status_history (job_id, status, entered_at) VALUES (?, ?, ?)",
+			).run(jobId, "Not started", "2025-01-01T00:00:00Z");
+			db.prepare(
+				"INSERT INTO job_status_history (job_id, status, entered_at) VALUES (?, ?, ?)",
+			).run(jobId, "Resume submitted", "2025-01-02T00:00:00Z");
+
+			expect(getStats(db, USER_ID, "all").transitions).toEqual([]);
+		});
+
+		it("infers the final transition from the last history row to the current status", () => {
+			// Job is currently at Rejected/Withdrawn but history only has Resume submitted
+			insertJob(db, {
+				user_id: USER_ID,
+				status: "Rejected/Withdrawn",
+				ending_substatus: "Ghosted",
+			});
+			const jobId = (
+				db
+					.prepare("SELECT last_insert_rowid() as id")
+					.get() as { id: number }
+			).id;
+
+			db.prepare(
+				"INSERT INTO job_status_history (job_id, status, entered_at) VALUES (?, ?, ?)",
+			).run(jobId, "Resume submitted", "2025-01-02T00:00:00Z");
+
+			const transitions = getStats(db, USER_ID, "all").transitions;
+			expect(transitions).toEqual([
+				{ from: "Resume submitted", to: "Rejected/Withdrawn", count: 1 },
+			]);
+		});
+	});
+
 	describe("window filter", () => {
 		beforeEach(() => {
 			// Recent job (today)

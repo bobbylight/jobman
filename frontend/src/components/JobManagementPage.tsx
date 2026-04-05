@@ -7,14 +7,8 @@ import React, {
 	useRef,
 } from "react";
 import {
-	AppBar,
-	Toolbar,
 	Button,
 	Box,
-	Avatar,
-	IconButton,
-	Menu,
-	MenuItem,
 	CircularProgress,
 	Snackbar,
 	Alert,
@@ -22,19 +16,14 @@ import {
 	TextField,
 	Chip,
 	Select,
+	MenuItem,
 	Divider,
-	ListItemIcon,
-	ListItemText,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import StarIcon from "@mui/icons-material/Star";
 import CloseIcon from "@mui/icons-material/Close";
-import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
-import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
-import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
-import InsightsIcon from "@mui/icons-material/Insights";
-import ViewKanbanOutlinedIcon from "@mui/icons-material/ViewKanbanOutlined";
+import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import type {
 	Job,
@@ -42,16 +31,13 @@ import type {
 	JobStatus,
 	FitScore,
 	EndingSubstatus,
-	User,
 } from "../types";
 import { FIT_SCORES, TERMINAL_STATUSES } from "../constants";
 import KanbanBoard from "./KanbanBoard";
 import JobDialog from "./JobDialog";
 import EndingStatusDialog from "./EndingStatusDialog";
-import StatsPage from "./StatsPage";
 
 type Severity = "success" | "error" | "info" | "warning";
-type View = "board" | "stats";
 
 // Minimum fit score filter: show jobs at or above this threshold
 // "Not sure" is excluded when any threshold is set
@@ -63,26 +49,21 @@ const MIN_FIT_SCORE_OPTIONS: { label: string; value: FitScore | null }[] = [
 	{ label: "Very High only", value: "Very High" },
 ];
 
-interface Props {
-	currentUser: User;
-	onLogout: () => void;
-}
+export default function JobManagementPage() {
+	const navigate = useNavigate();
+	const { jobId } = useParams<{ jobId?: string }>();
 
-export default function JobManagementPage({ currentUser, onLogout }: Props) {
-	const [currentView, setCurrentView] = useState<View>("board");
 	const [jobs, setJobs] = useState<Job[]>([]);
 	const [search, setSearch] = useState("");
 	const [favoritesOnly, setFavoritesOnly] = useState(false);
 	const [minFitScore, setMinFitScore] = useState<FitScore | null>(null);
 	const [hideWithdrawn, setHideWithdrawn] = useState(false);
 	const [loading, setLoading] = useState(true);
-	const [dialog, setDialog] = useState<{ open: boolean; job: Job | null }>({
-		open: false,
-		job: null,
-	});
-	const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(
-		null,
-	);
+
+	// "add" dialog is purely local; "edit" dialog is driven by the URL
+	const [addOpen, setAddOpen] = useState(false);
+	const [editJob, setEditJob] = useState<Job | null>(null);
+
 	const [pendingTerminalChange, setPendingTerminalChange] = useState<{
 		job: Job;
 		newStatus: JobStatus;
@@ -117,6 +98,22 @@ export default function JobManagementPage({ currentUser, onLogout }: Props) {
 		void loadJobs();
 	}, [loadJobs]);
 
+	// Sync the edit dialog with the URL param once jobs are loaded
+	useEffect(() => {
+		if (!jobId) {
+			setEditJob(null);
+			return;
+		}
+		if (loading) return;
+		const id = parseInt(jobId, 10);
+		const found = jobs.find((j) => j.id === id) ?? null;
+		if (!found) {
+			navigate("/jobs", { replace: true });
+			return;
+		}
+		setEditJob(found);
+	}, [jobId, jobs, loading, navigate]);
+
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
 			if (e.key !== "/") return;
@@ -134,21 +131,28 @@ export default function JobManagementPage({ currentUser, onLogout }: Props) {
 		return () => document.removeEventListener("keydown", onKeyDown);
 	}, []);
 
-	const openAdd = useCallback(() => setDialog({ open: true, job: null }), []);
+	const openAdd = useCallback(() => setAddOpen(true), []);
 	const openEdit = useCallback(
-		(job: Job) => setDialog({ open: true, job }),
-		[],
+		(job: Job) => navigate(`/jobs/${job.id}`),
+		[navigate],
 	);
-	const closeDialog = useCallback(
-		() => setDialog({ open: false, job: null }),
-		[],
-	);
+	const closeDialog = useCallback(() => {
+		if (addOpen) {
+			setAddOpen(false);
+		} else {
+			navigate("/jobs");
+		}
+	}, [addOpen, navigate]);
+
+	// The job being edited (null when in "add" mode)
+	const dialogJob = addOpen ? null : editJob;
+	const dialogOpen = addOpen || editJob !== null;
 
 	const handleSave = useCallback(
 		async (formData: JobFormData) => {
 			try {
-				if (dialog.job) {
-					const updated = await api.updateJob(dialog.job.id, formData);
+				if (dialogJob) {
+					const updated = await api.updateJob(dialogJob.id, formData);
 					setJobs((prev) =>
 						prev.map((j) => (j.id === updated.id ? updated : j)),
 					);
@@ -163,7 +167,7 @@ export default function JobManagementPage({ currentUser, onLogout }: Props) {
 				notify("Failed to save job", "error");
 			}
 		},
-		[dialog.job, closeDialog],
+		[dialogJob, closeDialog],
 	);
 
 	const handleDelete = useCallback(
@@ -283,245 +287,157 @@ export default function JobManagementPage({ currentUser, onLogout }: Props) {
 
 	return (
 		<>
-			<AppBar position="sticky">
-				<Toolbar sx={{ gap: 1, minHeight: "56px !important" }}>
-					<Box
-						component="img"
-						src="/img/logo.svg"
-						alt="JobMan"
-						sx={{ height: 52 }}
-					/>
-					<Box sx={{ flexGrow: 1 }} />
-					{currentView === "board" && (
-						<Button
-							variant="contained"
-							startIcon={<AddIcon />}
-							onClick={openAdd}
-						>
-							Add Job
-						</Button>
-					)}
-					<IconButton
-						onClick={() =>
-							setCurrentView((v) => (v === "board" ? "stats" : "board"))
-						}
-						size="small"
-						title={currentView === "board" ? "View stats" : "View board"}
-						sx={{ color: "text.secondary" }}
-					>
-						{currentView === "board" ? (
-							<InsightsIcon />
-						) : (
-							<ViewKanbanOutlinedIcon />
-						)}
-					</IconButton>
-					<IconButton
-						onClick={(e) => setUserMenuAnchor(e.currentTarget)}
-						size="small"
-						sx={{ p: 0 }}
-					>
-						<Avatar
-							src={currentUser.avatarUrl ?? undefined}
-							alt={currentUser.displayName ?? currentUser.email}
-							sx={{ width: 32, height: 32 }}
-						/>
-					</IconButton>
-					<Menu
-						anchorEl={userMenuAnchor}
-						open={Boolean(userMenuAnchor)}
-						onClose={() => setUserMenuAnchor(null)}
-						anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-						transformOrigin={{ vertical: "top", horizontal: "right" }}
-						slotProps={{ paper: { sx: { mt: 0.5, minWidth: 160 } } }}
-					>
-						<MenuItem onClick={() => setUserMenuAnchor(null)}>
-							<ListItemIcon>
-								<AccountCircleOutlinedIcon fontSize="small" />
-							</ListItemIcon>
-							<ListItemText>View Profile</ListItemText>
-						</MenuItem>
-						<MenuItem onClick={() => setUserMenuAnchor(null)}>
-							<ListItemIcon>
-								<SettingsOutlinedIcon fontSize="small" />
-							</ListItemIcon>
-							<ListItemText>Settings</ListItemText>
-						</MenuItem>
-						<Divider />
-						<MenuItem
-							onClick={() => {
-								setUserMenuAnchor(null);
-								onLogout();
-							}}
-						>
-							<ListItemIcon>
-								<LogoutOutlinedIcon fontSize="small" />
-							</ListItemIcon>
-							<ListItemText>Sign Out</ListItemText>
-						</MenuItem>
-					</Menu>
-				</Toolbar>
+			{/* Board toolbar: Add Job button + filters */}
+			<Box
+				sx={{
+					position: "sticky",
+					top: 56,
+					zIndex: (theme) => theme.zIndex.appBar - 1,
+					bgcolor: "primary.main",
+					px: 2,
+					py: 0.5,
+					display: "flex",
+					gap: 1,
+					alignItems: "center",
+					flexWrap: "wrap",
+					borderTop: "1px solid rgba(99,102,241,0.15)",
+				}}
+			>
+				<Button variant="contained" startIcon={<AddIcon />} onClick={openAdd}>
+					Add Job
+				</Button>
 
-				{/* Filter strip — only shown on board view */}
-				{currentView === "board" && (
-					<Box
-						sx={{
-							px: 2,
-							py: 0.5,
-							display: "flex",
-							gap: 1,
-							alignItems: "center",
-							flexWrap: "wrap",
-							borderTop: "1px solid rgba(99,102,241,0.15)",
-						}}
-					>
-						<TextField
-							placeholder="Search company or role… ( / )"
-							size="small"
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							slotProps={{
-								input: {
-									inputRef: searchRef,
-									startAdornment: (
-										<InputAdornment position="start">
-											<SearchIcon
-												fontSize="small"
-												sx={{ color: "text.disabled" }}
-											/>
-										</InputAdornment>
-									),
-								},
-							}}
-							sx={{
-								width: 280,
-								"& .MuiOutlinedInput-root": {
-									bgcolor: "rgba(255,255,255,0.7)",
-									borderRadius: 2,
-								},
-							}}
-						/>
+				<Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
 
+				<TextField
+					placeholder="Search company or role… ( / )"
+					size="small"
+					value={search}
+					onChange={(e) => setSearch(e.target.value)}
+					slotProps={{
+						input: {
+							inputRef: searchRef,
+							startAdornment: (
+								<InputAdornment position="start">
+									<SearchIcon
+										fontSize="small"
+										sx={{ color: "text.disabled" }}
+									/>
+								</InputAdornment>
+							),
+						},
+					}}
+					sx={{
+						width: 280,
+						"& .MuiOutlinedInput-root": {
+							bgcolor: "rgba(255,255,255,0.7)",
+							borderRadius: 2,
+						},
+					}}
+				/>
+
+				<Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
+
+				<Chip
+					icon={<StarIcon fontSize="small" />}
+					label="Favorites"
+					onClick={() => setFavoritesOnly((v) => !v)}
+					color={favoritesOnly ? "warning" : "default"}
+					variant={favoritesOnly ? "filled" : "outlined"}
+					sx={{
+						fontWeight: 500,
+						bgcolor: favoritesOnly ? undefined : "rgba(255,255,255,0.7)",
+					}}
+				/>
+
+				<Select
+					size="small"
+					value={minFitScore ?? ""}
+					onChange={(e) => setMinFitScore((e.target.value as FitScore) || null)}
+					displayEmpty
+					renderValue={(val) =>
+						val
+							? (MIN_FIT_SCORE_OPTIONS.find((o) => o.value === val)?.label ??
+								"Fit score")
+							: "Fit score"
+					}
+					sx={{
+						height: 32,
+						bgcolor: minFitScore ? "primary.main" : "rgba(255,255,255,0.7)",
+						color: minFitScore ? "primary.contrastText" : "text.primary",
+						borderRadius: "16px",
+						fontWeight: 500,
+						fontSize: "0.8125rem",
+						"& .MuiSelect-icon": {
+							color: minFitScore ? "primary.contrastText" : "action.active",
+						},
+						"& .MuiOutlinedInput-notchedOutline": {
+							borderColor: minFitScore ? "primary.main" : "rgba(0,0,0,0.23)",
+						},
+						"&:hover .MuiOutlinedInput-notchedOutline": {
+							borderColor: minFitScore ? "primary.dark" : "rgba(0,0,0,0.87)",
+						},
+						minWidth: 120,
+					}}
+				>
+					{MIN_FIT_SCORE_OPTIONS.map(({ label, value }) => (
+						<MenuItem key={label} value={value ?? ""}>
+							{label}
+						</MenuItem>
+					))}
+				</Select>
+
+				<Chip
+					label="Hide Withdrawn"
+					onClick={() => setHideWithdrawn((v) => !v)}
+					color={hideWithdrawn ? "primary" : "default"}
+					variant={hideWithdrawn ? "filled" : "outlined"}
+					sx={{
+						fontWeight: 500,
+						bgcolor: hideWithdrawn ? undefined : "rgba(255,255,255,0.7)",
+					}}
+				/>
+
+				{hasAnyFilter && (
+					<>
 						<Divider
 							orientation="vertical"
 							flexItem
 							sx={{ mx: 0.5, my: 0.5 }}
 						/>
-
 						<Chip
-							icon={<StarIcon fontSize="small" />}
-							label="Favorites"
-							onClick={() => setFavoritesOnly((v) => !v)}
-							color={favoritesOnly ? "warning" : "default"}
-							variant={favoritesOnly ? "filled" : "outlined"}
-							sx={{
-								fontWeight: 500,
-								bgcolor: favoritesOnly ? undefined : "rgba(255,255,255,0.7)",
-							}}
-						/>
-
-						<Select
+							icon={<CloseIcon fontSize="small" />}
+							label="Clear"
+							onClick={clearFilters}
 							size="small"
-							value={minFitScore ?? ""}
-							onChange={(e) =>
-								setMinFitScore((e.target.value as FitScore) || null)
-							}
-							displayEmpty
-							renderValue={(val) =>
-								val
-									? (MIN_FIT_SCORE_OPTIONS.find((o) => o.value === val)
-											?.label ?? "Fit score")
-									: "Fit score"
-							}
-							sx={{
-								height: 32,
-								bgcolor: minFitScore ? "primary.main" : "rgba(255,255,255,0.7)",
-								color: minFitScore ? "primary.contrastText" : "text.primary",
-								borderRadius: "16px",
-								fontWeight: 500,
-								fontSize: "0.8125rem",
-								"& .MuiSelect-icon": {
-									color: minFitScore ? "primary.contrastText" : "action.active",
-								},
-								"& .MuiOutlinedInput-notchedOutline": {
-									borderColor: minFitScore
-										? "primary.main"
-										: "rgba(0,0,0,0.23)",
-								},
-								"&:hover .MuiOutlinedInput-notchedOutline": {
-									borderColor: minFitScore
-										? "primary.dark"
-										: "rgba(0,0,0,0.87)",
-								},
-								minWidth: 120,
-							}}
-						>
-							{MIN_FIT_SCORE_OPTIONS.map(({ label, value }) => (
-								<MenuItem key={label} value={value ?? ""}>
-									{label}
-								</MenuItem>
-							))}
-						</Select>
-
-						<Chip
-							label="Hide Withdrawn"
-							onClick={() => setHideWithdrawn((v) => !v)}
-							color={hideWithdrawn ? "primary" : "default"}
-							variant={hideWithdrawn ? "filled" : "outlined"}
-							sx={{
-								fontWeight: 500,
-								bgcolor: hideWithdrawn ? undefined : "rgba(255,255,255,0.7)",
-							}}
+							sx={{ fontWeight: 500, bgcolor: "rgba(255,255,255,0.7)" }}
 						/>
-
-						{hasAnyFilter && (
-							<>
-								<Divider
-									orientation="vertical"
-									flexItem
-									sx={{ mx: 0.5, my: 0.5 }}
-								/>
-								<Chip
-									icon={<CloseIcon fontSize="small" />}
-									label="Clear"
-									onClick={clearFilters}
-									size="small"
-									sx={{ fontWeight: 500, bgcolor: "rgba(255,255,255,0.7)" }}
-								/>
-							</>
-						)}
-					</Box>
+					</>
 				)}
-			</AppBar>
+			</Box>
 
-			<Box
-				sx={{
-					bgcolor: "background.default",
-					minHeight: "calc(100vh - 64px)",
-					pt: currentView === "board" ? 3 : 0,
-				}}
-			>
-				{currentView === "stats" ? (
-					<StatsPage />
-				) : loading ? (
-					<Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-						<CircularProgress />
-					</Box>
-				) : (
+			{/* Board content */}
+			{loading ? (
+				<Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
+					<CircularProgress />
+				</Box>
+			) : (
+				<Box sx={{ pt: 3 }}>
 					<KanbanBoard
 						jobs={filteredJobs}
 						onStatusChange={handleStatusChange}
 						onCardClick={openEdit}
 						onToggleFavorite={handleToggleFavorite}
 					/>
-				)}
-			</Box>
+				</Box>
+			)}
 
 			<JobDialog
-				open={dialog.open}
+				open={dialogOpen}
 				onClose={closeDialog}
 				onSave={handleSave}
 				onDelete={handleDelete}
-				initialValues={dialog.job}
+				initialValues={dialogJob}
 			/>
 
 			<EndingStatusDialog
