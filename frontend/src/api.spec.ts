@@ -410,6 +410,7 @@ describe("api", () => {
 			byStatus: [{ status: "Not started", count: 2 }],
 			applicationsByWeek: [],
 			avgDaysPerStage: [],
+			transitions: [],
 		};
 
 		it("GETs /api/stats?window=all and returns the stats", async () => {

@@ -9,6 +9,8 @@ export interface StatsResponse {
 	byStatus: { status: string; count: number }[];
 	applicationsByWeek: { week: string; count: number }[];
 	avgDaysPerStage: { stage: string; avgDays: number }[];
+	/** Consecutive status transitions for the Sankey chart. */
+	transitions: { from: string; to: string; count: number }[];
 }
 
 type Window = "all" | "90" | "30";
@@ -102,7 +104,7 @@ export function getStats(
 	const avgDaysPerStage = db
 		.prepare(
 			`WITH job_filter AS (
-        SELECT id FROM jobs
+        SELECT id, status AS current_status, updated_at FROM jobs
         WHERE user_id = ?
           AND (ending_substatus IS NULL OR ending_substatus <> 'Withdrawn')
           ${df}
@@ -112,7 +114,15 @@ export function getStats(
           h.job_id,
           h.status,
           h.entered_at,
-          MIN(h2.entered_at) AS next_entered_at
+          COALESCE(
+            MIN(h2.entered_at),
+            -- No next history row: use updated_at if status has since changed,
+            -- or now() if the job is still in this stage.
+            CASE WHEN jf.current_status <> h.status
+                 THEN jf.updated_at
+                 ELSE strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+            END
+          ) AS next_entered_at
         FROM job_status_history h
         JOIN job_filter jf ON h.job_id = jf.id
         LEFT JOIN job_status_history h2
@@ -124,7 +134,7 @@ export function getStats(
         ROUND(AVG(julianday(next_entered_at) - julianday(entered_at)), 1) AS avgDays
       FROM consecutive
       WHERE next_entered_at IS NOT NULL
-        AND julianday(next_entered_at) - julianday(entered_at) >= 0
+        AND julianday(next_entered_at) - julianday(entered_at) > 0
       GROUP BY status
       ORDER BY MIN(CASE status
         WHEN 'Not started'       THEN 1
@@ -138,6 +148,38 @@ export function getStats(
 		)
 		.all(userId) as { stage: string; avgDays: number }[];
 
+	const transitions = db
+		.prepare(
+			`WITH job_filter AS (
+        SELECT id, status AS current_status FROM jobs
+        WHERE user_id = ?
+          AND (ending_substatus IS NULL OR ending_substatus <> 'Withdrawn')
+          ${df}
+      ),
+      -- Pair each history row with the next history row for the same job
+      consecutive AS (
+        SELECT
+          h.job_id,
+          h.status AS from_status,
+          COALESCE(
+            (SELECT h2.status FROM job_status_history h2
+             WHERE h2.job_id = h.job_id AND h2.entered_at > h.entered_at
+             ORDER BY h2.entered_at LIMIT 1),
+            -- If there is no next history row and the job's current status
+            -- differs from this row, treat the current status as the target.
+            CASE WHEN jf.current_status <> h.status
+                 THEN jf.current_status END
+          ) AS to_status
+        FROM job_status_history h
+        JOIN job_filter jf ON h.job_id = jf.id
+      )
+      SELECT from_status AS "from", to_status AS "to", COUNT(*) AS count
+      FROM consecutive
+      WHERE to_status IS NOT NULL
+      GROUP BY from_status, to_status`,
+		)
+		.all(userId) as { from: string; to: string; count: number }[];
+
 	return {
 		totalApplications: total,
 		activePipeline: active,
@@ -146,5 +188,6 @@ export function getStats(
 		byStatus,
 		applicationsByWeek,
 		avgDaysPerStage,
+		transitions,
 	};
 }

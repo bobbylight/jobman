@@ -30,6 +30,7 @@ const BASE_STATS: StatsResponse = {
 	byStatus: [{ status: "Not started", count: 4 }],
 	applicationsByWeek: [],
 	avgDaysPerStage: [],
+	transitions: [],
 };
 
 describe("StatsPage", () => {

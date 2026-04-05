@@ -110,7 +110,7 @@ export default function StatsPage() {
 								>
 									Pipeline Funnel
 								</Typography>
-								<PipelineFunnelChart byStatus={data.byStatus} />
+								<PipelineFunnelChart transitions={data.transitions} />
 							</CardContent>
 						</Card>
 						<Card sx={{ flex: "1 1 340px" }}>

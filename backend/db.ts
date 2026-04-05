@@ -94,9 +94,23 @@ db.exec(`
 // jobs that don't yet have any history entries for a given status.
 db.exec(`
   INSERT INTO job_status_history (job_id, status, entered_at)
+  SELECT j.id, 'Not started',
+    COALESCE(
+      -- Place 1 second before the earliest existing history entry so ordering is correct
+      (SELECT datetime(MIN(h.entered_at), '-1 second') FROM job_status_history h WHERE h.job_id = j.id),
+      j.created_at
+    )
+  FROM jobs j
+  WHERE NOT EXISTS (
+    SELECT 1 FROM job_status_history h
+    WHERE h.job_id = j.id AND h.status = 'Not started'
+  );
+
+  INSERT INTO job_status_history (job_id, status, entered_at)
   SELECT j.id, 'Resume submitted', j.date_applied
   FROM jobs j
   WHERE j.date_applied IS NOT NULL
+    AND j.status <> 'Not started'
     AND NOT EXISTS (
       SELECT 1 FROM job_status_history h
       WHERE h.job_id = j.id AND h.status = 'Resume submitted'
@@ -118,6 +132,29 @@ db.exec(`
     AND NOT EXISTS (
       SELECT 1 FROM job_status_history h
       WHERE h.job_id = j.id AND h.status = 'Interviewing'
+    );
+
+  -- Fix any 'Not started' rows whose timestamp isn't before all other entries
+  UPDATE job_status_history
+  SET entered_at = (
+    SELECT datetime(MIN(h2.entered_at), '-1 second')
+    FROM job_status_history h2
+    WHERE h2.job_id = job_status_history.job_id
+      AND h2.id <> job_status_history.id
+  )
+  WHERE status = 'Not started'
+    AND entered_at >= (
+      SELECT MIN(h2.entered_at)
+      FROM job_status_history h2
+      WHERE h2.job_id = job_status_history.job_id
+        AND h2.status <> 'Not started'
+    );
+
+  -- Remove spurious 'Resume submitted' backfill entries for jobs still in 'Not started'
+  DELETE FROM job_status_history
+  WHERE status = 'Resume submitted'
+    AND job_id IN (
+      SELECT id FROM jobs WHERE status = 'Not started'
     );
 `);
 

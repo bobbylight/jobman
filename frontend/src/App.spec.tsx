@@ -19,7 +19,7 @@ vi.mock("./api", () => ({
 	},
 }));
 
-vi.mock("./components/JobManagementPage", () => ({
+vi.mock("./components/AppShell", () => ({
 	default: ({
 		currentUser,
 		onLogout,
