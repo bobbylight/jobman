@@ -409,6 +409,7 @@ describe("api", () => {
 			responseRate: 0.6,
 			byStatus: [{ status: "Not started", count: 2 }],
 			applicationsByWeek: [],
+			avgDaysPerStage: [],
 		};
 
 		it("GETs /api/stats?window=all and returns the stats", async () => {

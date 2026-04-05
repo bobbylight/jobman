@@ -13,6 +13,7 @@ import StatusDonutChart from "./stats/StatusDonutChart";
 import PipelineFunnelChart from "./stats/PipelineFunnelChart";
 import ApplicationsOverTime from "./stats/ApplicationsOverTime";
 import LookbackToggle from "./stats/LookbackToggle";
+import AvgDaysChart from "./stats/AvgDaysChart";
 
 function formatPercent(rate: number | null): string {
 	if (rate === null) return "—";
@@ -126,23 +127,44 @@ export default function StatsPage() {
 						</Card>
 					</Box>
 
-					{/* Charts row 2: Applications Over Time (not shown for 30-day window) */}
-					{window !== "30" && (
-						<Card>
+					{/* Charts row 2: Avg Days Per Stage + Applications Over Time */}
+					<Box
+						sx={{
+							display: "flex",
+							gap: 2,
+							flexWrap: "wrap",
+							alignItems: "flex-start",
+						}}
+					>
+						<Card sx={{ flex: "1 1 340px" }}>
 							<CardContent>
 								<Typography
 									variant="subtitle2"
 									color="text.secondary"
 									gutterBottom
 								>
-									Applications Over Time
+									Avg. Days Per Stage
 								</Typography>
-								<ApplicationsOverTime
-									applicationsByWeek={data.applicationsByWeek}
-								/>
+								<AvgDaysChart avgDaysPerStage={data.avgDaysPerStage} />
 							</CardContent>
 						</Card>
-					)}
+						{window !== "30" && (
+							<Card sx={{ flex: "1 1 340px" }}>
+								<CardContent>
+									<Typography
+										variant="subtitle2"
+										color="text.secondary"
+										gutterBottom
+									>
+										Applications Over Time
+									</Typography>
+									<ApplicationsOverTime
+										applicationsByWeek={data.applicationsByWeek}
+									/>
+								</CardContent>
+							</Card>
+						)}
+					</Box>
 				</>
 			) : null}
 		</Box>

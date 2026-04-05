@@ -78,6 +78,47 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_interview_questions_interview_id
     ON interview_questions(interview_id);
+
+  CREATE TABLE IF NOT EXISTS job_status_history (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_id     INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    status     TEXT NOT NULL,
+    entered_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_job_status_history_job_id
+    ON job_status_history(job_id);
+`);
+
+// One-time backfill: synthesise history rows from existing date columns for
+// jobs that don't yet have any history entries for a given status.
+db.exec(`
+  INSERT INTO job_status_history (job_id, status, entered_at)
+  SELECT j.id, 'Resume submitted', j.date_applied
+  FROM jobs j
+  WHERE j.date_applied IS NOT NULL
+    AND NOT EXISTS (
+      SELECT 1 FROM job_status_history h
+      WHERE h.job_id = j.id AND h.status = 'Resume submitted'
+    );
+
+  INSERT INTO job_status_history (job_id, status, entered_at)
+  SELECT j.id, 'Phone screen', j.date_phone_screen
+  FROM jobs j
+  WHERE j.date_phone_screen IS NOT NULL
+    AND NOT EXISTS (
+      SELECT 1 FROM job_status_history h
+      WHERE h.job_id = j.id AND h.status = 'Phone screen'
+    );
+
+  INSERT INTO job_status_history (job_id, status, entered_at)
+  SELECT j.id, 'Interviewing', j.date_last_onsite
+  FROM jobs j
+  WHERE j.date_last_onsite IS NOT NULL
+    AND NOT EXISTS (
+      SELECT 1 FROM job_status_history h
+      WHERE h.job_id = j.id AND h.status = 'Interviewing'
+    );
 `);
 
 export default db;
