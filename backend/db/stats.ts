@@ -8,6 +8,7 @@ export interface StatsResponse {
 	responseRate: number | null;
 	byStatus: { status: string; count: number }[];
 	applicationsByWeek: { week: string; count: number }[];
+	avgDaysPerStage: { stage: string; avgDays: number }[];
 }
 
 type Window = "all" | "90" | "30";
@@ -98,6 +99,45 @@ export function getStats(
 		)
 		.all(userId) as { week: string; count: number }[];
 
+	const avgDaysPerStage = db
+		.prepare(
+			`WITH job_filter AS (
+        SELECT id FROM jobs
+        WHERE user_id = ?
+          AND (ending_substatus IS NULL OR ending_substatus <> 'Withdrawn')
+          ${df}
+      ),
+      consecutive AS (
+        SELECT
+          h.job_id,
+          h.status,
+          h.entered_at,
+          MIN(h2.entered_at) AS next_entered_at
+        FROM job_status_history h
+        JOIN job_filter jf ON h.job_id = jf.id
+        LEFT JOIN job_status_history h2
+          ON h2.job_id = h.job_id AND h2.entered_at > h.entered_at
+        GROUP BY h.id
+      )
+      SELECT
+        status AS stage,
+        ROUND(AVG(julianday(next_entered_at) - julianday(entered_at)), 1) AS avgDays
+      FROM consecutive
+      WHERE next_entered_at IS NOT NULL
+        AND julianday(next_entered_at) - julianday(entered_at) >= 0
+      GROUP BY status
+      ORDER BY MIN(CASE status
+        WHEN 'Not started'       THEN 1
+        WHEN 'Resume submitted'  THEN 2
+        WHEN 'Phone screen'      THEN 3
+        WHEN 'Interviewing'      THEN 4
+        WHEN 'Offer!'            THEN 5
+        WHEN 'Rejected/Withdrawn' THEN 6
+        ELSE 7
+      END)`,
+		)
+		.all(userId) as { stage: string; avgDays: number }[];
+
 	return {
 		totalApplications: total,
 		activePipeline: active,
@@ -105,5 +145,6 @@ export function getStats(
 		responseRate,
 		byStatus,
 		applicationsByWeek,
+		avgDaysPerStage,
 	};
 }

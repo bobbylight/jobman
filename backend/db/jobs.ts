@@ -86,34 +86,41 @@ export function createJob(
 	db: Database.Database,
 	data: JobCreateData,
 ): Job {
-	const result = db
-		.prepare(
-			`INSERT INTO jobs (user_id, date_applied, company, role, link, salary, fit_score,
-        referred_by, status, recruiter, notes, job_description, ending_substatus,
-        date_phone_screen, date_last_onsite, favorite)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		)
-		.run(
-			data.user_id,
-			data.date_applied,
-			data.company,
-			data.role,
-			data.link,
-			data.salary,
-			data.fit_score,
-			data.referred_by,
-			data.status,
-			data.recruiter,
-			data.notes,
-			data.job_description,
-			data.ending_substatus,
-			data.date_phone_screen,
-			data.date_last_onsite,
-			data.favorite ? 1 : 0,
+	return db.transaction(() => {
+		const result = db
+			.prepare(
+				`INSERT INTO jobs (user_id, date_applied, company, role, link, salary, fit_score,
+          referred_by, status, recruiter, notes, job_description, ending_substatus,
+          date_phone_screen, date_last_onsite, favorite)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			)
+			.run(
+				data.user_id,
+				data.date_applied,
+				data.company,
+				data.role,
+				data.link,
+				data.salary,
+				data.fit_score,
+				data.referred_by,
+				data.status,
+				data.recruiter,
+				data.notes,
+				data.job_description,
+				data.ending_substatus,
+				data.date_phone_screen,
+				data.date_last_onsite,
+				data.favorite ? 1 : 0,
+			);
+		db.prepare(
+			"INSERT INTO job_status_history (job_id, status) VALUES (?, ?)",
+		).run(result.lastInsertRowid, data.status);
+		return toClient(
+			db
+				.prepare("SELECT * FROM jobs WHERE id = ?")
+				.get(result.lastInsertRowid),
 		);
-	return toClient(
-		db.prepare("SELECT * FROM jobs WHERE id = ?").get(result.lastInsertRowid),
-	);
+	})();
 }
 
 export function updateJob(
@@ -122,37 +129,51 @@ export function updateJob(
 	userId: number,
 	data: JobUpdateData,
 ): Job | null {
-	const info = db
-		.prepare(
-			`UPDATE jobs SET
-        date_applied = ?, company = ?, role = ?, link = ?, salary = ?,
-        fit_score = ?, referred_by = ?, status = ?, recruiter = ?, notes = ?,
-        job_description = ?, ending_substatus = ?, date_phone_screen = ?,
-        date_last_onsite = ?, favorite = ?
-      WHERE id = ? AND user_id = ?`,
-		)
-		.run(
-			data.date_applied,
-			data.company,
-			data.role,
-			data.link,
-			data.salary,
-			data.fit_score,
-			data.referred_by,
-			data.status,
-			data.recruiter,
-			data.notes,
-			data.job_description,
-			data.ending_substatus,
-			data.date_phone_screen,
-			data.date_last_onsite,
-			data.favorite ? 1 : 0,
-			jobId,
-			userId,
-		);
-	if (info.changes === 0) return null;
-	// Fresh SELECT picks up the updated_at trigger value
-	return toClient(db.prepare("SELECT * FROM jobs WHERE id = ?").get(jobId));
+	return db.transaction(() => {
+		const current = db
+			.prepare("SELECT status FROM jobs WHERE id = ? AND user_id = ?")
+			.get(jobId, userId) as { status: string } | undefined;
+		if (!current) return null;
+
+		const info = db
+			.prepare(
+				`UPDATE jobs SET
+          date_applied = ?, company = ?, role = ?, link = ?, salary = ?,
+          fit_score = ?, referred_by = ?, status = ?, recruiter = ?, notes = ?,
+          job_description = ?, ending_substatus = ?, date_phone_screen = ?,
+          date_last_onsite = ?, favorite = ?
+        WHERE id = ? AND user_id = ?`,
+			)
+			.run(
+				data.date_applied,
+				data.company,
+				data.role,
+				data.link,
+				data.salary,
+				data.fit_score,
+				data.referred_by,
+				data.status,
+				data.recruiter,
+				data.notes,
+				data.job_description,
+				data.ending_substatus,
+				data.date_phone_screen,
+				data.date_last_onsite,
+				data.favorite ? 1 : 0,
+				jobId,
+				userId,
+			);
+		if (info.changes === 0) return null;
+
+		if (current.status !== data.status) {
+			db.prepare(
+				"INSERT INTO job_status_history (job_id, status) VALUES (?, ?)",
+			).run(jobId, data.status);
+		}
+
+		// Fresh SELECT picks up the updated_at trigger value
+		return toClient(db.prepare("SELECT * FROM jobs WHERE id = ?").get(jobId));
+	})();
 }
 
 export function deleteJob(

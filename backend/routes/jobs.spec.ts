@@ -38,6 +38,12 @@ const SCHEMA = `
     date_phone_screen TEXT,
     date_last_onsite TEXT
   );
+  CREATE TABLE IF NOT EXISTS job_status_history (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_id     INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    status     TEXT NOT NULL,
+    entered_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+  );
   CREATE TABLE IF NOT EXISTS interviews (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     job_id INTEGER NOT NULL,

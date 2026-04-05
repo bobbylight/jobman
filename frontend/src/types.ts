@@ -98,4 +98,5 @@ export interface StatsResponse {
 	responseRate: number | null;
 	byStatus: { status: string; count: number }[];
 	applicationsByWeek: { week: string; count: number }[];
+	avgDaysPerStage: { stage: string; avgDays: number }[];
 }
