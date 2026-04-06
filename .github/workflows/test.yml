@@ -35,3 +35,19 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Upload frontend coverage to codecov
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          files: ./frontend/coverage/lcov.info
+          flags: frontend
+
+      - name: Upload backend coverage to codecov
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          files: ./backend/coverage/lcov.info
+          flags: backend
