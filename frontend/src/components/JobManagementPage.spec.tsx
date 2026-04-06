@@ -453,7 +453,7 @@ describe("JobManagementPage", () => {
 				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
 			});
 
-			fireEvent.click(screen.getByRole("button", { name: "Test User" }));
+			fireEvent.click(screen.getByRole("button", { name: "User menu" }));
 
 			expect(screen.getByText("View Profile")).toBeInTheDocument();
 			expect(screen.getByText("Settings")).toBeInTheDocument();
@@ -468,7 +468,7 @@ describe("JobManagementPage", () => {
 				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
 			});
 
-			fireEvent.click(screen.getByRole("button", { name: "Test User" }));
+			fireEvent.click(screen.getByRole("button", { name: "User menu" }));
 			fireEvent.click(screen.getByText("Sign Out"));
 
 			expect(mockOnLogout).toHaveBeenCalledOnce();

@@ -52,6 +52,7 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 						onClick={(e) => setUserMenuAnchor(e.currentTarget)}
 						size="small"
 						sx={{ p: 0 }}
+						aria-label="User menu"
 					>
 						<Avatar
 							src={currentUser.avatarUrl ?? undefined}
@@ -95,7 +96,13 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 				</Toolbar>
 			</AppBar>
 
-			<Box sx={{ display: "flex", minHeight: "calc(100vh - 56px)" }}>
+			<Box
+				sx={{
+					display: "flex",
+					height: "calc(100vh - 56px)",
+					overflow: "hidden",
+				}}
+			>
 				{/* Navigation Rail */}
 				<Box
 					component="nav"
@@ -139,7 +146,14 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 				</Box>
 
 				{/* Page content */}
-				<Box sx={{ flex: 1, bgcolor: "background.default", minWidth: 0 }}>
+				<Box
+					sx={{
+						flex: 1,
+						bgcolor: "background.default",
+						minWidth: 0,
+						overflowY: "auto",
+					}}
+				>
 					<Outlet />
 				</Box>
 			</Box>

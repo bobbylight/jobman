@@ -291,7 +291,7 @@ export default function JobManagementPage() {
 			<Box
 				sx={{
 					position: "sticky",
-					top: 56,
+					top: 0,
 					zIndex: (theme) => theme.zIndex.appBar - 1,
 					bgcolor: "primary.main",
 					px: 2,
