@@ -20,6 +20,15 @@ vi.mock("../api", () => ({
 }));
 
 vi.mock("./KanbanBoard", () => ({ default: vi.fn() }));
+vi.mock("./CompanyLogo", () => ({
+	default: ({ company }: { company: string }) => (
+		<span
+			data-testid="company-logo"
+			data-company={company}
+			aria-hidden="true"
+		/>
+	),
+}));
 vi.mock("./StatsPage", () => ({
 	default: vi.fn(() => <div data-testid="stats-page" />),
 }));
@@ -317,7 +326,7 @@ describe("JobManagementPage", () => {
 
 			await waitFor(() =>
 				expect(
-					screen.getByRole("heading", { name: "Edit Job" }),
+					screen.getByRole("heading", { name: "DeepLink Co - Engineer" }),
 				).toBeInTheDocument(),
 			);
 		});

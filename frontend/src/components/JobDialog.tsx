@@ -29,6 +29,7 @@ import {
 	ENDING_SUBSTATUSES,
 	TERMINAL_STATUSES,
 } from "../constants";
+import CompanyLogo from "./CompanyLogo";
 import MarkdownField from "./MarkdownField";
 import type {
 	Job,
@@ -168,8 +169,35 @@ export default function JobDialog({
 						justifyContent: "space-between",
 					}}
 				>
-					{isEdit ? "Edit Job" : "Add Job"}
-					<Box sx={{ display: "flex", alignItems: "center" }}>
+					{isEdit ? (
+						<Box
+							sx={{
+								display: "flex",
+								alignItems: "center",
+								gap: 1,
+								minWidth: 0,
+								flex: 1,
+								mr: 1,
+							}}
+						>
+							{form.company && <CompanyLogo company={form.company} size={24} />}
+							<Typography
+								component="span"
+								noWrap
+								sx={{
+									fontSize: "inherit",
+									fontWeight: "inherit",
+									lineHeight: "inherit",
+								}}
+							>
+								{form.company}
+								{form.role ? ` - ${form.role}` : ""}
+							</Typography>
+						</Box>
+					) : (
+						"Add Job"
+					)}
+					<Box sx={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
 						<Tooltip title={form.favorite ? "Unfavorite" : "Favorite"}>
 							<IconButton
 								size="small"

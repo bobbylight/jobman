@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import { STATUS_COLORS } from "../../constants";
 import type { JobStatus } from "../../types";
+import CompanyLogo from "../CompanyLogo";
 
 interface TopCompany {
 	company: string;
@@ -55,9 +56,12 @@ export default function TopCompaniesTable({ topCompanies }: Props) {
 				{topCompanies.map((row) => (
 					<TableRow key={row.company}>
 						<TableCell>
-							<Typography variant="body2" fontWeight={500}>
-								{row.company}
-							</Typography>
+							<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+								<CompanyLogo company={row.company} />
+								<Typography variant="body2" fontWeight={500}>
+									{row.company}
+								</Typography>
+							</Box>
 						</TableCell>
 						<TableCell align="center">{row.applications}</TableCell>
 						<TableCell align="center">{row.active}</TableCell>
