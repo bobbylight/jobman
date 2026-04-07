@@ -13,6 +13,16 @@ import { api } from "../api";
 
 vi.mock("../api");
 
+vi.mock("./CompanyLogo", () => ({
+	default: ({ company }: { company: string }) => (
+		<span
+			data-testid="company-logo"
+			data-company={company}
+			aria-hidden="true"
+		/>
+	),
+}));
+
 const BASE_JOB: Job = {
 	id: 42,
 	company: "Acme Corp",
@@ -150,11 +160,82 @@ describe("JobDialog", () => {
 		});
 	});
 
-	describe("edit mode (with initialValues)", () => {
-		it('shows "Edit Job" as the dialog title', () => {
+	describe("dialog title", () => {
+		it('shows "Add Job" in add mode', () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
+			expect(
+				screen.getByRole("heading", { name: "Add Job" }),
+			).toBeInTheDocument();
+		});
+
+		it("shows company and role separated by a dash in edit mode", () => {
 			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
 			expect(
-				screen.getByRole("heading", { name: "Edit Job" }),
+				screen.getByRole("heading", { name: "Acme Corp - Engineer" }),
+			).toBeInTheDocument();
+		});
+
+		it("shows only the company when role is empty", () => {
+			render(
+				<JobDialog
+					{...DEFAULT_PROPS}
+					initialValues={{ ...BASE_JOB, role: "" }}
+				/>,
+			);
+			expect(
+				screen.getByRole("heading", { name: "Acme Corp" }),
+			).toBeInTheDocument();
+		});
+
+		it("renders the company logo in edit mode", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+			const logo = screen.getByTestId("company-logo");
+			expect(logo).toBeInTheDocument();
+			expect(logo).toHaveAttribute("data-company", "Acme Corp");
+		});
+
+		it("does not render a company logo in add mode", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
+			expect(screen.queryByTestId("company-logo")).not.toBeInTheDocument();
+		});
+
+		it("updates the title in real time when the company field changes", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+			fireEvent.change(screen.getByLabelText(/Company/), {
+				target: { value: "Globex" },
+			});
+			expect(
+				screen.getByRole("heading", { name: "Globex - Engineer" }),
+			).toBeInTheDocument();
+		});
+
+		it("updates the title in real time when the role field changes", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+			fireEvent.change(screen.getByLabelText(/Role/), {
+				target: { value: "Staff Engineer" },
+			});
+			expect(
+				screen.getByRole("heading", { name: "Acme Corp - Staff Engineer" }),
+			).toBeInTheDocument();
+		});
+
+		it("updates the logo when the company field changes", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+			fireEvent.change(screen.getByLabelText(/Company/), {
+				target: { value: "Globex" },
+			});
+			expect(screen.getByTestId("company-logo")).toHaveAttribute(
+				"data-company",
+				"Globex",
+			);
+		});
+	});
+
+	describe("edit mode (with initialValues)", () => {
+		it("shows company and role as the dialog title", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={BASE_JOB} />);
+			expect(
+				screen.getByRole("heading", { name: "Acme Corp - Engineer" }),
 			).toBeInTheDocument();
 		});
 

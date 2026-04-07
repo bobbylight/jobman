@@ -11,6 +11,7 @@ import {
 	IconButton,
 	Tooltip,
 } from "@mui/material";
+import CompanyLogo from "./CompanyLogo";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
@@ -164,6 +165,7 @@ const JobCard = React.memo(function JobCard({
 				<DragIndicatorIcon
 					sx={{ fontSize: 16, color: "text.disabled", flexShrink: 0 }}
 				/>
+				<CompanyLogo company={job.company} />
 				<Typography
 					variant="subtitle2"
 					fontWeight={700}
