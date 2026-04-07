@@ -11,6 +11,15 @@ export interface StatsResponse {
 	avgDaysPerStage: { stage: string; avgDays: number }[];
 	/** Consecutive status transitions for the Sankey chart. */
 	transitions: { from: string; to: string; count: number }[];
+	/** Weekly pipeline snapshots — how many jobs were in each status each week. */
+	statusOverTime: { week: string; status: string; count: number }[];
+	/** Top 5 companies by application count with summary stats. */
+	topCompanies: {
+		company: string;
+		applications: number;
+		active: number;
+		bestStage: string;
+	}[];
 }
 
 type Window = "all" | "90" | "30";
@@ -151,7 +160,7 @@ export function getStats(
 	const transitions = db
 		.prepare(
 			`WITH job_filter AS (
-        SELECT id, status AS current_status FROM jobs
+        SELECT id, status AS current_status, ending_substatus FROM jobs
         WHERE user_id = ?
           AND (ending_substatus IS NULL OR ending_substatus <> 'Withdrawn')
           ${df}
@@ -169,16 +178,112 @@ export function getStats(
             -- differs from this row, treat the current status as the target.
             CASE WHEN jf.current_status <> h.status
                  THEN jf.current_status END
-          ) AS to_status
+          ) AS to_status,
+          jf.ending_substatus
         FROM job_status_history h
         JOIN job_filter jf ON h.job_id = jf.id
+      ),
+      -- Replace terminal statuses with their ending_substatus when set,
+      -- so the Sankey shows granular outcomes rather than the bucket label.
+      resolved AS (
+        SELECT
+          from_status,
+          CASE
+            WHEN to_status IN ('Rejected/Withdrawn', 'Offer!') AND ending_substatus IS NOT NULL
+            THEN ending_substatus
+            ELSE to_status
+          END AS to_status
+        FROM consecutive
+        WHERE to_status IS NOT NULL
       )
       SELECT from_status AS "from", to_status AS "to", COUNT(*) AS count
-      FROM consecutive
-      WHERE to_status IS NOT NULL
+      FROM resolved
       GROUP BY from_status, to_status`,
 		)
 		.all(userId) as { from: string; to: string; count: number }[];
+
+	const topCompanies = db
+		.prepare(
+			`SELECT
+        company,
+        COUNT(*) AS applications,
+        SUM(CASE WHEN status IN ('Not started', 'Resume submitted', 'Phone screen', 'Interviewing', 'Offer!')
+             THEN 1 ELSE 0 END) AS active,
+        CASE MAX(CASE status
+          WHEN 'Offer!'             THEN 6
+          WHEN 'Interviewing'       THEN 5
+          WHEN 'Phone screen'       THEN 4
+          WHEN 'Resume submitted'   THEN 3
+          WHEN 'Rejected/Withdrawn' THEN 2
+          WHEN 'Not started'        THEN 1
+          ELSE 0
+        END)
+          WHEN 6 THEN 'Offer!'
+          WHEN 5 THEN 'Interviewing'
+          WHEN 4 THEN 'Phone screen'
+          WHEN 3 THEN 'Resume submitted'
+          WHEN 2 THEN 'Rejected/Withdrawn'
+          WHEN 1 THEN 'Not started'
+        END AS bestStage
+       FROM jobs
+       WHERE ${baseWhere}
+       GROUP BY company
+       ORDER BY applications DESC
+       LIMIT 5`,
+		)
+		.all(userId) as {
+		company: string;
+		applications: number;
+		active: number;
+		bestStage: string;
+	}[];
+
+	// For "all" the recursive CTE terminates at the earliest history entry;
+	// for windowed views it terminates at the window boundary.
+	const sotCutoff =
+		window === "all"
+			? `(SELECT date(MIN(h.entered_at), '-7 days')
+           FROM job_status_history h JOIN jobs j ON j.id = h.job_id
+           WHERE j.user_id = ?)`
+			: `date('now', '-${window} days')`;
+
+	const statusOverTime = db
+		.prepare(
+			`WITH RECURSIVE date_series(snap) AS (
+        SELECT date('now')
+        UNION ALL
+        SELECT date(snap, '-7 days')
+        FROM date_series
+        WHERE snap > ${sotCutoff}
+      ),
+      user_jobs AS (
+        SELECT id FROM jobs
+        WHERE user_id = ?
+          AND (ending_substatus IS NULL OR ending_substatus <> 'Withdrawn')
+      ),
+      job_status_at_snap AS (
+        SELECT
+          d.snap,
+          (
+            SELECT h.status
+            FROM job_status_history h
+            WHERE h.job_id = uj.id
+              AND date(h.entered_at) <= d.snap
+            ORDER BY h.entered_at DESC
+            LIMIT 1
+          ) AS status
+        FROM date_series d
+        JOIN user_jobs uj
+      )
+      SELECT snap AS week, status, COUNT(*) AS count
+      FROM job_status_at_snap
+      WHERE status IS NOT NULL
+      GROUP BY snap, status
+      ORDER BY snap`,
+		)
+		.all(
+			...(window === "all" ? [userId, userId] : [userId]),
+		) as { week: string; status: string; count: number }[];
 
 	return {
 		totalApplications: total,
@@ -189,5 +294,7 @@ export function getStats(
 		applicationsByWeek,
 		avgDaysPerStage,
 		transitions,
+		statusOverTime,
+		topCompanies,
 	};
 }

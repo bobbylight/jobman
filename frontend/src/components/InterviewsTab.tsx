@@ -118,7 +118,7 @@ export default function InterviewsTab({
 		try {
 			const data = await api.getInterviews(jobId);
 			const sorted = [...data].sort((a, b) =>
-				a.interview_dttm.localeCompare(b.interview_dttm),
+				b.interview_dttm.localeCompare(a.interview_dttm),
 			);
 			setInterviews(sorted);
 			onCountChange(sorted.length);

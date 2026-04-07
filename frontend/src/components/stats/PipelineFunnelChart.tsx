@@ -2,8 +2,8 @@ import React, { useMemo } from "react";
 import { Sankey, Tooltip } from "recharts";
 import type { SankeyNode } from "recharts/types/util/types";
 import { Typography, Box, useTheme } from "@mui/material";
-import { STATUS_COLORS, STATUSES } from "../../constants";
-import type { JobStatus } from "../../types";
+import { ENDING_SUBSTATUSES, STATUS_COLORS, STATUSES } from "../../constants";
+import type { EndingSubstatus, JobStatus } from "../../types";
 
 interface Props {
 	transitions: { from: string; to: string; count: number }[];
@@ -33,6 +33,28 @@ interface SankeyLinkProps {
 	};
 }
 
+const SUBSTATUS_COLORS: Record<EndingSubstatus, string> = {
+	"Offer accepted": "#2e7d32",
+	"Offer declined": "#f57c00",
+	Rejected: "#e53935",
+	Withdrawn: "#78909c",
+	Ghosted: "#8d6e63",
+	"No response": "#bdbdbd",
+};
+
+// Full node ordering: main pipeline statuses first, then granular terminal
+// outcomes. Substatuses must come after all main statuses so every link in
+// the Sankey is a forward link (source index < target index).
+const NODE_ORDER: string[] = [...STATUSES, ...ENDING_SUBSTATUSES];
+
+function nodeColor(name: string): string {
+	return (
+		STATUS_COLORS[name as JobStatus] ??
+		SUBSTATUS_COLORS[name as EndingSubstatus] ??
+		"#90a4ae"
+	);
+}
+
 /** Build the { nodes, links } structure that recharts Sankey expects. */
 function toSankeyData(transitions: Props["transitions"]) {
 	// Collect every status that appears in the transition data
@@ -43,12 +65,12 @@ function toSankeyData(transitions: Props["transitions"]) {
 	}
 
 	// Order nodes by the canonical pipeline order so the Sankey flows left→right
-	const ordered = STATUSES.filter((s) => statusSet.has(s));
+	const ordered = NODE_ORDER.filter((s) => statusSet.has(s));
 	const indexMap = new Map<string, number>(ordered.map((s, i) => [s, i]));
 
 	const nodes: ChartNode[] = ordered.map((s) => ({
 		name: s,
-		color: STATUS_COLORS[s as JobStatus] ?? "#90a4ae",
+		color: nodeColor(s),
 	}));
 
 	const links = transitions
@@ -147,6 +169,7 @@ export default function PipelineFunnelChart({ transitions }: Props) {
 			nodeWidth={12}
 			nodePadding={14}
 			sort={false}
+			verticalAlign="justify"
 			margin={{ top: 4, right: 140, bottom: 4, left: 4 }}
 		>
 			<Tooltip

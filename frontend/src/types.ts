@@ -101,4 +101,13 @@ export interface StatsResponse {
 	avgDaysPerStage: { stage: string; avgDays: number }[];
 	/** Consecutive status transitions for the Sankey chart. */
 	transitions: { from: string; to: string; count: number }[];
+	/** Weekly pipeline snapshots — how many jobs were in each status each week. */
+	statusOverTime: { week: string; status: string; count: number }[];
+	/** Top 5 companies by application count with summary stats. */
+	topCompanies: {
+		company: string;
+		applications: number;
+		active: number;
+		bestStage: string;
+	}[];
 }

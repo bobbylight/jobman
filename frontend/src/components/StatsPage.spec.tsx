@@ -31,6 +31,8 @@ const BASE_STATS: StatsResponse = {
 	applicationsByWeek: [],
 	avgDaysPerStage: [],
 	transitions: [],
+	statusOverTime: [],
+	topCompanies: [],
 };
 
 describe("StatsPage", () => {

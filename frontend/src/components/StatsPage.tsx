@@ -14,6 +14,8 @@ import PipelineFunnelChart from "./stats/PipelineFunnelChart";
 import ApplicationsOverTime from "./stats/ApplicationsOverTime";
 import LookbackToggle from "./stats/LookbackToggle";
 import AvgDaysChart from "./stats/AvgDaysChart";
+import PipelineOverTimeChart from "./stats/PipelineOverTimeChart";
+import TopCompaniesTable from "./stats/TopCompaniesTable";
 
 function formatPercent(rate: number | null): string {
 	if (rate === null) return "—";
@@ -164,6 +166,41 @@ export default function StatsPage() {
 								</CardContent>
 							</Card>
 						)}
+					</Box>
+					{/* Charts row 3: Pipeline Over Time + Top Companies */}
+					<Box
+						sx={{
+							display: "flex",
+							gap: 2,
+							flexWrap: "wrap",
+							alignItems: "flex-start",
+							mt: 2,
+						}}
+					>
+						<Card sx={{ flex: "1 1 340px" }}>
+							<CardContent>
+								<Typography
+									variant="subtitle2"
+									color="text.secondary"
+									gutterBottom
+								>
+									Pipeline Over Time
+								</Typography>
+								<PipelineOverTimeChart statusOverTime={data.statusOverTime} />
+							</CardContent>
+						</Card>
+						<Card sx={{ flex: "1 1 340px" }}>
+							<CardContent>
+								<Typography
+									variant="subtitle2"
+									color="text.secondary"
+									gutterBottom
+								>
+									Top Companies (all time)
+								</Typography>
+								<TopCompaniesTable topCompanies={data.topCompanies} />
+							</CardContent>
+						</Card>
 					</Box>
 				</>
 			) : null}
