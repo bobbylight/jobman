@@ -133,23 +133,19 @@ describe("InterviewsTab", () => {
 			});
 		});
 
-		it("renders interviews sorted by interview_dttm ascending", async () => {
-			// Provide them in reverse order
+		it("renders interviews sorted by interview_dttm descending", async () => {
+			// Provide them in chronological order; expect the most recent to appear first
 			vi.mocked(api.getInterviews).mockResolvedValue([
-				INTERVIEW_B,
 				INTERVIEW_A,
+				INTERVIEW_B,
 			]);
 			render(<InterviewsTab {...DEFAULT_PROPS} />);
 			await waitFor(() => {
-				const cards = screen.getAllByRole("button", {
-					name: /Edit interview/i,
-				});
-				// We can verify order by checking text positions
 				const types = screen
 					.getAllByText(/Phone Screen|Onsite/)
 					.map((el) => el.textContent);
-				expect(types[0]).toBe("Phone Screen"); // A comes before B chronologically
-				expect(types[1]).toBe("Onsite");
+				expect(types[0]).toBe("Onsite"); // B (later date) comes first
+				expect(types[1]).toBe("Phone Screen");
 			});
 		});
 

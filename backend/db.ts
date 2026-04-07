@@ -117,7 +117,11 @@ db.exec(`
     );
 
   INSERT INTO job_status_history (job_id, status, entered_at)
-  SELECT j.id, 'Phone screen', j.date_phone_screen
+  SELECT j.id, 'Phone screen',
+    CASE WHEN j.date_phone_screen <= strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+         THEN j.date_phone_screen
+         ELSE COALESCE(j.updated_at, j.created_at)
+    END
   FROM jobs j
   WHERE j.date_phone_screen IS NOT NULL
     AND NOT EXISTS (
@@ -126,7 +130,11 @@ db.exec(`
     );
 
   INSERT INTO job_status_history (job_id, status, entered_at)
-  SELECT j.id, 'Interviewing', j.date_last_onsite
+  SELECT j.id, 'Interviewing',
+    CASE WHEN j.date_last_onsite <= strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+         THEN j.date_last_onsite
+         ELSE COALESCE(j.updated_at, j.created_at)
+    END
   FROM jobs j
   WHERE j.date_last_onsite IS NOT NULL
     AND NOT EXISTS (

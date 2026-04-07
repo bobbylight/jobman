@@ -411,6 +411,8 @@ describe("api", () => {
 			applicationsByWeek: [],
 			avgDaysPerStage: [],
 			transitions: [],
+			statusOverTime: [],
+			topCompanies: [],
 		};
 
 		it("GETs /api/stats?window=all and returns the stats", async () => {

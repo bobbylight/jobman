@@ -326,7 +326,8 @@ describe("getStats", () => {
 		});
 
 		it("infers the final transition from the last history row to the current status", () => {
-			// Job is currently at Rejected/Withdrawn but history only has Resume submitted
+			// Job is currently at Rejected/Withdrawn with ending_substatus "Ghosted".
+			// The resolved CTE should map the to-status to the substatus.
 			insertJob(db, {
 				user_id: USER_ID,
 				status: "Rejected/Withdrawn",
@@ -344,7 +345,7 @@ describe("getStats", () => {
 
 			const transitions = getStats(db, USER_ID, "all").transitions;
 			expect(transitions).toEqual([
-				{ from: "Resume submitted", to: "Rejected/Withdrawn", count: 1 },
+				{ from: "Resume submitted", to: "Ghosted", count: 1 },
 			]);
 		});
 	});
