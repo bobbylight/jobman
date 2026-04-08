@@ -49,6 +49,11 @@ describe("AppShell", () => {
 		expect(screen.getByRole("button", { name: "Board" })).toBeInTheDocument();
 	});
 
+	it("renders the Interviews nav button", () => {
+		renderAppShell();
+		expect(screen.getByRole("button", { name: "Interviews" })).toBeInTheDocument();
+	});
+
 	it("renders the Stats nav button", () => {
 		renderAppShell();
 		expect(screen.getByRole("button", { name: "Stats" })).toBeInTheDocument();
@@ -63,6 +68,12 @@ describe("AppShell", () => {
 		renderAppShell();
 		fireEvent.click(screen.getByRole("button", { name: "Board" }));
 		expect(mockNavigate).toHaveBeenCalledWith("/jobs");
+	});
+
+	it("navigates to /interviews when Interviews is clicked", () => {
+		renderAppShell();
+		fireEvent.click(screen.getByRole("button", { name: "Interviews" }));
+		expect(mockNavigate).toHaveBeenCalledWith("/interviews");
 	});
 
 	it("navigates to /stats when Stats is clicked", () => {

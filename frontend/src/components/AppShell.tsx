@@ -14,6 +14,7 @@ import {
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import InsightsIcon from "@mui/icons-material/Insights";
 import ViewKanbanOutlinedIcon from "@mui/icons-material/ViewKanbanOutlined";
 import Tooltip from "@mui/material/Tooltip";
@@ -22,6 +23,7 @@ import type { User } from "../types";
 
 const NAV_ITEMS = [
 	{ path: "/jobs", icon: <ViewKanbanOutlinedIcon />, label: "Board" },
+	{ path: "/interviews", icon: <CalendarMonthOutlinedIcon />, label: "Interviews" },
 	{ path: "/stats", icon: <InsightsIcon />, label: "Stats" },
 ] as const;
 

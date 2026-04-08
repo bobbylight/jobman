@@ -401,6 +401,65 @@ describe("api", () => {
 		});
 	});
 
+	describe("searchInterviews", () => {
+		const MOCK_ENRICHED = [
+			{
+				id: 1,
+				job_id: 10,
+				interview_type: "phone_screen",
+				interview_dttm: "2026-03-15T14:00:00Z",
+				interview_interviewers: null,
+				interview_vibe: null,
+				interview_notes: null,
+				job: { id: 10, company: "Acme", role: "Engineer", link: "https://acme.com" },
+			},
+		];
+
+		it("GETs /api/interviews with no params when no dates provided", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_ENRICHED));
+			const result = await api.searchInterviews();
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/interviews",
+				expect.objectContaining({
+					headers: { "Content-Type": "application/json" },
+				}),
+			);
+			expect(result).toEqual(MOCK_ENRICHED);
+		});
+
+		it("includes ?from param when from is provided", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_ENRICHED));
+			await api.searchInterviews("2026-01-01");
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/interviews?from=2026-01-01",
+				expect.any(Object),
+			);
+		});
+
+		it("includes ?to param when to is provided", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_ENRICHED));
+			await api.searchInterviews(undefined, "2026-12-31");
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/interviews?to=2026-12-31",
+				expect.any(Object),
+			);
+		});
+
+		it("includes both ?from and ?to params when both are provided", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_ENRICHED));
+			await api.searchInterviews("2026-01-01", "2026-12-31");
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/interviews?from=2026-01-01&to=2026-12-31",
+				expect.any(Object),
+			);
+		});
+
+		it("throws when the response is not ok", async () => {
+			mockFetch.mockResolvedValue(makeResponse({ error: "Unauthorized" }, false));
+			await expect(api.searchInterviews()).rejects.toThrow("API error 400");
+		});
+	});
+
 	describe("getStats", () => {
 		const MOCK_STATS: StatsResponse = {
 			totalApplications: 5,
