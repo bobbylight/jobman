@@ -67,6 +67,15 @@ export interface Interview {
 
 export type InterviewFormData = Omit<Interview, "id" | "job_id">;
 
+export interface EnrichedInterview extends Interview {
+	job: {
+		id: number;
+		company: string;
+		role: string;
+		link: string;
+	};
+}
+
 export type QuestionType =
 	| "behavioral"
 	| "technical"

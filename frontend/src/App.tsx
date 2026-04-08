@@ -12,6 +12,7 @@ import type { User } from "./types";
 import LoginPage from "./components/LoginPage";
 import AppShell from "./components/AppShell";
 import JobManagementPage from "./components/JobManagementPage";
+import InterviewsPage from "./components/InterviewsPage";
 import StatsPage from "./components/StatsPage";
 
 export default function App() {
@@ -78,6 +79,7 @@ export default function App() {
 						<Route path="/" element={<Navigate to="/jobs" replace />} />
 						<Route path="/jobs" element={<JobManagementPage />} />
 						<Route path="/jobs/:jobId" element={<JobManagementPage />} />
+						<Route path="/interviews" element={<InterviewsPage />} />
 						<Route path="/stats" element={<StatsPage />} />
 						<Route path="*" element={<Navigate to="/jobs" replace />} />
 					</Route>

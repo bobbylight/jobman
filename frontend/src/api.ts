@@ -3,6 +3,7 @@ import type {
 	JobFormData,
 	User,
 	Interview,
+	EnrichedInterview,
 	InterviewFormData,
 	InterviewQuestion,
 	InterviewQuestionFormData,
@@ -55,6 +56,15 @@ export const api = {
 	// Stats
 	getStats: (window: StatsWindow) =>
 		request<StatsResponse>(`/stats?window=${window}`),
+
+	// Cross-job interview search
+	searchInterviews: (from?: string, to?: string) => {
+		const params = new URLSearchParams();
+		if (from) params.set("from", from);
+		if (to) params.set("to", to);
+		const qs = params.toString();
+		return request<EnrichedInterview[]>(`/interviews${qs ? `?${qs}` : ""}`);
+	},
 
 	// Interviews
 	getInterviews: (jobId: number) =>
