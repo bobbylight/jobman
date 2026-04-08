@@ -6,7 +6,10 @@ import SqliteStoreFactory from "better-sqlite3-session-store";
 import type Database from "better-sqlite3";
 
 import { createAuthRouter } from "./routes/auth.js";
-import { createInterviewsRouter } from "./routes/interviews.js";
+import {
+	createInterviewSearchRouter,
+	createInterviewsRouter,
+} from "./routes/interviews.js";
 import { createJobsRouter } from "./routes/jobs.js";
 import { createStatsRouter } from "./routes/stats.js";
 
@@ -60,6 +63,7 @@ export function createApp(db: Database.Database) {
 	app.use(passport.initialize());
 
 	app.use("/api/auth", createAuthRouter(db));
+	app.use("/api/interviews", requireAuth, createInterviewSearchRouter(db));
 	app.use("/api/jobs", requireAuth, createJobsRouter(db));
 	app.use(
 		"/api/jobs/:jobId/interviews",

@@ -594,3 +594,153 @@ describe("DELETE /api/jobs/:jobId/interviews/:interviewId/questions/:questionId"
 		expect(res.status).toBe(404);
 	});
 });
+
+// --- GET /api/interviews (cross-job interview search) ---
+
+describe("GET /api/interviews", () => {
+	it("returns 200 with an empty array when there are no interviews", async () => {
+		const res = await req("get", "/api/interviews");
+		expect(res.status).toBe(200);
+		expect(res.body).toEqual([]);
+	});
+
+	it("returns enriched interviews with a nested job object", async () => {
+		const jobId = await createJob();
+		await req("post", `/api/jobs/${jobId}/interviews`).send({
+			...BASE_INTERVIEW,
+			interview_interviewers: "Alice",
+			interview_vibe: "casual",
+		});
+
+		const res = await req("get", "/api/interviews");
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(1);
+		const interview = res.body[0];
+		expect(interview.interview_type).toBe("phone_screen");
+		expect(interview.interview_interviewers).toBe("Alice");
+		expect(interview.interview_vibe).toBe("casual");
+		expect(interview.job).toMatchObject({
+			id: jobId,
+			company: BASE_JOB.company,
+			role: BASE_JOB.role,
+			link: BASE_JOB.link,
+		});
+	});
+
+	it("returns interviews ordered by interview_dttm ascending", async () => {
+		const jobId = await createJob();
+		await req("post", `/api/jobs/${jobId}/interviews`).send({
+			...BASE_INTERVIEW,
+			interview_dttm: "2026-04-20T10:00",
+		});
+		await req("post", `/api/jobs/${jobId}/interviews`).send({
+			...BASE_INTERVIEW,
+			interview_dttm: "2026-04-05T10:00",
+		});
+
+		const res = await req("get", "/api/interviews");
+		expect(res.status).toBe(200);
+		expect(res.body[0].interview_dttm).toBe("2026-04-05T10:00");
+		expect(res.body[1].interview_dttm).toBe("2026-04-20T10:00");
+	});
+
+	it("filters to interviews on or after ?from", async () => {
+		const jobId = await createJob();
+		await req("post", `/api/jobs/${jobId}/interviews`).send({
+			...BASE_INTERVIEW,
+			interview_dttm: "2026-03-01T10:00",
+		});
+		await req("post", `/api/jobs/${jobId}/interviews`).send({
+			...BASE_INTERVIEW,
+			interview_dttm: "2026-04-15T10:00",
+		});
+
+		const res = await req("get", "/api/interviews?from=2026-04-01T00:00:00");
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(1);
+		expect(res.body[0].interview_dttm).toBe("2026-04-15T10:00");
+	});
+
+	it("filters to interviews on or before ?to", async () => {
+		const jobId = await createJob();
+		await req("post", `/api/jobs/${jobId}/interviews`).send({
+			...BASE_INTERVIEW,
+			interview_dttm: "2026-03-01T10:00",
+		});
+		await req("post", `/api/jobs/${jobId}/interviews`).send({
+			...BASE_INTERVIEW,
+			interview_dttm: "2026-04-15T10:00",
+		});
+
+		const res = await req("get", "/api/interviews?to=2026-04-01T23:59:59");
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(1);
+		expect(res.body[0].interview_dttm).toBe("2026-03-01T10:00");
+	});
+
+	it("filters to interviews within a ?from+?to range", async () => {
+		const jobId = await createJob();
+		await req("post", `/api/jobs/${jobId}/interviews`).send({
+			...BASE_INTERVIEW,
+			interview_dttm: "2026-03-01T10:00",
+		});
+		await req("post", `/api/jobs/${jobId}/interviews`).send({
+			...BASE_INTERVIEW,
+			interview_dttm: "2026-04-10T10:00",
+		});
+		await req("post", `/api/jobs/${jobId}/interviews`).send({
+			...BASE_INTERVIEW,
+			interview_dttm: "2026-05-01T10:00",
+		});
+
+		const res = await req(
+			"get",
+			"/api/interviews?from=2026-04-01T00:00:00&to=2026-04-30T23:59:59",
+		);
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(1);
+		expect(res.body[0].interview_dttm).toBe("2026-04-10T10:00");
+	});
+
+	it("returns 400 for an invalid ?from value", async () => {
+		const res = await req("get", "/api/interviews?from=not-a-date");
+		expect(res.status).toBe(400);
+		expect(res.body.error).toMatch(/from/);
+	});
+
+	it("returns 400 for an invalid ?to value", async () => {
+		const res = await req("get", "/api/interviews?to=not-a-date");
+		expect(res.status).toBe(400);
+		expect(res.body.error).toMatch(/to/);
+	});
+
+	it("only returns interviews belonging to the authenticated user", async () => {
+		const jobId = await createJob();
+		await req("post", `/api/jobs/${jobId}/interviews`).send(BASE_INTERVIEW);
+
+		// Insert a job + interview for a different user directly
+		testDb
+			.prepare(
+				"INSERT INTO jobs (user_id, company, role, link, status) VALUES (?, ?, ?, ?, ?)",
+			)
+			.run(2, "Other Corp", "PM", "https://other.example.com", "Not started");
+		const otherJobId = (
+			testDb.prepare("SELECT last_insert_rowid() AS id").get() as { id: number }
+		).id;
+		testDb
+			.prepare(
+				"INSERT INTO interviews (job_id, interview_type, interview_dttm) VALUES (?, ?, ?)",
+			)
+			.run(otherJobId, "phone_screen", "2026-04-02T14:00");
+
+		const res = await req("get", "/api/interviews");
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(1);
+		expect(res.body[0].job.company).toBe(BASE_JOB.company);
+	});
+
+	it("returns 401 when unauthenticated", async () => {
+		const res = await request(app).get("/api/interviews");
+		expect(res.status).toBe(401);
+	});
+});

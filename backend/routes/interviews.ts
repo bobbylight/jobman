@@ -4,6 +4,38 @@ import expressLib from "express";
 import * as InterviewsDb from "../db/interviews.js";
 import { validateInterview, validateInterviewQuestion } from "../validators.js";
 
+// GET /api/interviews — cross-job interview search with optional ?from and ?to filters
+export function createInterviewSearchRouter(db: Database.Database) {
+	const router = expressLib.Router();
+
+	router.get("/", (req, res) => {
+		const { from, to } = req.query as { from?: string; to?: string };
+
+		if (from !== undefined && isNaN(Date.parse(from))) {
+			return res.status(400).json({ error: "Invalid 'from' date" });
+		}
+		if (to !== undefined && isNaN(Date.parse(to))) {
+			return res.status(400).json({ error: "Invalid 'to' date" });
+		}
+
+		const rows = InterviewsDb.listEnrichedInterviews(
+			db,
+			req.session.userId!,
+			from,
+			to,
+		);
+
+		return res.json(
+			rows.map(({ company, role, link, ...interview }) => ({
+				...interview,
+				job: { id: interview.job_id, company, role, link },
+			})),
+		);
+	});
+
+	return router;
+}
+
 // Verifies the job belongs to the user and the interview belongs to the job.
 // Sends 404 and returns null if either check fails.
 function resolveInterview(
