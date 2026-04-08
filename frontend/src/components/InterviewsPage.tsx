@@ -44,6 +44,26 @@ function formatDttm(dttm: string): string {
 	});
 }
 
+/**
+ * Returns {from, to} strings (YYYY-MM-DD) covering today through the Sunday
+ * after next Sunday — i.e. "this week and next week".
+ */
+export function getDefaultDateRange(): { from: string; to: string } {
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+
+	// Days until the next Sunday (if today is Sunday, that's 7 days away)
+	const daysToNextSunday = today.getDay() === 0 ? 7 : 7 - today.getDay();
+	const nextSunday = new Date(today);
+	nextSunday.setDate(today.getDate() + daysToNextSunday);
+
+	const sundayAfterNext = new Date(nextSunday);
+	sundayAfterNext.setDate(nextSunday.getDate() + 7);
+
+	const fmt = (d: Date) => d.toISOString().slice(0, 10);
+	return { from: fmt(today), to: fmt(sundayAfterNext) };
+}
+
 /** Group interviews by calendar month, returning entries in order. */
 function groupByMonth(
 	interviews: EnrichedInterview[],
@@ -65,8 +85,9 @@ export default function InterviewsPage() {
 	const [interviews, setInterviews] = useState<EnrichedInterview[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(false);
-	const [from, setFrom] = useState("");
-	const [to, setTo] = useState("");
+	const defaults = getDefaultDateRange();
+	const [from, setFrom] = useState(defaults.from);
+	const [to, setTo] = useState(defaults.to);
 
 	useEffect(() => {
 		setLoading(true);
@@ -93,7 +114,7 @@ export default function InterviewsPage() {
 				}}
 			>
 				<Typography variant="h5" fontWeight={700} sx={{ flex: 1 }}>
-					Interviews
+					Upcoming Interviews
 				</Typography>
 				<Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
 					<TextField
@@ -114,16 +135,16 @@ export default function InterviewsPage() {
 						slotProps={{ inputLabel: { shrink: true } }}
 						sx={{ width: 160 }}
 					/>
-					{(from || to) && (
+					{(from !== defaults.from || to !== defaults.to) && (
 						<Button
 							size="small"
 							variant="text"
 							onClick={() => {
-								setFrom("");
-								setTo("");
+								setFrom(defaults.from);
+								setTo(defaults.to);
 							}}
 						>
-							Clear
+							Reset
 						</Button>
 					)}
 				</Box>
@@ -145,9 +166,9 @@ export default function InterviewsPage() {
 					color="text.disabled"
 					sx={{ textAlign: "center", mt: 10 }}
 				>
-					{from || to
+					{from !== defaults.from || to !== defaults.to
 						? "No interviews found in this date range."
-						: "No interviews recorded yet."}
+						: "No upcoming interviews."}
 				</Typography>
 			) : (
 				grouped.map(({ month, items }) => (
@@ -205,6 +226,7 @@ function InterviewRow({
 				display: "flex",
 				gap: 1.5,
 				alignItems: "flex-start",
+				bgcolor: "background.paper",
 			}}
 		>
 			<TypeIcon
@@ -213,7 +235,12 @@ function InterviewRow({
 			<Box sx={{ flex: 1, minWidth: 0 }}>
 				{/* Top row: type + date + vibe */}
 				<Box
-					sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}
+					sx={{
+						display: "flex",
+						alignItems: "center",
+						gap: 1,
+						flexWrap: "wrap",
+					}}
 				>
 					<Typography variant="body2" fontWeight={600}>
 						{typeLabel}

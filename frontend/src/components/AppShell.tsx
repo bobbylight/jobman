@@ -23,7 +23,11 @@ import type { User } from "../types";
 
 const NAV_ITEMS = [
 	{ path: "/jobs", icon: <ViewKanbanOutlinedIcon />, label: "Board" },
-	{ path: "/interviews", icon: <CalendarMonthOutlinedIcon />, label: "Interviews" },
+	{
+		path: "/interviews",
+		icon: <CalendarMonthOutlinedIcon />,
+		label: "Interviews",
+	},
 	{ path: "/stats", icon: <InsightsIcon />, label: "Stats" },
 ] as const;
 
