@@ -14,15 +14,23 @@ import {
 	Alert,
 	InputAdornment,
 	TextField,
-	Chip,
 	Select,
 	MenuItem,
 	Divider,
+	IconButton,
+	Tooltip,
+	Badge,
+	Popover,
+	Typography,
+	FormControlLabel,
+	Switch,
+	Stack,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import StarIcon from "@mui/icons-material/Star";
-import CloseIcon from "@mui/icons-material/Close";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
+import TuneIcon from "@mui/icons-material/Tune";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import type {
@@ -57,8 +65,9 @@ export default function JobManagementPage() {
 	const [search, setSearch] = useState("");
 	const [favoritesOnly, setFavoritesOnly] = useState(false);
 	const [minFitScore, setMinFitScore] = useState<FitScore | null>(null);
-	const [hideWithdrawn, setHideWithdrawn] = useState(false);
+	const [hideWithdrawn, setHideWithdrawn] = useState(true);
 	const [loading, setLoading] = useState(true);
+	const [filterAnchor, setFilterAnchor] = useState<HTMLElement | null>(null);
 
 	// "add" dialog is purely local; "edit" dialog is driven by the URL
 	const [addOpen, setAddOpen] = useState(false);
@@ -239,16 +248,9 @@ export default function JobManagementPage() {
 		}
 	}, []);
 
-	const hasActiveFilters =
-		favoritesOnly || minFitScore !== null || hideWithdrawn;
-	const hasAnyFilter = search.trim() !== "" || hasActiveFilters;
-
-	function clearFilters() {
-		setSearch("");
-		setFavoritesOnly(false);
-		setMinFitScore(null);
-		setHideWithdrawn(false);
-	}
+	// Count of active filters shown in the Filters popover badge
+	const activeFilterCount =
+		(minFitScore !== null ? 1 : 0) + (hideWithdrawn ? 1 : 0);
 
 	// Defer filter values so the input stays responsive while the board catches up
 	const deferredSearch = useDeferredValue(search);
@@ -297,17 +299,14 @@ export default function JobManagementPage() {
 					px: 2,
 					py: 0.5,
 					display: "flex",
-					gap: 1,
+					gap: 1.5,
 					alignItems: "center",
-					flexWrap: "wrap",
 					borderTop: "1px solid rgba(99,102,241,0.15)",
 				}}
 			>
 				<Button variant="contained" startIcon={<AddIcon />} onClick={openAdd}>
 					Add Job
 				</Button>
-
-				<Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
 
 				<TextField
 					placeholder="Search company or role… ( / )"
@@ -328,7 +327,8 @@ export default function JobManagementPage() {
 						},
 					}}
 					sx={{
-						width: 280,
+						flex: 1,
+						maxWidth: 360,
 						"& .MuiOutlinedInput-root": {
 							bgcolor: "rgba(255,255,255,0.7)",
 							borderRadius: 2,
@@ -336,85 +336,143 @@ export default function JobManagementPage() {
 					}}
 				/>
 
-				<Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
-
-				<Chip
-					icon={<StarIcon fontSize="small" />}
-					label="Favorites"
-					onClick={() => setFavoritesOnly((v) => !v)}
-					color={favoritesOnly ? "warning" : "default"}
-					variant={favoritesOnly ? "filled" : "outlined"}
-					sx={{
-						fontWeight: 500,
-						bgcolor: favoritesOnly ? undefined : "rgba(255,255,255,0.7)",
-					}}
-				/>
-
-				<Select
-					size="small"
-					value={minFitScore ?? ""}
-					onChange={(e) => setMinFitScore((e.target.value as FitScore) || null)}
-					displayEmpty
-					renderValue={(val) =>
-						val
-							? (MIN_FIT_SCORE_OPTIONS.find((o) => o.value === val)?.label ??
-								"Fit score")
-							: "Fit score"
-					}
-					sx={{
-						height: 32,
-						bgcolor: minFitScore ? "primary.main" : "rgba(255,255,255,0.7)",
-						color: minFitScore ? "primary.contrastText" : "text.primary",
-						borderRadius: "16px",
-						fontWeight: 500,
-						fontSize: "0.8125rem",
-						"& .MuiSelect-icon": {
-							color: minFitScore ? "primary.contrastText" : "action.active",
-						},
-						"& .MuiOutlinedInput-notchedOutline": {
-							borderColor: minFitScore ? "primary.main" : "rgba(0,0,0,0.23)",
-						},
-						"&:hover .MuiOutlinedInput-notchedOutline": {
-							borderColor: minFitScore ? "primary.dark" : "rgba(0,0,0,0.87)",
-						},
-						minWidth: 120,
-					}}
-				>
-					{MIN_FIT_SCORE_OPTIONS.map(({ label, value }) => (
-						<MenuItem key={label} value={value ?? ""}>
-							{label}
-						</MenuItem>
-					))}
-				</Select>
-
-				<Chip
-					label="Hide Withdrawn"
-					onClick={() => setHideWithdrawn((v) => !v)}
-					color={hideWithdrawn ? "primary" : "default"}
-					variant={hideWithdrawn ? "filled" : "outlined"}
-					sx={{
-						fontWeight: 500,
-						bgcolor: hideWithdrawn ? undefined : "rgba(255,255,255,0.7)",
-					}}
-				/>
-
-				{hasAnyFilter && (
-					<>
-						<Divider
-							orientation="vertical"
-							flexItem
-							sx={{ mx: 0.5, my: 0.5 }}
-						/>
-						<Chip
-							icon={<CloseIcon fontSize="small" />}
-							label="Clear"
-							onClick={clearFilters}
+				<Box sx={{ ml: "auto", display: "flex", gap: 1, alignItems: "center" }}>
+					<Tooltip
+						title={favoritesOnly ? "Showing favorites only" : "Favorites only"}
+					>
+						<IconButton
+							aria-label="Favorites only"
 							size="small"
-							sx={{ fontWeight: 500, bgcolor: "rgba(255,255,255,0.7)" }}
-						/>
-					</>
-				)}
+							onClick={() => setFavoritesOnly((v) => !v)}
+							sx={{
+								color: favoritesOnly ? "warning.main" : "rgba(255,255,255,0.7)",
+								bgcolor: favoritesOnly
+									? "rgba(255,193,7,0.15)"
+									: "rgba(255,255,255,0.1)",
+								"&:hover": {
+									bgcolor: favoritesOnly
+										? "rgba(255,193,7,0.25)"
+										: "rgba(255,255,255,0.2)",
+								},
+							}}
+						>
+							{favoritesOnly ? <StarIcon /> : <StarBorderIcon />}
+						</IconButton>
+					</Tooltip>
+
+					<Badge badgeContent={activeFilterCount || null} color="error">
+						<Button
+							size="small"
+							startIcon={<TuneIcon />}
+							onClick={(e) => setFilterAnchor(e.currentTarget)}
+							variant="outlined"
+							sx={{
+								borderRadius: "16px",
+								fontWeight: 500,
+								fontSize: "0.8125rem",
+								bgcolor:
+									activeFilterCount > 0
+										? "rgba(255,255,255,0.2)"
+										: "rgba(255,255,255,0.7)",
+								color: activeFilterCount > 0 ? "white" : "text.primary",
+								borderColor:
+									activeFilterCount > 0
+										? "rgba(255,255,255,0.5)"
+										: "rgba(0,0,0,0.23)",
+								"&:hover": {
+									bgcolor:
+										activeFilterCount > 0
+											? "rgba(255,255,255,0.3)"
+											: "rgba(255,255,255,0.85)",
+									borderColor:
+										activeFilterCount > 0
+											? "rgba(255,255,255,0.7)"
+											: "rgba(0,0,0,0.87)",
+								},
+							}}
+						>
+							Filters
+						</Button>
+					</Badge>
+				</Box>
 			</Box>
+
+			{/* Filters popover */}
+			<Popover
+				open={Boolean(filterAnchor)}
+				anchorEl={filterAnchor}
+				onClose={() => setFilterAnchor(null)}
+				anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+				transformOrigin={{ vertical: "top", horizontal: "right" }}
+				slotProps={{ paper: { sx: { mt: 0.5, width: 260, p: 2 } } }}
+			>
+				<Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+					Filters
+				</Typography>
+				<Stack spacing={2}>
+					<Box>
+						<Typography
+							variant="caption"
+							color="text.secondary"
+							sx={{ display: "block", mb: 0.5 }}
+						>
+							Minimum fit score
+						</Typography>
+						<Select
+							size="small"
+							fullWidth
+							value={minFitScore ?? ""}
+							onChange={(e) =>
+								setMinFitScore((e.target.value as FitScore) || null)
+							}
+							displayEmpty
+							renderValue={(val) =>
+								val
+									? (MIN_FIT_SCORE_OPTIONS.find((o) => o.value === val)
+											?.label ?? "Any score")
+									: "Any score"
+							}
+						>
+							{MIN_FIT_SCORE_OPTIONS.map(({ label, value }) => (
+								<MenuItem key={label} value={value ?? ""}>
+									{label}
+								</MenuItem>
+							))}
+						</Select>
+					</Box>
+
+					<FormControlLabel
+						control={
+							<Switch
+								checked={hideWithdrawn}
+								onChange={(e) => setHideWithdrawn(e.target.checked)}
+								size="small"
+							/>
+						}
+						label="Hide withdrawn"
+						sx={{
+							mx: 0,
+							"& .MuiFormControlLabel-label": { fontSize: "0.875rem" },
+						}}
+					/>
+
+					{activeFilterCount > 0 && (
+						<>
+							<Divider />
+							<Button
+								size="small"
+								onClick={() => {
+									setMinFitScore(null);
+									setHideWithdrawn(false);
+								}}
+								sx={{ alignSelf: "flex-start", px: 0 }}
+							>
+								Clear filters
+							</Button>
+						</>
+					)}
+				</Stack>
+			</Popover>
 
 			{/* Board content */}
 			{loading ? (
