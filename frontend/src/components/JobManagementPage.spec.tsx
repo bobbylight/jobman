@@ -182,7 +182,7 @@ describe("JobManagementPage", () => {
 		expect(screen.queryByText("Beta")).not.toBeInTheDocument();
 	});
 
-	it("filters jobs to favorites only when the Favorites chip is toggled", async () => {
+	it("filters jobs to favorites only when the Favorites button is toggled", async () => {
 		mockGetJobs.mockResolvedValue([
 			makeJob({ id: 1, company: "Starred Co", favorite: true }),
 			makeJob({ id: 2, company: "Plain Co", favorite: false }),
@@ -192,13 +192,13 @@ describe("JobManagementPage", () => {
 			expect(screen.getByText("Starred Co")).toBeInTheDocument();
 		});
 
-		fireEvent.click(screen.getByRole("button", { name: /Favorites/ }));
+		fireEvent.click(screen.getByRole("button", { name: "Favorites only" }));
 
 		expect(screen.getByText("Starred Co")).toBeInTheDocument();
 		expect(screen.queryByText("Plain Co")).not.toBeInTheDocument();
 	});
 
-	it("hides withdrawn jobs when Hide Withdrawn is toggled, but keeps rejections", async () => {
+	it("hides withdrawn jobs by default but keeps rejections visible", async () => {
 		mockGetJobs.mockResolvedValue([
 			makeJob({
 				id: 1,
@@ -214,13 +214,19 @@ describe("JobManagementPage", () => {
 			}),
 		]);
 		renderPage();
-		await waitFor(() => {
-			expect(screen.getByText("Withdrawn Co")).toBeInTheDocument();
-		});
+		await waitFor(() =>
+			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+		);
 
-		fireEvent.click(screen.getByRole("button", { name: /Hide Withdrawn/ }));
-
+		// Withdrawn hidden by default; rejections visible
 		expect(screen.queryByText("Withdrawn Co")).not.toBeInTheDocument();
+		expect(screen.getByText("Rejected Co")).toBeInTheDocument();
+
+		// Disable hide-withdrawn via the Filters popover
+		fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
+		fireEvent.click(screen.getByText("Hide withdrawn"));
+
+		expect(screen.getByText("Withdrawn Co")).toBeInTheDocument();
 		expect(screen.getByText("Rejected Co")).toBeInTheDocument();
 	});
 
@@ -235,6 +241,7 @@ describe("JobManagementPage", () => {
 			expect(screen.getByText("High Co")).toBeInTheDocument();
 		});
 
+		fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
 		fireEvent.mouseDown(screen.getByRole("combobox"));
 		fireEvent.click(
 			await screen.findByRole("option", { name: "High or better" }),
@@ -245,29 +252,38 @@ describe("JobManagementPage", () => {
 		expect(screen.queryByText("Unsure Co")).not.toBeInTheDocument();
 	});
 
-	it("shows the Clear button when any filter is active and resets all filters on click", async () => {
+	it("shows a Clear filters button in the Filters popover and resets filters on click", async () => {
 		mockGetJobs.mockResolvedValue([
-			makeJob({ id: 1, company: "Starred Co", favorite: true }),
-			makeJob({ id: 2, company: "Plain Co", favorite: false }),
+			makeJob({
+				id: 1,
+				company: "Withdrawn Co",
+				status: "Rejected/Withdrawn",
+				ending_substatus: "Withdrawn",
+			}),
+			makeJob({ id: 2, company: "Normal Co" }),
 		]);
 		renderPage();
-		await waitFor(() => {
-			expect(screen.getByText("Plain Co")).toBeInTheDocument();
-		});
+		await waitFor(() =>
+			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+		);
 
+		// Withdrawn Co hidden because hideWithdrawn defaults to true
+		expect(screen.queryByText("Withdrawn Co")).not.toBeInTheDocument();
+
+		// Open popover — Clear filters visible (activeFilterCount = 1)
+		fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
 		expect(
-			screen.queryByRole("button", { name: /Clear/ }),
-		).not.toBeInTheDocument();
+			screen.getByRole("button", { name: /Clear filters/ }),
+		).toBeInTheDocument();
 
-		fireEvent.click(screen.getByRole("button", { name: /Favorites/ }));
-		expect(screen.queryByText("Plain Co")).not.toBeInTheDocument();
-		expect(screen.getByRole("button", { name: /Clear/ })).toBeInTheDocument();
+		// Click Clear — resets hideWithdrawn to false
+		fireEvent.click(screen.getByRole("button", { name: /Clear filters/ }));
 
-		fireEvent.click(screen.getByRole("button", { name: /Clear/ }));
-		expect(screen.getByText("Plain Co")).toBeInTheDocument();
+		// Clear button gone (activeFilterCount = 0); Withdrawn Co now visible
 		expect(
-			screen.queryByRole("button", { name: /Clear/ }),
+			screen.queryByRole("button", { name: /Clear filters/ }),
 		).not.toBeInTheDocument();
+		expect(screen.getByText("Withdrawn Co")).toBeInTheDocument();
 	});
 
 	it("focuses the search field when '/' is pressed outside an input", async () => {
