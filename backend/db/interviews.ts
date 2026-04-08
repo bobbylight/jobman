@@ -40,6 +40,42 @@ export interface QuestionCreateData {
 
 export type QuestionUpdateData = Omit<QuestionCreateData, "interview_id">;
 
+export interface EnrichedInterviewRow extends InterviewRow {
+	company: string;
+	role: string;
+	link: string;
+}
+
+export function listEnrichedInterviews(
+	db: Database.Database,
+	userId: number,
+	from?: string,
+	to?: string,
+): EnrichedInterviewRow[] {
+	const conditions: string[] = ["j.user_id = ?"];
+	const params: (number | string)[] = [userId];
+
+	if (from !== undefined) {
+		conditions.push("i.interview_dttm >= ?");
+		params.push(from);
+	}
+	if (to !== undefined) {
+		conditions.push("i.interview_dttm <= ?");
+		params.push(to);
+	}
+
+	const sql = `
+		SELECT i.id, i.job_id, i.interview_type, i.interview_dttm,
+		       i.interview_interviewers, i.interview_vibe, i.interview_notes,
+		       j.company, j.role, j.link
+		FROM interviews i
+		JOIN jobs j ON j.id = i.job_id
+		WHERE ${conditions.join(" AND ")}
+		ORDER BY i.interview_dttm ASC
+	`;
+	return db.prepare(sql).all(...params) as EnrichedInterviewRow[];
+}
+
 export function jobBelongsToUser(
 	db: Database.Database,
 	jobId: number,
