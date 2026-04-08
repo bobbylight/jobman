@@ -1,8 +1,8 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
-import InterviewsPage from "./InterviewsPage";
+import InterviewsPage, { getDefaultDateRange } from "./InterviewsPage";
 import { api } from "../api";
 import type { EnrichedInterview } from "../types";
 
@@ -19,6 +19,12 @@ vi.mock("react-router-dom", async (importOriginal) => {
 
 const mockSearchInterviews = vi.mocked(api.searchInterviews);
 
+// Fix "today" to Wednesday Apr 8, 2026 for deterministic date math.
+// Next Sunday = Apr 12, Sunday after that = Apr 19.
+const FIXED_NOW = new Date("2026-04-08T12:00:00Z").getTime();
+const DEFAULT_FROM = "2026-04-08";
+const DEFAULT_TO = "2026-04-19";
+
 function makeInterview(
 	overrides: Partial<EnrichedInterview> = {},
 ): EnrichedInterview {
@@ -30,7 +36,12 @@ function makeInterview(
 		interview_interviewers: null,
 		interview_vibe: null,
 		interview_notes: null,
-		job: { id: 10, company: "Acme Corp", role: "Software Engineer", link: "https://example.com/job" },
+		job: {
+			id: 10,
+			company: "Acme Corp",
+			role: "Software Engineer",
+			link: "https://example.com/job",
+		},
 		...overrides,
 	};
 }
@@ -43,8 +54,46 @@ function renderPage() {
 	);
 }
 
+describe("getDefaultDateRange", () => {
+	beforeEach(() => vi.useFakeTimers({ toFake: ["Date"] }));
+	afterEach(() => vi.useRealTimers());
+
+	it("returns today as 'from' on a Wednesday", () => {
+		vi.setSystemTime(FIXED_NOW);
+		const { from } = getDefaultDateRange();
+		expect(from).toBe(DEFAULT_FROM);
+	});
+
+	it("returns the Sunday after next Sunday as 'to' on a Wednesday", () => {
+		vi.setSystemTime(FIXED_NOW);
+		const { to } = getDefaultDateRange();
+		expect(to).toBe(DEFAULT_TO); // next Sun Apr 12, then +7 = Apr 19
+	});
+
+	it("adds a full 14 days when today is Sunday", () => {
+		// Apr 12, 2026 is a Sunday
+		vi.setSystemTime(new Date("2026-04-12T12:00:00Z").getTime());
+		const { from, to } = getDefaultDateRange();
+		expect(from).toBe("2026-04-12");
+		expect(to).toBe("2026-04-26"); // +7 = Apr 19, +7 = Apr 26
+	});
+
+	it("includes only tomorrow through 8 days when today is Saturday", () => {
+		// Apr 11, 2026 is a Saturday
+		vi.setSystemTime(new Date("2026-04-11T12:00:00Z").getTime());
+		const { from, to } = getDefaultDateRange();
+		expect(from).toBe("2026-04-11");
+		expect(to).toBe("2026-04-19"); // next Sun Apr 12, +7 = Apr 19
+	});
+});
+
 describe("InterviewsPage", () => {
-	beforeEach(() => vi.clearAllMocks());
+	beforeEach(() => {
+		vi.useFakeTimers({ toFake: ["Date"] });
+		vi.setSystemTime(FIXED_NOW);
+		vi.clearAllMocks();
+	});
+	afterEach(() => vi.useRealTimers());
 
 	it("shows a loading spinner while fetching", () => {
 		mockSearchInterviews.mockReturnValue(new Promise(() => {}));
@@ -64,26 +113,24 @@ describe("InterviewsPage", () => {
 		mockSearchInterviews.mockRejectedValue(new Error("Network error"));
 		renderPage();
 		await waitFor(() =>
-			expect(
-				screen.getByText(/Failed to load interviews/),
-			).toBeInTheDocument(),
+			expect(screen.getByText(/Failed to load interviews/)).toBeInTheDocument(),
 		);
 	});
 
-	it("shows generic empty state when no date filter is set and no results", async () => {
+	it("shows 'No upcoming interviews' empty state with default filters and no results", async () => {
 		mockSearchInterviews.mockResolvedValue([]);
 		renderPage();
 		await waitFor(() =>
-			expect(
-				screen.getByText(/No interviews recorded yet/),
-			).toBeInTheDocument(),
+			expect(screen.getByText(/No upcoming interviews/)).toBeInTheDocument(),
 		);
 	});
 
-	it("shows filtered empty state when a date filter is set and no results", async () => {
+	it("shows 'No interviews found in this date range' when filters differ from defaults", async () => {
 		mockSearchInterviews.mockResolvedValue([]);
 		renderPage();
-		await waitFor(() => expect(screen.queryByRole("progressbar")).not.toBeInTheDocument());
+		await waitFor(() =>
+			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+		);
 
 		fireEvent.change(screen.getByLabelText("From"), {
 			target: { value: "2026-01-01" },
@@ -96,15 +143,32 @@ describe("InterviewsPage", () => {
 		);
 	});
 
-	it("calls searchInterviews with no args on initial render", async () => {
+	it("calls searchInterviews with the default date range on initial render", async () => {
 		mockSearchInterviews.mockResolvedValue([]);
 		renderPage();
 		await waitFor(() =>
-			expect(mockSearchInterviews).toHaveBeenCalledWith(undefined, undefined),
+			expect(mockSearchInterviews).toHaveBeenCalledWith(
+				DEFAULT_FROM,
+				DEFAULT_TO,
+			),
 		);
 	});
 
-	it("re-fetches with from param when From date is entered", async () => {
+	it("pre-populates From and To inputs with default values", async () => {
+		mockSearchInterviews.mockResolvedValue([]);
+		renderPage();
+		await waitFor(() =>
+			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+		);
+		expect(screen.getByLabelText<HTMLInputElement>("From").value).toBe(
+			DEFAULT_FROM,
+		);
+		expect(screen.getByLabelText<HTMLInputElement>("To").value).toBe(
+			DEFAULT_TO,
+		);
+	});
+
+	it("re-fetches with new from param when From date is changed", async () => {
 		mockSearchInterviews.mockResolvedValue([]);
 		renderPage();
 		await waitFor(() => expect(mockSearchInterviews).toHaveBeenCalledTimes(1));
@@ -114,11 +178,14 @@ describe("InterviewsPage", () => {
 		});
 
 		await waitFor(() =>
-			expect(mockSearchInterviews).toHaveBeenLastCalledWith("2026-01-01", undefined),
+			expect(mockSearchInterviews).toHaveBeenLastCalledWith(
+				"2026-01-01",
+				DEFAULT_TO,
+			),
 		);
 	});
 
-	it("re-fetches with to param when To date is entered", async () => {
+	it("re-fetches with new to param when To date is changed", async () => {
 		mockSearchInterviews.mockResolvedValue([]);
 		renderPage();
 		await waitFor(() => expect(mockSearchInterviews).toHaveBeenCalledTimes(1));
@@ -128,7 +195,10 @@ describe("InterviewsPage", () => {
 		});
 
 		await waitFor(() =>
-			expect(mockSearchInterviews).toHaveBeenLastCalledWith(undefined, "2026-12-31"),
+			expect(mockSearchInterviews).toHaveBeenLastCalledWith(
+				DEFAULT_FROM,
+				"2026-12-31",
+			),
 		);
 	});
 
@@ -144,7 +214,9 @@ describe("InterviewsPage", () => {
 		mockSearchInterviews.mockResolvedValue([makeInterview()]);
 		renderPage();
 		await waitFor(() =>
-			expect(screen.getByText(/Acme Corp.*Software Engineer/)).toBeInTheDocument(),
+			expect(
+				screen.getByText(/Acme Corp.*Software Engineer/),
+			).toBeInTheDocument(),
 		);
 	});
 
@@ -153,9 +225,7 @@ describe("InterviewsPage", () => {
 			makeInterview({ interview_vibe: "casual" }),
 		]);
 		renderPage();
-		await waitFor(() =>
-			expect(screen.getByText("Casual")).toBeInTheDocument(),
-		);
+		await waitFor(() => expect(screen.getByText("Casual")).toBeInTheDocument());
 	});
 
 	it("renders interviewers when present", async () => {
@@ -183,7 +253,9 @@ describe("InterviewsPage", () => {
 		mockSearchInterviews.mockResolvedValue([makeInterview()]);
 		renderPage();
 		await waitFor(() =>
-			expect(screen.getByText(/Acme Corp.*Software Engineer/)).toBeInTheDocument(),
+			expect(
+				screen.getByText(/Acme Corp.*Software Engineer/),
+			).toBeInTheDocument(),
 		);
 		fireEvent.click(screen.getByText(/Acme Corp.*Software Engineer/));
 		expect(mockNavigate).toHaveBeenCalledWith("/jobs/10");
@@ -192,7 +264,16 @@ describe("InterviewsPage", () => {
 	it("groups interviews by month", async () => {
 		mockSearchInterviews.mockResolvedValue([
 			makeInterview({ id: 1, interview_dttm: "2026-03-15T14:00:00Z" }),
-			makeInterview({ id: 2, interview_dttm: "2026-04-02T10:00:00Z", job: { id: 10, company: "Beta Inc", role: "Staff SWE", link: "https://example.com" } }),
+			makeInterview({
+				id: 2,
+				interview_dttm: "2026-04-02T10:00:00Z",
+				job: {
+					id: 10,
+					company: "Beta Inc",
+					role: "Staff SWE",
+					link: "https://example.com",
+				},
+			}),
 		]);
 		renderPage();
 		await waitFor(() =>
@@ -220,46 +301,63 @@ describe("InterviewsPage", () => {
 		);
 	});
 
-	it("shows Clear button when from date is set", async () => {
+	it("does not show Reset button when filters match defaults", async () => {
 		mockSearchInterviews.mockResolvedValue([]);
 		renderPage();
-		await waitFor(() => expect(screen.queryByRole("progressbar")).not.toBeInTheDocument());
+		await waitFor(() =>
+			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+		);
+		expect(
+			screen.queryByRole("button", { name: /Reset/ }),
+		).not.toBeInTheDocument();
+	});
 
-		expect(screen.queryByRole("button", { name: /Clear/ })).not.toBeInTheDocument();
+	it("shows Reset button when From is changed from default", async () => {
+		mockSearchInterviews.mockResolvedValue([]);
+		renderPage();
+		await waitFor(() =>
+			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+		);
+
 		fireEvent.change(screen.getByLabelText("From"), {
 			target: { value: "2026-01-01" },
 		});
 		await waitFor(() =>
-			expect(screen.getByRole("button", { name: /Clear/ })).toBeInTheDocument(),
+			expect(screen.getByRole("button", { name: /Reset/ })).toBeInTheDocument(),
 		);
 	});
 
-	it("clears both date filters when Clear is clicked", async () => {
+	it("resets both date filters to defaults when Reset is clicked", async () => {
 		mockSearchInterviews.mockResolvedValue([]);
 		renderPage();
-		await waitFor(() => expect(screen.queryByRole("progressbar")).not.toBeInTheDocument());
+		await waitFor(() =>
+			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+		);
 
 		fireEvent.change(screen.getByLabelText("From"), {
 			target: { value: "2026-01-01" },
 		});
 		await waitFor(() =>
-			expect(screen.getByRole("button", { name: /Clear/ })).toBeInTheDocument(),
+			expect(screen.getByRole("button", { name: /Reset/ })).toBeInTheDocument(),
 		);
-		fireEvent.click(screen.getByRole("button", { name: /Clear/ }));
+		fireEvent.click(screen.getByRole("button", { name: /Reset/ }));
 
 		await waitFor(() =>
-			expect(mockSearchInterviews).toHaveBeenLastCalledWith(undefined, undefined),
+			expect(mockSearchInterviews).toHaveBeenLastCalledWith(
+				DEFAULT_FROM,
+				DEFAULT_TO,
+			),
 		);
-		expect(screen.queryByRole("button", { name: /Clear/ })).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: /Reset/ }),
+		).not.toBeInTheDocument();
 	});
 
-	it("renders onsite type icon for onsite interviews", async () => {
+	it("renders onsite type label for onsite interviews", async () => {
 		mockSearchInterviews.mockResolvedValue([
 			makeInterview({ interview_type: "onsite" }),
 		]);
 		renderPage();
-		await waitFor(() =>
-			expect(screen.getByText("Onsite")).toBeInTheDocument(),
-		);
+		await waitFor(() => expect(screen.getByText("Onsite")).toBeInTheDocument());
 	});
 });

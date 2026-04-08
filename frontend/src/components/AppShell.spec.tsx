@@ -51,7 +51,9 @@ describe("AppShell", () => {
 
 	it("renders the Interviews nav button", () => {
 		renderAppShell();
-		expect(screen.getByRole("button", { name: "Interviews" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Interviews" }),
+		).toBeInTheDocument();
 	});
 
 	it("renders the Stats nav button", () => {

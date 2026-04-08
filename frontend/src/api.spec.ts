@@ -411,7 +411,12 @@ describe("api", () => {
 				interview_interviewers: null,
 				interview_vibe: null,
 				interview_notes: null,
-				job: { id: 10, company: "Acme", role: "Engineer", link: "https://acme.com" },
+				job: {
+					id: 10,
+					company: "Acme",
+					role: "Engineer",
+					link: "https://acme.com",
+				},
 			},
 		];
 
@@ -455,7 +460,9 @@ describe("api", () => {
 		});
 
 		it("throws when the response is not ok", async () => {
-			mockFetch.mockResolvedValue(makeResponse({ error: "Unauthorized" }, false));
+			mockFetch.mockResolvedValue(
+				makeResponse({ error: "Unauthorized" }, false),
+			);
 			await expect(api.searchInterviews()).rejects.toThrow("API error 400");
 		});
 	});
