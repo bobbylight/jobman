@@ -7,7 +7,7 @@ import { api } from "../api";
 import type { EnrichedInterview } from "../types";
 
 vi.mock("../api", () => ({
-	api: { searchInterviews: vi.fn() },
+	api: { searchInterviews: vi.fn(), loadMoreInterviews: vi.fn() },
 }));
 
 const mockNavigate = vi.fn();
@@ -18,6 +18,7 @@ vi.mock("react-router-dom", async (importOriginal) => {
 });
 
 const mockSearchInterviews = vi.mocked(api.searchInterviews);
+const mockLoadMoreInterviews = vi.mocked(api.loadMoreInterviews);
 
 // Fix "today" to Wednesday Apr 8, 2026 for deterministic date math.
 // Next Sunday = Apr 12, Sunday after that = Apr 19.
@@ -359,5 +360,201 @@ describe("InterviewsPage", () => {
 		]);
 		renderPage();
 		await waitFor(() => expect(screen.getByText("Onsite")).toBeInTheDocument());
+	});
+
+	// --- Load More ---
+
+	it("shows Load More button when initial load returns results", async () => {
+		mockSearchInterviews.mockResolvedValue([makeInterview()]);
+		renderPage();
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: /Load More/ }),
+			).toBeInTheDocument(),
+		);
+	});
+
+	it("does not show Load More button when initial load is empty", async () => {
+		mockSearchInterviews.mockResolvedValue([]);
+		renderPage();
+		await waitFor(() =>
+			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+		);
+		expect(
+			screen.queryByRole("button", { name: /Load More/ }),
+		).not.toBeInTheDocument();
+	});
+
+	it("shows a spinner in place of Load More while loading more", async () => {
+		mockSearchInterviews.mockResolvedValue([makeInterview()]);
+		mockLoadMoreInterviews.mockReturnValue(new Promise(() => {}));
+		renderPage();
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: /Load More/ }),
+			).toBeInTheDocument(),
+		);
+		fireEvent.click(screen.getByRole("button", { name: /Load More/ }));
+		expect(
+			screen.queryByRole("button", { name: /Load More/ }),
+		).not.toBeInTheDocument();
+		expect(screen.getByRole("progressbar")).toBeInTheDocument();
+	});
+
+	it("appends new interviews and shows success Snackbar on load more", async () => {
+		const first = makeInterview({
+			id: 1,
+			interview_dttm: "2026-04-10T10:00:00Z",
+		});
+		const second = makeInterview({
+			id: 2,
+			interview_dttm: "2026-04-20T10:00:00Z",
+			job: {
+				id: 11,
+				company: "Beta Inc",
+				role: "Staff SWE",
+				link: "https://beta.example.com",
+			},
+		});
+		mockSearchInterviews.mockResolvedValue([first]);
+		mockLoadMoreInterviews.mockResolvedValue([second]);
+		renderPage();
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: /Load More/ }),
+			).toBeInTheDocument(),
+		);
+		fireEvent.click(screen.getByRole("button", { name: /Load More/ }));
+		await waitFor(() =>
+			expect(screen.getByText("Beta Inc · Staff SWE")).toBeInTheDocument(),
+		);
+		expect(screen.getByText("Loaded 1 new interview")).toBeInTheDocument();
+	});
+
+	it("uses plural 'interviews' in Snackbar when loading more than one", async () => {
+		mockSearchInterviews.mockResolvedValue([makeInterview({ id: 1 })]);
+		mockLoadMoreInterviews.mockResolvedValue([
+			makeInterview({ id: 2, interview_dttm: "2026-05-01T10:00:00Z" }),
+			makeInterview({ id: 3, interview_dttm: "2026-05-02T10:00:00Z" }),
+		]);
+		renderPage();
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: /Load More/ }),
+			).toBeInTheDocument(),
+		);
+		fireEvent.click(screen.getByRole("button", { name: /Load More/ }));
+		await waitFor(() =>
+			expect(screen.getByText("Loaded 2 new interviews")).toBeInTheDocument(),
+		);
+	});
+
+	it("shows 'End of scheduled interviews' and hides Load More when response is empty", async () => {
+		mockSearchInterviews.mockResolvedValue([makeInterview()]);
+		mockLoadMoreInterviews.mockResolvedValue([]);
+		renderPage();
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: /Load More/ }),
+			).toBeInTheDocument(),
+		);
+		fireEvent.click(screen.getByRole("button", { name: /Load More/ }));
+		await waitFor(() =>
+			expect(
+				screen.getByText("End of scheduled interviews"),
+			).toBeInTheDocument(),
+		);
+		expect(
+			screen.queryByRole("button", { name: /Load More/ }),
+		).not.toBeInTheDocument();
+	});
+
+	it("shows 'No more interviews scheduled' Snackbar when response is empty", async () => {
+		mockSearchInterviews.mockResolvedValue([makeInterview()]);
+		mockLoadMoreInterviews.mockResolvedValue([]);
+		renderPage();
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: /Load More/ }),
+			).toBeInTheDocument(),
+		);
+		fireEvent.click(screen.getByRole("button", { name: /Load More/ }));
+		await waitFor(() =>
+			expect(
+				screen.getByText("No more interviews scheduled"),
+			).toBeInTheDocument(),
+		);
+	});
+
+	it("sets reachedEnd when load more returns fewer results than PAGE_SIZE", async () => {
+		mockSearchInterviews.mockResolvedValue([makeInterview({ id: 1 })]);
+		// 3 results < PAGE_SIZE (10) → should reach end
+		mockLoadMoreInterviews.mockResolvedValue([
+			makeInterview({ id: 2, interview_dttm: "2026-05-01T10:00:00Z" }),
+			makeInterview({ id: 3, interview_dttm: "2026-05-02T10:00:00Z" }),
+			makeInterview({ id: 4, interview_dttm: "2026-05-03T10:00:00Z" }),
+		]);
+		renderPage();
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: /Load More/ }),
+			).toBeInTheDocument(),
+		);
+		fireEvent.click(screen.getByRole("button", { name: /Load More/ }));
+		await waitFor(() =>
+			expect(
+				screen.getByText("End of scheduled interviews"),
+			).toBeInTheDocument(),
+		);
+	});
+
+	it("passes the last interview's dttm as the after cursor", async () => {
+		const iv = makeInterview({ interview_dttm: "2026-04-15T14:30:00Z" });
+		mockSearchInterviews.mockResolvedValue([iv]);
+		mockLoadMoreInterviews.mockResolvedValue([]);
+		renderPage();
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: /Load More/ }),
+			).toBeInTheDocument(),
+		);
+		fireEvent.click(screen.getByRole("button", { name: /Load More/ }));
+		await waitFor(() =>
+			expect(mockLoadMoreInterviews).toHaveBeenCalledWith(
+				"2026-04-15T14:30:00Z",
+				10,
+			),
+		);
+	});
+
+	it("re-shows Load More after date filter resets reachedEnd", async () => {
+		mockSearchInterviews.mockResolvedValue([makeInterview()]);
+		mockLoadMoreInterviews.mockResolvedValue([]);
+		renderPage();
+		// Reach end
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: /Load More/ }),
+			).toBeInTheDocument(),
+		);
+		fireEvent.click(screen.getByRole("button", { name: /Load More/ }));
+		await waitFor(() =>
+			expect(
+				screen.getByText("End of scheduled interviews"),
+			).toBeInTheDocument(),
+		);
+		// Change filter → resets
+		mockSearchInterviews.mockResolvedValue([makeInterview({ id: 99 })]);
+		fireEvent.change(screen.getByLabelText("From"), {
+			target: { value: "2026-01-01" },
+		});
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: /Load More/ }),
+			).toBeInTheDocument(),
+		);
+		expect(
+			screen.queryByText("End of scheduled interviews"),
+		).not.toBeInTheDocument();
 	});
 });

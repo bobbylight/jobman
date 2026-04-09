@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
+	Alert,
 	Box,
 	Button,
 	Chip,
 	CircularProgress,
 	Link,
+	Snackbar,
 	TextField,
 	Tooltip,
 	Typography,
@@ -15,6 +17,10 @@ import PhoneIcon from "@mui/icons-material/Phone";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import type { EnrichedInterview, InterviewType, InterviewVibe } from "../types";
+
+type Severity = "success" | "info" | "warning" | "error";
+
+const PAGE_SIZE = 10;
 
 const INTERVIEW_TYPE_LABELS: Record<InterviewType, string> = {
 	phone_screen: "Phone Screen",
@@ -85,13 +91,27 @@ export default function InterviewsPage() {
 	const [interviews, setInterviews] = useState<EnrichedInterview[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(false);
+	const [loadingMore, setLoadingMore] = useState(false);
+	const [reachedEnd, setReachedEnd] = useState(false);
+	const [snack, setSnack] = useState<{
+		open: boolean;
+		message: string;
+		severity: Severity;
+	}>({ open: false, message: "", severity: "success" });
 	const defaults = getDefaultDateRange();
 	const [from, setFrom] = useState(defaults.from);
 	const [to, setTo] = useState(defaults.to);
 
+	const notify = useCallback(
+		(message: string, severity: Severity = "success") =>
+			setSnack({ open: true, message, severity }),
+		[],
+	);
+
 	useEffect(() => {
 		setLoading(true);
 		setError(false);
+		setReachedEnd(false);
 		api
 			.searchInterviews(from || undefined, to || undefined)
 			.then(setInterviews)
@@ -99,108 +119,170 @@ export default function InterviewsPage() {
 			.finally(() => setLoading(false));
 	}, [from, to]);
 
+	const handleLoadMore = useCallback(async () => {
+		const last = interviews[interviews.length - 1];
+		if (!last) return;
+		const lastDttm = last.interview_dttm;
+		setLoadingMore(true);
+		try {
+			const newItems = await api.loadMoreInterviews(lastDttm, PAGE_SIZE);
+			if (newItems.length === 0) {
+				setReachedEnd(true);
+				notify("No more interviews scheduled", "info");
+			} else {
+				setInterviews((prev) => [...prev, ...newItems]);
+				if (newItems.length < PAGE_SIZE) setReachedEnd(true);
+				notify(
+					`Loaded ${newItems.length} new interview${newItems.length !== 1 ? "s" : ""}`,
+				);
+			}
+		} catch {
+			notify("Failed to load more interviews", "error");
+		} finally {
+			setLoadingMore(false);
+		}
+	}, [interviews, notify]);
+
 	const grouped = groupByMonth(interviews);
 
 	return (
-		<Box sx={{ maxWidth: 860, mx: "auto", px: 3, py: 4 }}>
-			{/* Header */}
-			<Box
-				sx={{
-					display: "flex",
-					alignItems: "center",
-					flexWrap: "wrap",
-					gap: 2,
-					mb: 3,
-				}}
-			>
-				<Typography variant="h5" fontWeight={700} sx={{ flex: 1 }}>
-					Upcoming Interviews
-				</Typography>
-				<Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
-					<TextField
-						label="From"
-						type="date"
-						value={from}
-						onChange={(e) => setFrom(e.target.value)}
-						size="small"
-						slotProps={{ inputLabel: { shrink: true } }}
-						sx={{ width: 160 }}
-					/>
-					<TextField
-						label="To"
-						type="date"
-						value={to}
-						onChange={(e) => setTo(e.target.value)}
-						size="small"
-						slotProps={{ inputLabel: { shrink: true } }}
-						sx={{ width: 160 }}
-					/>
-					{(from !== defaults.from || to !== defaults.to) && (
-						<Button
+		<>
+			<Box sx={{ maxWidth: 860, mx: "auto", px: 3, py: 4 }}>
+				{/* Header */}
+				<Box
+					sx={{
+						display: "flex",
+						alignItems: "center",
+						flexWrap: "wrap",
+						gap: 2,
+						mb: 3,
+					}}
+				>
+					<Typography variant="h5" fontWeight={700} sx={{ flex: 1 }}>
+						Upcoming Interviews
+					</Typography>
+					<Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+						<TextField
+							label="From"
+							type="date"
+							value={from}
+							onChange={(e) => setFrom(e.target.value)}
 							size="small"
-							variant="text"
-							onClick={() => {
-								setFrom(defaults.from);
-								setTo(defaults.to);
-							}}
-						>
-							Reset
-						</Button>
-					)}
+							slotProps={{ inputLabel: { shrink: true } }}
+							sx={{ width: 160 }}
+						/>
+						<TextField
+							label="To"
+							type="date"
+							value={to}
+							onChange={(e) => setTo(e.target.value)}
+							size="small"
+							slotProps={{ inputLabel: { shrink: true } }}
+							sx={{ width: 160 }}
+						/>
+						{(from !== defaults.from || to !== defaults.to) && (
+							<Button
+								size="small"
+								variant="text"
+								onClick={() => {
+									setFrom(defaults.from);
+									setTo(defaults.to);
+								}}
+							>
+								Reset
+							</Button>
+						)}
+					</Box>
 				</Box>
+
+				{error && (
+					<Typography color="error" sx={{ mb: 2 }}>
+						Failed to load interviews. Please try again.
+					</Typography>
+				)}
+
+				{loading ? (
+					<Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
+						<CircularProgress />
+					</Box>
+				) : interviews.length === 0 ? (
+					<Typography
+						variant="body2"
+						color="text.disabled"
+						sx={{ textAlign: "center", mt: 10 }}
+					>
+						{from !== defaults.from || to !== defaults.to
+							? "No interviews found in this date range."
+							: "No upcoming interviews."}
+					</Typography>
+				) : (
+					grouped.map(({ month, items }) => (
+						<Box key={month} sx={{ mb: 3 }}>
+							<Typography
+								variant="overline"
+								color="text.secondary"
+								sx={{ display: "block", mb: 1 }}
+							>
+								{month}
+							</Typography>
+							{items.map((iv) => (
+								<InterviewRow
+									key={iv.id}
+									interview={iv}
+									onJobClick={() => navigate(`/jobs/${iv.job.id}`)}
+								/>
+							))}
+						</Box>
+					))
+				)}
+
+				{!loading && !error && interviews.length > 0 && (
+					<Box
+						sx={{
+							mt: 2,
+							display: "flex",
+							flexDirection: "column",
+							alignItems: "center",
+							gap: 1.5,
+						}}
+					>
+						<Typography variant="caption" color="text.disabled">
+							{interviews.length} interview{interviews.length !== 1 ? "s" : ""}
+						</Typography>
+						{reachedEnd ? (
+							<Typography variant="body2" color="text.disabled">
+								End of scheduled interviews
+							</Typography>
+						) : loadingMore ? (
+							<CircularProgress size={24} />
+						) : (
+							<Button
+								variant="outlined"
+								size="small"
+								onClick={() => void handleLoadMore()}
+							>
+								Load More
+							</Button>
+						)}
+					</Box>
+				)}
 			</Box>
 
-			{error && (
-				<Typography color="error" sx={{ mb: 2 }}>
-					Failed to load interviews. Please try again.
-				</Typography>
-			)}
-
-			{loading ? (
-				<Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-					<CircularProgress />
-				</Box>
-			) : interviews.length === 0 ? (
-				<Typography
-					variant="body2"
-					color="text.disabled"
-					sx={{ textAlign: "center", mt: 10 }}
+			<Snackbar
+				open={snack.open}
+				autoHideDuration={3000}
+				onClose={() => setSnack((s) => ({ ...s, open: false }))}
+				anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+			>
+				<Alert
+					severity={snack.severity}
+					variant="filled"
+					sx={{ width: "100%" }}
 				>
-					{from !== defaults.from || to !== defaults.to
-						? "No interviews found in this date range."
-						: "No upcoming interviews."}
-				</Typography>
-			) : (
-				grouped.map(({ month, items }) => (
-					<Box key={month} sx={{ mb: 3 }}>
-						<Typography
-							variant="overline"
-							color="text.secondary"
-							sx={{ display: "block", mb: 1 }}
-						>
-							{month}
-						</Typography>
-						{items.map((iv) => (
-							<InterviewRow
-								key={iv.id}
-								interview={iv}
-								onJobClick={() => navigate(`/jobs/${iv.job.id}`)}
-							/>
-						))}
-					</Box>
-				))
-			)}
-
-			{!loading && !error && interviews.length > 0 && (
-				<Typography
-					variant="caption"
-					color="text.disabled"
-					sx={{ display: "block", textAlign: "right", mt: 1 }}
-				>
-					{interviews.length} interview{interviews.length !== 1 ? "s" : ""}
-				</Typography>
-			)}
-		</Box>
+					{snack.message}
+				</Alert>
+			</Snackbar>
+		</>
 	);
 }
 

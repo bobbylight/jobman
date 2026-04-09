@@ -401,6 +401,54 @@ describe("api", () => {
 		});
 	});
 
+	describe("loadMoreInterviews", () => {
+		const MOCK_ENRICHED = [
+			{
+				id: 1,
+				job_id: 10,
+				interview_type: "phone_screen",
+				interview_dttm: "2026-04-20T10:00:00Z",
+				interview_interviewers: null,
+				interview_vibe: null,
+				interview_notes: null,
+				job: {
+					id: 10,
+					company: "Acme",
+					role: "Engineer",
+					link: "https://acme.com",
+				},
+			},
+		];
+
+		it("GETs /api/interviews?after=<dttm>&limit=10 by default", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_ENRICHED));
+			const result = await api.loadMoreInterviews("2026-04-15T10:00:00Z");
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/interviews?after=2026-04-15T10%3A00%3A00Z&limit=10",
+				expect.any(Object),
+			);
+			expect(result).toEqual(MOCK_ENRICHED);
+		});
+
+		it("includes the specified limit when provided", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_ENRICHED));
+			await api.loadMoreInterviews("2026-04-15T10:00:00Z", 5);
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/interviews?after=2026-04-15T10%3A00%3A00Z&limit=5",
+				expect.any(Object),
+			);
+		});
+
+		it("throws when the response is not ok", async () => {
+			mockFetch.mockResolvedValue(
+				makeResponse({ error: "Unauthorized" }, false),
+			);
+			await expect(
+				api.loadMoreInterviews("2026-04-15T10:00:00Z"),
+			).rejects.toThrow("API error 400");
+		});
+	});
+
 	describe("searchInterviews", () => {
 		const MOCK_ENRICHED = [
 			{

@@ -4,33 +4,61 @@ import expressLib from "express";
 import * as InterviewsDb from "../db/interviews.js";
 import { validateInterview, validateInterviewQuestion } from "../validators.js";
 
-// GET /api/interviews — cross-job interview search with optional ?from and ?to filters
+const PAGE_SIZE = 10;
+
+function toEnrichedResponse(rows: InterviewsDb.EnrichedInterviewRow[]) {
+	return rows.map(({ company, role, link, ...interview }) => ({
+		...interview,
+		job: { id: interview.job_id, company, role, link },
+	}));
+}
+
+// GET /api/interviews — cross-job interview search
+//   Date-range mode:  ?from=<iso>&to=<iso>   (inclusive bounds, both optional)
+//   Cursor/page mode: ?after=<iso>&limit=<n>  (exclusive lower bound, limit 1–50)
 export function createInterviewSearchRouter(db: Database.Database) {
 	const router = expressLib.Router();
 
 	router.get("/", (req, res) => {
-		const { from, to } = req.query as { from?: string; to?: string };
+		const { from, to, after, limit } = req.query as {
+			from?: string;
+			to?: string;
+			after?: string;
+			limit?: string;
+		};
 
+		// Cursor pagination path
+		if (after !== undefined) {
+			if (isNaN(Date.parse(after))) {
+				return res.status(400).json({ error: "Invalid 'after' date" });
+			}
+			const parsedLimit = limit !== undefined ? parseInt(limit, 10) : PAGE_SIZE;
+			if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 50) {
+				return res.status(400).json({ error: "Invalid 'limit' value" });
+			}
+			const rows = InterviewsDb.listEnrichedInterviewsAfter(
+				db,
+				req.session.userId!,
+				after,
+				parsedLimit,
+			);
+			return res.json(toEnrichedResponse(rows));
+		}
+
+		// Date-range path (existing behavior, unchanged)
 		if (from !== undefined && isNaN(Date.parse(from))) {
 			return res.status(400).json({ error: "Invalid 'from' date" });
 		}
 		if (to !== undefined && isNaN(Date.parse(to))) {
 			return res.status(400).json({ error: "Invalid 'to' date" });
 		}
-
 		const rows = InterviewsDb.listEnrichedInterviews(
 			db,
 			req.session.userId!,
 			from,
 			to,
 		);
-
-		return res.json(
-			rows.map(({ company, role, link, ...interview }) => ({
-				...interview,
-				job: { id: interview.job_id, company, role, link },
-			})),
-		);
+		return res.json(toEnrichedResponse(rows));
 	});
 
 	return router;

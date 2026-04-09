@@ -76,6 +76,25 @@ export function listEnrichedInterviews(
 	return db.prepare(sql).all(...params) as EnrichedInterviewRow[];
 }
 
+export function listEnrichedInterviewsAfter(
+	db: Database.Database,
+	userId: number,
+	after: string,
+	limit: number,
+): EnrichedInterviewRow[] {
+	const sql = `
+		SELECT i.id, i.job_id, i.interview_type, i.interview_dttm,
+		       i.interview_interviewers, i.interview_vibe, i.interview_notes,
+		       j.company, j.role, j.link
+		FROM interviews i
+		JOIN jobs j ON j.id = i.job_id
+		WHERE j.user_id = ? AND i.interview_dttm > ?
+		ORDER BY i.interview_dttm ASC
+		LIMIT ?
+	`;
+	return db.prepare(sql).all(userId, after, limit) as EnrichedInterviewRow[];
+}
+
 export function jobBelongsToUser(
 	db: Database.Database,
 	jobId: number,
