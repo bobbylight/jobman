@@ -744,3 +744,111 @@ describe("GET /api/interviews", () => {
 		expect(res.status).toBe(401);
 	});
 });
+
+describe("GET /api/interviews — cursor pagination (?after + ?limit)", () => {
+	it("returns interviews strictly after ?after", async () => {
+		const jobId = await createJob();
+		await req("post", `/api/jobs/${jobId}/interviews`).send({ ...BASE_INTERVIEW, interview_dttm: "2026-04-01T10:00" });
+		await req("post", `/api/jobs/${jobId}/interviews`).send({ ...BASE_INTERVIEW, interview_dttm: "2026-04-02T10:00" });
+		await req("post", `/api/jobs/${jobId}/interviews`).send({ ...BASE_INTERVIEW, interview_dttm: "2026-04-03T10:00" });
+
+		const res = await req("get", "/api/interviews?after=2026-04-01T10:00");
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(2);
+		expect(res.body[0].interview_dttm).toBe("2026-04-02T10:00");
+		expect(res.body[1].interview_dttm).toBe("2026-04-03T10:00");
+	});
+
+	it("does not return the interview at exactly the cursor dttm", async () => {
+		const jobId = await createJob();
+		await req("post", `/api/jobs/${jobId}/interviews`).send({ ...BASE_INTERVIEW, interview_dttm: "2026-04-01T10:00" });
+
+		const res = await req("get", "/api/interviews?after=2026-04-01T10:00");
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(0);
+	});
+
+	it("returns at most ?limit interviews", async () => {
+		const jobId = await createJob();
+		for (let i = 1; i <= 5; i++) {
+			await req("post", `/api/jobs/${jobId}/interviews`).send({
+				...BASE_INTERVIEW,
+				interview_dttm: `2026-04-0${i}T10:00`,
+			});
+		}
+
+		const res = await req("get", "/api/interviews?after=2026-01-01T00:00:00&limit=2");
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(2);
+	});
+
+	it("uses the default page size (10) when ?limit is omitted", async () => {
+		const jobId = await createJob();
+		for (let i = 1; i <= 15; i++) {
+			const day = String(i).padStart(2, "0");
+			await req("post", `/api/jobs/${jobId}/interviews`).send({
+				...BASE_INTERVIEW,
+				interview_dttm: `2026-04-${day}T10:00`,
+			});
+		}
+
+		const res = await req("get", "/api/interviews?after=2026-01-01T00:00:00");
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(10);
+	});
+
+	it("returns an empty array when no interviews exist after the cursor", async () => {
+		const jobId = await createJob();
+		await req("post", `/api/jobs/${jobId}/interviews`).send({ ...BASE_INTERVIEW, interview_dttm: "2026-04-01T10:00" });
+
+		const res = await req("get", "/api/interviews?after=2026-12-31T23:59:59");
+		expect(res.status).toBe(200);
+		expect(res.body).toEqual([]);
+	});
+
+	it("returns 400 for an invalid ?after value", async () => {
+		const res = await req("get", "/api/interviews?after=not-a-date");
+		expect(res.status).toBe(400);
+		expect(res.body.error).toMatch(/after/);
+	});
+
+	it("returns 400 when ?limit is 0", async () => {
+		const res = await req("get", "/api/interviews?after=2026-04-01T00:00:00&limit=0");
+		expect(res.status).toBe(400);
+		expect(res.body.error).toMatch(/limit/);
+	});
+
+	it("returns 400 when ?limit exceeds 50", async () => {
+		const res = await req("get", "/api/interviews?after=2026-04-01T00:00:00&limit=51");
+		expect(res.status).toBe(400);
+		expect(res.body.error).toMatch(/limit/);
+	});
+
+	it("only returns interviews belonging to the authenticated user", async () => {
+		const jobId = await createJob();
+		await req("post", `/api/jobs/${jobId}/interviews`).send({ ...BASE_INTERVIEW, interview_dttm: "2026-04-10T10:00" });
+
+		// Insert an interview for a different user directly
+		testDb
+			.prepare("INSERT INTO jobs (user_id, company, role, link, status) VALUES (?, ?, ?, ?, ?)")
+			.run(2, "Other Corp", "PM", "https://other.example.com", "Not started");
+		const otherJobId = (testDb.prepare("SELECT last_insert_rowid() AS id").get() as { id: number }).id;
+		testDb
+			.prepare("INSERT INTO interviews (job_id, interview_type, interview_dttm) VALUES (?, ?, ?)")
+			.run(otherJobId, "phone_screen", "2026-04-15T10:00");
+
+		const res = await req("get", "/api/interviews?after=2026-01-01T00:00:00");
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(1);
+		expect(res.body[0].job.company).toBe(BASE_JOB.company);
+	});
+
+	it("returns enriched interviews with a nested job object", async () => {
+		const jobId = await createJob();
+		await req("post", `/api/jobs/${jobId}/interviews`).send({ ...BASE_INTERVIEW, interview_dttm: "2026-04-10T10:00" });
+
+		const res = await req("get", "/api/interviews?after=2026-01-01T00:00:00");
+		expect(res.status).toBe(200);
+		expect(res.body[0].job).toMatchObject({ id: jobId, company: BASE_JOB.company });
+	});
+});

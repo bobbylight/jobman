@@ -58,6 +58,10 @@ export const api = {
 		request<StatsResponse>(`/stats?window=${window}`),
 
 	// Cross-job interview search
+	loadMoreInterviews: (after: string, limit = 10) => {
+		const params = new URLSearchParams({ after, limit: String(limit) });
+		return request<EnrichedInterview[]>(`/interviews?${params.toString()}`);
+	},
 	searchInterviews: (from?: string, to?: string) => {
 		const params = new URLSearchParams();
 		if (from) params.set("from", from);
