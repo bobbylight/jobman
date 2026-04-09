@@ -32,9 +32,10 @@ function makeInterview(
 	return {
 		id: 1,
 		job_id: 10,
-		interview_type: "phone_screen",
+		interview_stage: "phone_screen",
 		interview_dttm: "2026-03-15T14:00:00Z",
 		interview_interviewers: null,
+		interview_type: null,
 		interview_vibe: null,
 		interview_notes: null,
 		job: {
@@ -449,7 +450,7 @@ describe("InterviewsPage", () => {
 
 	it("renders onsite type label for onsite interviews", async () => {
 		mockSearchInterviews.mockResolvedValue([
-			makeInterview({ interview_type: "onsite" }),
+			makeInterview({ interview_stage: "onsite" }),
 		]);
 		renderPage();
 		await waitFor(() => expect(screen.getByText("Onsite")).toBeInTheDocument());

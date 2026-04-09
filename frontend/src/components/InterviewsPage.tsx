@@ -16,15 +16,29 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PhoneIcon from "@mui/icons-material/Phone";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
-import type { EnrichedInterview, InterviewType, InterviewVibe } from "../types";
+import type {
+	EnrichedInterview,
+	InterviewStage,
+	InterviewType,
+	InterviewVibe,
+} from "../types";
 
 type Severity = "success" | "info" | "warning" | "error";
 
 const PAGE_SIZE = 10;
 
-const INTERVIEW_TYPE_LABELS: Record<InterviewType, string> = {
+const INTERVIEW_STAGE_LABELS: Record<InterviewStage, string> = {
 	phone_screen: "Phone Screen",
 	onsite: "Onsite",
+};
+
+const INTERVIEW_TYPE_LABELS: Record<InterviewType, string> = {
+	behavioral: "Behavioral",
+	leadership: "Leadership",
+	coding: "Coding",
+	system_design: "System Design",
+	past_experience: "Past Experience",
+	culture_fit: "Culture Fit",
 };
 
 const VIBE_CHIP_SX: Record<InterviewVibe, object> = {
@@ -392,8 +406,8 @@ function InterviewRow({
 	dimmed?: boolean;
 }) {
 	const TypeIcon =
-		interview.interview_type === "phone_screen" ? PhoneIcon : BusinessIcon;
-	const typeLabel = INTERVIEW_TYPE_LABELS[interview.interview_type];
+		interview.interview_stage === "phone_screen" ? PhoneIcon : BusinessIcon;
+	const typeLabel = INTERVIEW_STAGE_LABELS[interview.interview_stage];
 
 	return (
 		<Box
@@ -430,6 +444,13 @@ function InterviewRow({
 					<Typography variant="body2" color="text.secondary">
 						&middot; {formatDttm(interview.interview_dttm)}
 					</Typography>
+					{interview.interview_type && (
+						<Chip
+							label={INTERVIEW_TYPE_LABELS[interview.interview_type]}
+							size="small"
+							sx={{ bgcolor: "#f3e5f5", color: "#6a1b9a" }}
+						/>
+					)}
 					{interview.interview_vibe && (
 						<Chip
 							label={VIBE_LABELS[interview.interview_vibe]}

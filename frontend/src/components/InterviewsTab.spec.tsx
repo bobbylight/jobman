@@ -16,9 +16,10 @@ vi.mock("../api");
 const makeInterview = (overrides: Partial<Interview> = {}): Interview => ({
 	id: 1,
 	job_id: 42,
-	interview_type: "phone_screen",
+	interview_stage: "phone_screen",
 	interview_dttm: "2024-03-12T14:00",
 	interview_interviewers: "Jane Smith",
+	interview_type: null,
 	interview_vibe: "casual",
 	interview_notes: "Great conversation",
 	...overrides,
@@ -26,7 +27,7 @@ const makeInterview = (overrides: Partial<Interview> = {}): Interview => ({
 
 const INTERVIEW_A = makeInterview({
 	id: 1,
-	interview_type: "phone_screen",
+	interview_stage: "phone_screen",
 	interview_dttm: "2024-03-12T14:00",
 	interview_interviewers: "Jane Smith",
 	interview_vibe: "casual",
@@ -35,7 +36,7 @@ const INTERVIEW_A = makeInterview({
 
 const INTERVIEW_B = makeInterview({
 	id: 2,
-	interview_type: "onsite",
+	interview_stage: "onsite",
 	interview_dttm: "2024-03-19T10:00",
 	interview_interviewers: null,
 	interview_vibe: "intense",
@@ -323,7 +324,7 @@ describe("InterviewsTab", () => {
 					42,
 					INTERVIEW_A.id,
 					expect.objectContaining({
-						interview_type: INTERVIEW_A.interview_type,
+						interview_stage: INTERVIEW_A.interview_stage,
 					}),
 				);
 			});

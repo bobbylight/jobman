@@ -16,9 +16,10 @@ vi.mock("../api");
 const BASE_INTERVIEW: Interview = {
 	id: 10,
 	job_id: 42,
-	interview_type: "phone_screen",
+	interview_stage: "phone_screen",
 	interview_dttm: "2024-03-12T14:00",
 	interview_interviewers: "Jane Smith",
+	interview_type: null,
 	interview_vibe: "casual",
 	interview_notes: null,
 };
@@ -108,7 +109,7 @@ describe("QuestionSubView", () => {
 			render(
 				<QuestionSubView
 					{...DEFAULT_PROPS}
-					interview={{ ...BASE_INTERVIEW, interview_type: "onsite" }}
+					interview={{ ...BASE_INTERVIEW, interview_stage: "onsite" }}
 				/>,
 			);
 			await waitFor(() => {

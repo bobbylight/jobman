@@ -60,9 +60,10 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS interviews (
     id                     INTEGER PRIMARY KEY AUTOINCREMENT,
     job_id                 INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-    interview_type         TEXT NOT NULL,
+    interview_stage        TEXT NOT NULL,
     interview_dttm         TEXT NOT NULL,
     interview_interviewers TEXT,
+    interview_type         TEXT,
     interview_vibe         TEXT,
     interview_notes        TEXT
   );

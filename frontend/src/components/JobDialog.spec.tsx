@@ -47,9 +47,10 @@ const BASE_JOB: Job = {
 const MOCK_INTERVIEW: Interview = {
 	id: 1,
 	job_id: 42,
-	interview_type: "phone_screen",
+	interview_stage: "phone_screen",
 	interview_dttm: "2024-03-12T14:00",
 	interview_interviewers: "Jane Smith",
+	interview_type: null,
 	interview_vibe: "casual",
 	interview_notes: null,
 };

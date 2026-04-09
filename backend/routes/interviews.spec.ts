@@ -4,7 +4,7 @@ import Database from "better-sqlite3";
 import request from "supertest";
 import { createApp } from "../server.js";
 import {
-	VALID_INTERVIEW_TYPES,
+	VALID_INTERVIEW_STAGES,
 	VALID_INTERVIEW_VIBES,
 	VALID_QUESTION_TYPES,
 } from "../validators.js";
@@ -48,9 +48,10 @@ const SCHEMA = `
   CREATE TABLE IF NOT EXISTS interviews (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     job_id INTEGER NOT NULL,
-    interview_type TEXT NOT NULL,
+    interview_stage TEXT NOT NULL,
     interview_dttm TEXT NOT NULL,
     interview_interviewers TEXT,
+    interview_type TEXT,
     interview_vibe TEXT,
     interview_notes TEXT
   );
@@ -102,7 +103,7 @@ const BASE_JOB = {
 };
 
 const BASE_INTERVIEW = {
-	interview_type: "phone_screen",
+	interview_stage: "phone_screen",
 	interview_dttm: "2026-04-01T10:00",
 };
 
@@ -133,7 +134,7 @@ describe("GET /api/jobs/:jobId/interviews", () => {
 		const res = await req("get", `/api/jobs/${jobId}/interviews`);
 		expect(res.status).toBe(200);
 		expect(res.body).toHaveLength(1);
-		expect(res.body[0].interview_type).toBe("phone_screen");
+		expect(res.body[0].interview_stage).toBe("phone_screen");
 	});
 
 	it("returns 404 when the job does not exist", async () => {
@@ -156,7 +157,7 @@ describe("POST /api/jobs/:jobId/interviews", () => {
 		expect(res.status).toBe(201);
 		expect(res.body.id).toBeTypeOf("number");
 		expect(res.body.job_id).toBe(jobId);
-		expect(res.body.interview_type).toBe("phone_screen");
+		expect(res.body.interview_stage).toBe("phone_screen");
 		expect(res.body.interview_interviewers).toBe("Alice, Bob");
 		expect(res.body.interview_vibe).toBe("casual");
 		expect(res.body.interview_notes).toBe("Went well");
@@ -171,22 +172,22 @@ describe("POST /api/jobs/:jobId/interviews", () => {
 		expect(res.body.interview_notes).toBeNull();
 	});
 
-	it("returns 422 when interview_type is missing", async () => {
+	it("returns 422 when interview_stage is missing", async () => {
 		const jobId = await createJob();
-		const { interview_type: _t, ...withoutType } = BASE_INTERVIEW;
+		const { interview_stage: _t, ...withoutType } = BASE_INTERVIEW;
 		const res = await req("post", `/api/jobs/${jobId}/interviews`).send(withoutType);
 		expect(res.status).toBe(422);
-		expect(res.body.error).toMatch(/interview_type/);
+		expect(res.body.error).toMatch(/interview_stage/);
 	});
 
-	it("returns 422 when interview_type is invalid", async () => {
+	it("returns 422 when interview_stage is invalid", async () => {
 		const jobId = await createJob();
 		const res = await req("post", `/api/jobs/${jobId}/interviews`).send({
 			...BASE_INTERVIEW,
-			interview_type: "video_call",
+			interview_stage: "video_call",
 		});
 		expect(res.status).toBe(422);
-		expect(res.body.error).toMatch(/interview_type/);
+		expect(res.body.error).toMatch(/interview_stage/);
 	});
 
 	it("returns 422 when interview_dttm is missing", async () => {
@@ -207,14 +208,14 @@ describe("POST /api/jobs/:jobId/interviews", () => {
 		expect(res.body.error).toMatch(/interview_vibe/);
 	});
 
-	it.each([...VALID_INTERVIEW_TYPES])('accepts interview_type "%s"', async (interview_type) => {
+	it.each([...VALID_INTERVIEW_STAGES])('accepts interview_stage "%s"', async (interview_stage) => {
 		const jobId = await createJob();
 		const res = await req("post", `/api/jobs/${jobId}/interviews`).send({
 			...BASE_INTERVIEW,
-			interview_type,
+			interview_stage,
 		});
 		expect(res.status).toBe(201);
-		expect(res.body.interview_type).toBe(interview_type);
+		expect(res.body.interview_stage).toBe(interview_stage);
 	});
 
 	it.each([...VALID_INTERVIEW_VIBES])('accepts interview_vibe "%s"', async (interview_vibe) => {
@@ -248,13 +249,13 @@ describe("PUT /api/jobs/:jobId/interviews/:interviewId", () => {
 		const { jobId, interviewId } = await createJobAndInterview();
 		const res = await req("put", `/api/jobs/${jobId}/interviews/${interviewId}`).send({
 			...BASE_INTERVIEW,
-			interview_type: "onsite",
+			interview_stage: "onsite",
 			interview_vibe: "intense",
 			interview_notes: "Updated notes",
 		});
 
 		expect(res.status).toBe(200);
-		expect(res.body.interview_type).toBe("onsite");
+		expect(res.body.interview_stage).toBe("onsite");
 		expect(res.body.interview_vibe).toBe("intense");
 		expect(res.body.interview_notes).toBe("Updated notes");
 	});
@@ -271,11 +272,11 @@ describe("PUT /api/jobs/:jobId/interviews/:interviewId", () => {
 		expect(res.status).toBe(404);
 	});
 
-	it("returns 422 when interview_type is invalid", async () => {
+	it("returns 422 when interview_stage is invalid", async () => {
 		const { jobId, interviewId } = await createJobAndInterview();
 		const res = await req("put", `/api/jobs/${jobId}/interviews/${interviewId}`).send({
 			...BASE_INTERVIEW,
-			interview_type: "video_call",
+			interview_stage: "video_call",
 		});
 		expect(res.status).toBe(422);
 	});
@@ -616,7 +617,7 @@ describe("GET /api/interviews", () => {
 		expect(res.status).toBe(200);
 		expect(res.body).toHaveLength(1);
 		const interview = res.body[0];
-		expect(interview.interview_type).toBe("phone_screen");
+		expect(interview.interview_stage).toBe("phone_screen");
 		expect(interview.interview_interviewers).toBe("Alice");
 		expect(interview.interview_vibe).toBe("casual");
 		expect(interview.job).toMatchObject({
@@ -729,7 +730,7 @@ describe("GET /api/interviews", () => {
 		).id;
 		testDb
 			.prepare(
-				"INSERT INTO interviews (job_id, interview_type, interview_dttm) VALUES (?, ?, ?)",
+				"INSERT INTO interviews (job_id, interview_stage, interview_dttm) VALUES (?, ?, ?)",
 			)
 			.run(otherJobId, "phone_screen", "2026-04-02T14:00");
 
@@ -834,7 +835,7 @@ describe("GET /api/interviews — cursor pagination (?after + ?limit)", () => {
 			.run(2, "Other Corp", "PM", "https://other.example.com", "Not started");
 		const otherJobId = (testDb.prepare("SELECT last_insert_rowid() AS id").get() as { id: number }).id;
 		testDb
-			.prepare("INSERT INTO interviews (job_id, interview_type, interview_dttm) VALUES (?, ?, ?)")
+			.prepare("INSERT INTO interviews (job_id, interview_stage, interview_dttm) VALUES (?, ?, ?)")
 			.run(otherJobId, "phone_screen", "2026-04-15T10:00");
 
 		const res = await req("get", "/api/interviews?after=2026-01-01T00:00:00");

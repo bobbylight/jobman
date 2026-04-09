@@ -223,7 +223,7 @@ describe("api", () => {
 				{
 					id: 1,
 					job_id: 1,
-					interview_type: "phone_screen",
+					interview_stage: "phone_screen",
 					interview_dttm: "2024-03-12T14:00",
 					interview_interviewers: "Jane",
 					interview_vibe: "casual",
@@ -250,9 +250,10 @@ describe("api", () => {
 	describe("createInterview", () => {
 		it("POSTs to /api/jobs/:jobId/interviews with JSON body and returns the created interview", async () => {
 			const formData = {
-				interview_type: "onsite" as const,
+				interview_stage: "onsite" as const,
 				interview_dttm: "2024-03-19T10:00",
 				interview_interviewers: "Alice",
+				interview_type: null,
 				interview_vibe: "intense" as const,
 				interview_notes: null,
 			};
@@ -273,9 +274,10 @@ describe("api", () => {
 	describe("updateInterview", () => {
 		it("PUTs to /api/jobs/:jobId/interviews/:interviewId and returns the updated interview", async () => {
 			const formData = {
-				interview_type: "onsite" as const,
+				interview_stage: "onsite" as const,
 				interview_dttm: "2024-03-19T10:00",
 				interview_interviewers: "Bob",
+				interview_type: null,
 				interview_vibe: null,
 				interview_notes: "Updated notes",
 			};
@@ -406,7 +408,7 @@ describe("api", () => {
 			{
 				id: 1,
 				job_id: 10,
-				interview_type: "phone_screen",
+				interview_stage: "phone_screen",
 				interview_dttm: "2026-04-20T10:00:00Z",
 				interview_interviewers: null,
 				interview_vibe: null,
@@ -454,7 +456,7 @@ describe("api", () => {
 			{
 				id: 1,
 				job_id: 10,
-				interview_type: "phone_screen",
+				interview_stage: "phone_screen",
 				interview_dttm: "2026-03-15T14:00:00Z",
 				interview_interviewers: null,
 				interview_vibe: null,

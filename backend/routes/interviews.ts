@@ -119,9 +119,10 @@ export function createInterviewsRouter(db: Database.Database) {
 
 		const interview = InterviewsDb.createInterview(db, {
 			job_id: Number(jobId),
-			interview_type: f.interview_type as string,
+			interview_stage: f.interview_stage as string,
 			interview_dttm: f.interview_dttm as string,
 			interview_interviewers: (f.interview_interviewers as string | null) ?? null,
+			interview_type: (f.interview_type as string | null) ?? null,
 			interview_vibe: (f.interview_vibe as string | null) ?? null,
 			interview_notes: (f.interview_notes as string | null) ?? null,
 		});
@@ -149,9 +150,10 @@ export function createInterviewsRouter(db: Database.Database) {
 			Number(interviewId),
 			Number(jobId),
 			{
-				interview_type: f.interview_type as string,
+				interview_stage: f.interview_stage as string,
 				interview_dttm: f.interview_dttm as string,
 				interview_interviewers: (f.interview_interviewers as string | null) ?? null,
+				interview_type: (f.interview_type as string | null) ?? null,
 				interview_vibe: (f.interview_vibe as string | null) ?? null,
 				interview_notes: (f.interview_notes as string | null) ?? null,
 			},
