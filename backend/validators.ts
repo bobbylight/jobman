@@ -1,5 +1,13 @@
 export const TERMINAL_STATUSES = new Set(["Rejected/Withdrawn", "Offer!"]);
-export const VALID_INTERVIEW_TYPES = new Set(["phone_screen", "onsite"]);
+export const VALID_INTERVIEW_STAGES = new Set(["phone_screen", "onsite"]);
+export const VALID_INTERVIEW_TYPES = new Set([
+	"behavioral",
+	"leadership",
+	"coding",
+	"system_design",
+	"past_experience",
+	"culture_fit",
+]);
 export const VALID_INTERVIEW_VIBES = new Set(["casual", "intense"]);
 export const VALID_QUESTION_TYPES = new Set([
 	"behavioral",
@@ -37,11 +45,11 @@ export function validateEndingSubstatus(
 export function validateInterview(
 	body: Record<string, unknown>,
 ): string | null {
-	if (!body.interview_type || typeof body.interview_type !== "string") {
-		return "interview_type is required";
+	if (!body.interview_stage || typeof body.interview_stage !== "string") {
+		return "interview_stage is required";
 	}
-	if (!VALID_INTERVIEW_TYPES.has(body.interview_type)) {
-		return `interview_type must be one of: ${[...VALID_INTERVIEW_TYPES].join(", ")}`;
+	if (!VALID_INTERVIEW_STAGES.has(body.interview_stage)) {
+		return `interview_stage must be one of: ${[...VALID_INTERVIEW_STAGES].join(", ")}`;
 	}
 	if (!body.interview_dttm || typeof body.interview_dttm !== "string") {
 		return "interview_dttm is required";
@@ -52,6 +60,13 @@ export function validateInterview(
 			!VALID_INTERVIEW_VIBES.has(body.interview_vibe))
 	) {
 		return `interview_vibe must be one of: ${[...VALID_INTERVIEW_VIBES].join(", ")}`;
+	}
+	if (
+		body.interview_type != null &&
+		(typeof body.interview_type !== "string" ||
+			!VALID_INTERVIEW_TYPES.has(body.interview_type))
+	) {
+		return `interview_type must be one of: ${[...VALID_INTERVIEW_TYPES].join(", ")}`;
 	}
 	return null;
 }

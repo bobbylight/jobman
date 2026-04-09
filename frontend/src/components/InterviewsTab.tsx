@@ -20,15 +20,25 @@ import { api } from "../api";
 import type {
 	Interview,
 	InterviewFormData,
+	InterviewStage,
 	InterviewType,
 	InterviewVibe,
 } from "../types";
 import MarkdownField from "./MarkdownField";
 import QuestionSubView from "./QuestionSubView";
 
-const INTERVIEW_TYPE_LABELS: Record<InterviewType, string> = {
+const INTERVIEW_STAGE_LABELS: Record<InterviewStage, string> = {
 	phone_screen: "Phone Screen",
 	onsite: "Onsite",
+};
+
+const INTERVIEW_TYPE_LABELS: Record<InterviewType, string> = {
+	behavioral: "Behavioral",
+	leadership: "Leadership",
+	coding: "Coding",
+	system_design: "System Design",
+	past_experience: "Past Experience",
+	culture_fit: "Culture Fit",
 };
 
 const INTERVIEW_VIBE_LABELS: Record<InterviewVibe, string> = {
@@ -42,9 +52,10 @@ const VIBE_CHIP_SX: Record<InterviewVibe, object> = {
 };
 
 const EMPTY_FORM: InterviewFormData = {
-	interview_type: "phone_screen",
+	interview_stage: "phone_screen",
 	interview_dttm: "",
 	interview_interviewers: null,
+	interview_type: null,
 	interview_vibe: null,
 	interview_notes: null,
 };
@@ -159,9 +170,10 @@ export default function InterviewsTab({
 
 	function handleEditClick(interview: Interview) {
 		setForm({
-			interview_type: interview.interview_type,
+			interview_stage: interview.interview_stage,
 			interview_dttm: interview.interview_dttm.slice(0, 16),
 			interview_interviewers: interview.interview_interviewers,
+			interview_type: interview.interview_type,
 			interview_vibe: interview.interview_vibe,
 			interview_notes: interview.interview_notes,
 		});
@@ -370,8 +382,8 @@ function InterviewCard({
 	onViewQuestions: () => void;
 }) {
 	const TypeIcon =
-		interview.interview_type === "phone_screen" ? PhoneIcon : BusinessIcon;
-	const typeLabel = INTERVIEW_TYPE_LABELS[interview.interview_type];
+		interview.interview_stage === "phone_screen" ? PhoneIcon : BusinessIcon;
+	const typeLabel = INTERVIEW_STAGE_LABELS[interview.interview_stage];
 
 	return (
 		<Box
@@ -407,6 +419,13 @@ function InterviewCard({
 						<Typography variant="body2" color="text.secondary">
 							&middot; {formatDttm(interview.interview_dttm)}
 						</Typography>
+						{interview.interview_type && (
+							<Chip
+								label={INTERVIEW_TYPE_LABELS[interview.interview_type]}
+								size="small"
+								sx={{ bgcolor: "#f3e5f5", color: "#6a1b9a" }}
+							/>
+						)}
 						{interview.interview_vibe && (
 							<Chip
 								label={INTERVIEW_VIBE_LABELS[interview.interview_vibe]}
@@ -506,16 +525,16 @@ function InterviewForm({
 			<Box sx={{ display: "flex", gap: 1.5, mb: 1.5, flexWrap: "wrap" }}>
 				<TextField
 					select
-					label="Type"
-					value={data.interview_type}
+					label="Stage"
+					value={data.interview_stage}
 					onChange={(e) =>
-						onChange("interview_type", e.target.value as InterviewType)
+						onChange("interview_stage", e.target.value as InterviewStage)
 					}
 					size="small"
 					sx={{ minWidth: 140 }}
 				>
 					{(
-						Object.entries(INTERVIEW_TYPE_LABELS) as [InterviewType, string][]
+						Object.entries(INTERVIEW_STAGE_LABELS) as [InterviewStage, string][]
 					).map(([value, label]) => (
 						<MenuItem key={value} value={value}>
 							{label}
@@ -544,30 +563,56 @@ function InterviewForm({
 				placeholder="e.g. Jane Smith, Bob Lee"
 				sx={{ mb: 1.5 }}
 			/>
-			<TextField
-				select
-				label="Vibe"
-				value={data.interview_vibe ?? ""}
-				onChange={(e) =>
-					onChange(
-						"interview_vibe",
-						(e.target.value || null) as InterviewVibe | null,
-					)
-				}
-				size="small"
-				sx={{ minWidth: 140, mb: 1.5 }}
-			>
-				<MenuItem value="">
-					<em>None</em>
-				</MenuItem>
-				{(
-					Object.entries(INTERVIEW_VIBE_LABELS) as [InterviewVibe, string][]
-				).map(([value, label]) => (
-					<MenuItem key={value} value={value}>
-						{label}
+			<Box sx={{ display: "flex", gap: 1.5, mb: 1.5, flexWrap: "wrap" }}>
+				<TextField
+					select
+					label="Type"
+					value={data.interview_type ?? ""}
+					onChange={(e) =>
+						onChange(
+							"interview_type",
+							(e.target.value || null) as InterviewType | null,
+						)
+					}
+					size="small"
+					sx={{ minWidth: 160 }}
+				>
+					<MenuItem value="">
+						<em>None</em>
 					</MenuItem>
-				))}
-			</TextField>
+					{(
+						Object.entries(INTERVIEW_TYPE_LABELS) as [InterviewType, string][]
+					).map(([value, label]) => (
+						<MenuItem key={value} value={value}>
+							{label}
+						</MenuItem>
+					))}
+				</TextField>
+				<TextField
+					select
+					label="Vibe"
+					value={data.interview_vibe ?? ""}
+					onChange={(e) =>
+						onChange(
+							"interview_vibe",
+							(e.target.value || null) as InterviewVibe | null,
+						)
+					}
+					size="small"
+					sx={{ minWidth: 140 }}
+				>
+					<MenuItem value="">
+						<em>None</em>
+					</MenuItem>
+					{(
+						Object.entries(INTERVIEW_VIBE_LABELS) as [InterviewVibe, string][]
+					).map(([value, label]) => (
+						<MenuItem key={value} value={value}>
+							{label}
+						</MenuItem>
+					))}
+				</TextField>
+			</Box>
 			<Box sx={{ mb: 1.5 }}>
 				<MarkdownField
 					label="Notes"

@@ -3,9 +3,10 @@ import type Database from "better-sqlite3";
 export interface InterviewRow {
 	id: number;
 	job_id: number;
-	interview_type: string;
+	interview_stage: string;
 	interview_dttm: string;
 	interview_interviewers: string | null;
+	interview_type: string | null;
 	interview_vibe: string | null;
 	interview_notes: string | null;
 }
@@ -21,9 +22,10 @@ export interface InterviewQuestionRow {
 
 export interface InterviewCreateData {
 	job_id: number;
-	interview_type: string;
+	interview_stage: string;
 	interview_dttm: string;
 	interview_interviewers: string | null;
+	interview_type: string | null;
 	interview_vibe: string | null;
 	interview_notes: string | null;
 }
@@ -65,8 +67,8 @@ export function listEnrichedInterviews(
 	}
 
 	const sql = `
-		SELECT i.id, i.job_id, i.interview_type, i.interview_dttm,
-		       i.interview_interviewers, i.interview_vibe, i.interview_notes,
+		SELECT i.id, i.job_id, i.interview_stage, i.interview_dttm,
+		       i.interview_interviewers, i.interview_type, i.interview_vibe, i.interview_notes,
 		       j.company, j.role, j.link
 		FROM interviews i
 		JOIN jobs j ON j.id = i.job_id
@@ -83,8 +85,8 @@ export function listEnrichedInterviewsAfter(
 	limit: number,
 ): EnrichedInterviewRow[] {
 	const sql = `
-		SELECT i.id, i.job_id, i.interview_type, i.interview_dttm,
-		       i.interview_interviewers, i.interview_vibe, i.interview_notes,
+		SELECT i.id, i.job_id, i.interview_stage, i.interview_dttm,
+		       i.interview_interviewers, i.interview_type, i.interview_vibe, i.interview_notes,
 		       j.company, j.role, j.link
 		FROM interviews i
 		JOIN jobs j ON j.id = i.job_id
@@ -130,15 +132,16 @@ export function createInterview(
 ): InterviewRow {
 	const result = db
 		.prepare(
-			`INSERT INTO interviews (job_id, interview_type, interview_dttm,
-        interview_interviewers, interview_vibe, interview_notes)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+			`INSERT INTO interviews (job_id, interview_stage, interview_dttm,
+        interview_interviewers, interview_type, interview_vibe, interview_notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		)
 		.run(
 			data.job_id,
-			data.interview_type,
+			data.interview_stage,
 			data.interview_dttm,
 			data.interview_interviewers,
+			data.interview_type,
 			data.interview_vibe,
 			data.interview_notes,
 		);
@@ -156,14 +159,15 @@ export function updateInterview(
 	const info = db
 		.prepare(
 			`UPDATE interviews SET
-        interview_type = ?, interview_dttm = ?, interview_interviewers = ?,
-        interview_vibe = ?, interview_notes = ?
+        interview_stage = ?, interview_dttm = ?, interview_interviewers = ?,
+        interview_type = ?, interview_vibe = ?, interview_notes = ?
       WHERE id = ? AND job_id = ?`,
 		)
 		.run(
-			data.interview_type,
+			data.interview_stage,
 			data.interview_dttm,
 			data.interview_interviewers,
+			data.interview_type,
 			data.interview_vibe,
 			data.interview_notes,
 			interviewId,

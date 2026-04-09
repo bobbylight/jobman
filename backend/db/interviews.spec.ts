@@ -35,9 +35,10 @@ const SCHEMA = `
   CREATE TABLE interviews (
     id                     INTEGER PRIMARY KEY AUTOINCREMENT,
     job_id                 INTEGER NOT NULL,
-    interview_type         TEXT NOT NULL,
+    interview_stage         TEXT NOT NULL,
     interview_dttm         TEXT NOT NULL,
     interview_interviewers TEXT,
+    interview_type         TEXT,
     interview_vibe         TEXT,
     interview_notes        TEXT
   );
@@ -58,9 +59,10 @@ function makeDb() {
 }
 
 const BASE_INTERVIEW: Omit<InterviewCreateData, "job_id"> = {
-	interview_type: "Technical",
+	interview_stage: "Technical",
 	interview_dttm: "2025-06-01T10:00:00Z",
 	interview_interviewers: "Alice",
+	interview_type: null,
 	interview_vibe: "Good",
 	interview_notes: "Went well",
 };
@@ -116,7 +118,7 @@ describe("interviews db", () => {
 
 		it("returns all interviews for the given job", () => {
 			createInterview(db, { ...BASE_INTERVIEW, job_id: jobId });
-			createInterview(db, { ...BASE_INTERVIEW, job_id: jobId, interview_type: "HR" });
+			createInterview(db, { ...BASE_INTERVIEW, job_id: jobId, interview_stage: "HR" });
 			expect(listInterviews(db, jobId)).toHaveLength(2);
 		});
 
@@ -135,7 +137,7 @@ describe("interviews db", () => {
 			const created = createInterview(db, { ...BASE_INTERVIEW, job_id: jobId });
 			const found = findInterview(db, created.id, jobId);
 			expect(found?.id).toBe(created.id);
-			expect(found?.interview_type).toBe("Technical");
+			expect(found?.interview_stage).toBe("Technical");
 		});
 
 		it("returns undefined when job_id does not match", () => {
@@ -149,7 +151,7 @@ describe("interviews db", () => {
 			const interview = createInterview(db, { ...BASE_INTERVIEW, job_id: jobId });
 			expect(interview.id).toBeGreaterThan(0);
 			expect(interview.job_id).toBe(jobId);
-			expect(interview.interview_type).toBe("Technical");
+			expect(interview.interview_stage).toBe("Technical");
 			expect(interview.interview_dttm).toBe("2025-06-01T10:00:00Z");
 		});
 
@@ -172,9 +174,9 @@ describe("interviews db", () => {
 			const created = createInterview(db, { ...BASE_INTERVIEW, job_id: jobId });
 			const updated = updateInterview(db, created.id, jobId, {
 				...BASE_INTERVIEW,
-				interview_type: "Behavioral",
+				interview_stage: "Behavioral",
 			});
-			expect(updated?.interview_type).toBe("Behavioral");
+			expect(updated?.interview_stage).toBe("Behavioral");
 		});
 
 		it("returns null when no matching interview", () => {

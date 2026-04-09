@@ -46,7 +46,7 @@ const QUESTION_TYPE_CHIP_SX: Record<
 	culture_fit: { bgcolor: "#fce4ec", color: "#c62828" },
 };
 
-const INTERVIEW_TYPE_LABELS: Record<string, string> = {
+const INTERVIEW_STAGE_LABELS: Record<string, string> = {
 	phone_screen: "Phone Screen",
 	onsite: "Onsite",
 };
@@ -177,8 +177,8 @@ export default function QuestionSubView({ jobId, interview }: Props) {
 	}
 
 	const TypeIcon =
-		interview.interview_type === "phone_screen" ? PhoneIcon : BusinessIcon;
-	const typeLabel = INTERVIEW_TYPE_LABELS[interview.interview_type];
+		interview.interview_stage === "phone_screen" ? PhoneIcon : BusinessIcon;
+	const typeLabel = INTERVIEW_STAGE_LABELS[interview.interview_stage];
 
 	const isFormMode =
 		mode === "add" || (typeof mode === "object" && "editId" in mode);

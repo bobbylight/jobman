@@ -52,15 +52,23 @@ export interface Job {
 
 export type JobFormData = Omit<Job, "id" | "created_at">;
 
-export type InterviewType = "phone_screen" | "onsite";
+export type InterviewStage = "phone_screen" | "onsite";
+export type InterviewType =
+	| "behavioral"
+	| "leadership"
+	| "coding"
+	| "system_design"
+	| "past_experience"
+	| "culture_fit";
 export type InterviewVibe = "casual" | "intense";
 
 export interface Interview {
 	id: number;
 	job_id: number;
-	interview_type: InterviewType;
+	interview_stage: InterviewStage;
 	interview_dttm: string;
 	interview_interviewers: string | null;
+	interview_type: InterviewType | null;
 	interview_vibe: InterviewVibe | null;
 	interview_notes: string | null;
 }
