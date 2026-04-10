@@ -17,11 +17,6 @@ import AvgDaysChart from "./stats/AvgDaysChart";
 import PipelineOverTimeChart from "./stats/PipelineOverTimeChart";
 import TopCompaniesTable from "./stats/TopCompaniesTable";
 
-function formatPercent(rate: number | null): string {
-	if (rate === null) return "—";
-	return `${Math.round(rate * 100)}%`;
-}
-
 export default function StatsPage() {
 	const [window, setWindow] = useState<StatsWindow>("all");
 	const [data, setData] = useState<StatsResponse | null>(null);
@@ -84,7 +79,12 @@ export default function StatsPage() {
 						<StatCard label="Offers Received" value={data.offersReceived} />
 						<StatCard
 							label="Response Rate"
-							value={formatPercent(data.responseRate)}
+							value={
+								data.responseRate !== null
+									? Math.round(data.responseRate * 100)
+									: null
+							}
+							suffix="%"
 							subtitle={
 								data.responseRate !== null
 									? "Of submitted apps that got a reply"

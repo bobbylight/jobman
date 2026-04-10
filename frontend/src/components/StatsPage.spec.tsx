@@ -76,10 +76,16 @@ describe("StatsPage", () => {
 	it("displays the correct values from the API response", async () => {
 		mockGetStats.mockResolvedValue(BASE_STATS);
 		render(<StatsPage />);
-		await waitFor(() => expect(screen.getByText("10")).toBeInTheDocument());
-		expect(screen.getByText("4")).toBeInTheDocument();
-		expect(screen.getByText("1")).toBeInTheDocument();
-		expect(screen.getByText("50%")).toBeInTheDocument();
+		// Wait for all animated values simultaneously — they complete at slightly different ticks
+		await waitFor(
+			() => {
+				expect(screen.getByText("10")).toBeInTheDocument();
+				expect(screen.getByText("4")).toBeInTheDocument();
+				expect(screen.getByText("1")).toBeInTheDocument();
+				expect(screen.getByText("50%")).toBeInTheDocument();
+			},
+			{ timeout: 2000 },
+		);
 	});
 
 	it("displays '—' for response rate when it is null", async () => {
