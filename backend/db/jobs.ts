@@ -20,14 +20,19 @@ interface JobDbRow {
 	favorite: number;
 	created_at: string;
 	updated_at: string;
+	tags_csv: string | null;
 }
 
 // SQLite stores booleans as 0/1 — convert for the client
-export type Job = Omit<JobDbRow, "favorite"> & { favorite: boolean };
+export type Job = Omit<JobDbRow, "favorite" | "tags_csv"> & {
+	favorite: boolean;
+	tags: string[];
+};
 
 function toClient(row: unknown): Job {
 	const r = row as JobDbRow;
-	return { ...r, favorite: !!r.favorite };
+	const { tags_csv, ...rest } = r;
+	return { ...rest, favorite: !!r.favorite, tags: tags_csv ? tags_csv.split(",") : [] };
 }
 
 export interface JobCreateData {
@@ -47,13 +52,28 @@ export interface JobCreateData {
 	date_phone_screen: string | null;
 	date_last_onsite: string | null;
 	favorite: boolean;
+	tags: string[];
 }
 
 export type JobUpdateData = Omit<JobCreateData, "user_id">;
 
+const JOBS_WITH_TAGS_SQL = `
+  SELECT j.*, GROUP_CONCAT(jt.tag) AS tags_csv
+  FROM jobs j
+  LEFT JOIN job_tags jt ON j.id = jt.job_id
+`;
+
+function setTags(db: Database.Database, jobId: number | bigint, tags: string[]): void {
+	db.prepare("DELETE FROM job_tags WHERE job_id = ?").run(jobId);
+	const insert = db.prepare("INSERT INTO job_tags (job_id, tag) VALUES (?, ?)");
+	for (const tag of tags) {
+		insert.run(jobId, tag);
+	}
+}
+
 export function listJobs(db: Database.Database, userId: number): Job[] {
 	return db
-		.prepare("SELECT * FROM jobs WHERE user_id = ? ORDER BY created_at DESC")
+		.prepare(`${JOBS_WITH_TAGS_SQL} WHERE j.user_id = ? GROUP BY j.id ORDER BY j.created_at DESC`)
 		.all(userId)
 		.map(toClient);
 }
@@ -64,7 +84,7 @@ export function findJob(
 	userId: number,
 ): Job | undefined {
 	const row = db
-		.prepare("SELECT * FROM jobs WHERE id = ? AND user_id = ?")
+		.prepare(`${JOBS_WITH_TAGS_SQL} WHERE j.id = ? AND j.user_id = ? GROUP BY j.id`)
 		.get(jobId, userId);
 	return row ? toClient(row) : undefined;
 }
@@ -115,9 +135,10 @@ export function createJob(
 		db.prepare(
 			"INSERT INTO job_status_history (job_id, status) VALUES (?, ?)",
 		).run(result.lastInsertRowid, data.status);
+		setTags(db, result.lastInsertRowid, data.tags);
 		return toClient(
 			db
-				.prepare("SELECT * FROM jobs WHERE id = ?")
+				.prepare(`${JOBS_WITH_TAGS_SQL} WHERE j.id = ? GROUP BY j.id`)
 				.get(result.lastInsertRowid),
 		);
 	})();
@@ -171,8 +192,12 @@ export function updateJob(
 			).run(jobId, data.status);
 		}
 
+		setTags(db, jobId, data.tags);
+
 		// Fresh SELECT picks up the updated_at trigger value
-		return toClient(db.prepare("SELECT * FROM jobs WHERE id = ?").get(jobId));
+		return toClient(
+			db.prepare(`${JOBS_WITH_TAGS_SQL} WHERE j.id = ? GROUP BY j.id`).get(jobId),
+		);
 	})();
 }
 

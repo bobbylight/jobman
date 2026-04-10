@@ -40,6 +40,7 @@ const makeJob = (
 	date_phone_screen: null,
 	date_last_onsite: null,
 	favorite: false,
+	tags: [],
 	created_at: "2024-01-01T00:00:00.000Z",
 	updated_at: "2024-01-01T00:00:00.000Z",
 	...overrides,

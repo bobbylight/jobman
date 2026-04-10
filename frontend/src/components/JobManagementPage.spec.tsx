@@ -79,6 +79,7 @@ const makeJob = (overrides: Partial<Job> & Pick<Job, "id">): Job => ({
 	date_phone_screen: null,
 	date_last_onsite: null,
 	favorite: false,
+	tags: [],
 	created_at: "2024-01-01T00:00:00.000Z",
 	updated_at: "2024-01-01T00:00:00.000Z",
 	...overrides,
@@ -284,6 +285,45 @@ describe("JobManagementPage", () => {
 			screen.queryByRole("button", { name: /Clear filters/ }),
 		).not.toBeInTheDocument();
 		expect(screen.getByText("Withdrawn Co")).toBeInTheDocument();
+	});
+
+	it("filters jobs by tag — shows only jobs with at least one selected tag", async () => {
+		mockGetJobs.mockResolvedValue([
+			makeJob({ id: 1, company: "Remote Co", tags: ["remote"] }),
+			makeJob({ id: 2, company: "FAANG Co", tags: ["faang"] }),
+			makeJob({ id: 3, company: "No Tag Co", tags: [] }),
+		]);
+		renderPage();
+		await waitFor(() =>
+			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
+		fireEvent.click(screen.getByRole("button", { name: "Remote" }));
+
+		expect(screen.getByText("Remote Co")).toBeInTheDocument();
+		expect(screen.queryByText("FAANG Co")).not.toBeInTheDocument();
+		expect(screen.queryByText("No Tag Co")).not.toBeInTheDocument();
+	});
+
+	it("tag filter uses OR logic — shows jobs matching any selected tag", async () => {
+		mockGetJobs.mockResolvedValue([
+			makeJob({ id: 1, company: "Remote Co", tags: ["remote"] }),
+			makeJob({ id: 2, company: "FAANG Co", tags: ["faang"] }),
+			makeJob({ id: 3, company: "No Tag Co", tags: [] }),
+		]);
+		renderPage();
+		await waitFor(() =>
+			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
+		fireEvent.click(screen.getByRole("button", { name: "Remote" }));
+		fireEvent.click(screen.getByRole("button", { name: "FAANG" }));
+
+		expect(screen.getByText("Remote Co")).toBeInTheDocument();
+		expect(screen.getByText("FAANG Co")).toBeInTheDocument();
+		expect(screen.queryByText("No Tag Co")).not.toBeInTheDocument();
 	});
 
 	it("focuses the search field when '/' is pressed outside an input", async () => {

@@ -42,6 +42,13 @@ const SCHEMA = `
     status     TEXT NOT NULL,
     entered_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
   );
+  CREATE TABLE job_tags (
+    job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    tag    TEXT NOT NULL,
+    PRIMARY KEY (job_id, tag)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_job_tags_tag ON job_tags(tag);
 `;
 
 function makeDb() {
@@ -66,6 +73,7 @@ const BASE_JOB: Omit<JobCreateData, "user_id"> = {
 	ending_substatus: null,
 	date_phone_screen: null,
 	date_last_onsite: null,
+	tags: [],
 };
 
 describe("jobs db", () => {
@@ -201,6 +209,50 @@ describe("jobs db", () => {
 		it("returns false when job belongs to another user", () => {
 			const created = createJob(db, { ...BASE_JOB, user_id: OTHER_USER_ID });
 			expect(deleteJob(db, created.id, USER_ID)).toBe(false);
+		});
+	});
+
+	describe("tags", () => {
+		it("returns empty tags array when no tags are set", () => {
+			const job = createJob(db, { ...BASE_JOB, user_id: USER_ID });
+			expect(job.tags).toEqual([]);
+		});
+
+		it("stores and returns tags on create", () => {
+			const job = createJob(db, { ...BASE_JOB, user_id: USER_ID, tags: ["remote", "faang"] });
+			expect(job.tags).toEqual(expect.arrayContaining(["remote", "faang"]));
+			expect(job.tags).toHaveLength(2);
+		});
+
+		it("includes tags when listing jobs", () => {
+			createJob(db, { ...BASE_JOB, user_id: USER_ID, tags: ["startup"] });
+			const jobs = listJobs(db, USER_ID);
+			expect(jobs[0]?.tags).toEqual(["startup"]);
+		});
+
+		it("includes tags when finding a job", () => {
+			const created = createJob(db, { ...BASE_JOB, user_id: USER_ID, tags: ["hybrid"] });
+			const found = findJob(db, created.id, USER_ID);
+			expect(found?.tags).toEqual(["hybrid"]);
+		});
+
+		it("replaces tags on update", () => {
+			const created = createJob(db, { ...BASE_JOB, user_id: USER_ID, tags: ["remote", "faang"] });
+			const updated = updateJob(db, created.id, USER_ID, { ...BASE_JOB, tags: ["startup"] });
+			expect(updated?.tags).toEqual(["startup"]);
+		});
+
+		it("clears tags when updated with empty array", () => {
+			const created = createJob(db, { ...BASE_JOB, user_id: USER_ID, tags: ["remote"] });
+			const updated = updateJob(db, created.id, USER_ID, { ...BASE_JOB, tags: [] });
+			expect(updated?.tags).toEqual([]);
+		});
+
+		it("deletes tags when job is deleted", () => {
+			const created = createJob(db, { ...BASE_JOB, user_id: USER_ID, tags: ["remote"] });
+			deleteJob(db, created.id, USER_ID);
+			const tagRows = db.prepare("SELECT * FROM job_tags WHERE job_id = ?").all(created.id);
+			expect(tagRows).toHaveLength(0);
 		});
 	});
 });

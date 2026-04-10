@@ -40,6 +40,7 @@ const BASE_JOB: Job = {
 	date_phone_screen: null,
 	date_last_onsite: null,
 	favorite: false,
+	tags: [],
 	created_at: "2024-01-01T00:00:00.000Z",
 	updated_at: "2024-01-01T00:00:00.000Z",
 };
@@ -607,6 +608,58 @@ describe("JobDialog", () => {
 					expect.objectContaining({ ending_substatus: null }),
 				);
 			});
+		});
+	});
+
+	describe("tags", () => {
+		it("renders a Tags autocomplete input", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
+			expect(screen.getByLabelText("Tags")).toBeInTheDocument();
+		});
+
+		it("pre-fills selected tags as chips from initialValues", () => {
+			render(
+				<JobDialog
+					{...DEFAULT_PROPS}
+					initialValues={{ ...BASE_JOB, tags: ["remote", "faang"] }}
+				/>,
+			);
+			expect(
+				screen.getByRole("button", { name: /Remote/ }),
+			).toBeInTheDocument();
+			expect(screen.getByRole("button", { name: /FAANG/ })).toBeInTheDocument();
+		});
+
+		it("pre-fills tags in onSave payload", () => {
+			render(
+				<JobDialog
+					{...DEFAULT_PROPS}
+					initialValues={{ ...BASE_JOB, tags: ["remote", "faang"] }}
+				/>,
+			);
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
+				expect.objectContaining({
+					tags: expect.arrayContaining(["remote", "faang"]),
+				}),
+			);
+		});
+
+		it("includes empty tags array in onSave when no tags are selected", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
+			fireEvent.change(screen.getByLabelText(/Company/), {
+				target: { value: "X" },
+			});
+			fireEvent.change(screen.getByLabelText(/Role/), {
+				target: { value: "Y" },
+			});
+			fireEvent.change(screen.getByLabelText(/Link/), {
+				target: { value: "https://x.com" },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Add Job" }));
+			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
+				expect.objectContaining({ tags: [] }),
+			);
 		});
 	});
 

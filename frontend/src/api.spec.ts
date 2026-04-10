@@ -31,6 +31,7 @@ const MOCK_JOB: Job = {
 	date_phone_screen: null,
 	date_last_onsite: null,
 	favorite: false,
+	tags: [],
 	created_at: "2024-01-01T00:00:00.000Z",
 	updated_at: "2024-01-01T00:00:00.000Z",
 };
@@ -171,6 +172,7 @@ describe("api", () => {
 				date_last_onsite: null,
 				updated_at: "",
 				favorite: false,
+				tags: [],
 			};
 			const result = await api.createJob(formData);
 			expect(mockFetch).toHaveBeenCalledWith(
