@@ -244,7 +244,7 @@ const JobCard = React.memo(function JobCard({
 							flexWrap: "wrap",
 							gap: 0.5,
 							alignItems: "center",
-							mb: job.recruiter ? 0.5 : 0,
+							mb: 0.5,
 						}}
 					>
 						<Chip
