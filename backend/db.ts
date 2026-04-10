@@ -89,6 +89,14 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_job_status_history_job_id
     ON job_status_history(job_id);
+
+  CREATE TABLE IF NOT EXISTS job_tags (
+    job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    tag    TEXT NOT NULL,
+    PRIMARY KEY (job_id, tag)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_job_tags_tag ON job_tags(tag);
 `);
 
 // One-time backfill: synthesise history rows from existing date columns for

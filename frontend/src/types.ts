@@ -29,6 +29,15 @@ export type FitScore =
 	| "High"
 	| "Very High";
 
+export type JobTag =
+	| "remote"
+	| "hybrid"
+	| "in-office"
+	| "high-pay"
+	| "faang"
+	| "faang-adjacent"
+	| "startup";
+
 export interface Job {
 	id: number;
 	date_applied: string | null;
@@ -46,6 +55,7 @@ export interface Job {
 	date_phone_screen: string | null;
 	date_last_onsite: string | null;
 	favorite: boolean;
+	tags: JobTag[];
 	created_at: string;
 	updated_at: string;
 }

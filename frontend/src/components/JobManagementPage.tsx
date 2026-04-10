@@ -9,6 +9,7 @@ import React, {
 import {
 	Button,
 	Box,
+	Chip,
 	CircularProgress,
 	Snackbar,
 	Alert,
@@ -37,10 +38,17 @@ import type {
 	Job,
 	JobFormData,
 	JobStatus,
+	JobTag,
 	FitScore,
 	EndingSubstatus,
 } from "../types";
-import { FIT_SCORES, TERMINAL_STATUSES } from "../constants";
+import {
+	FIT_SCORES,
+	JOB_TAGS,
+	TAG_LABELS,
+	TERMINAL_STATUSES,
+	tagChipProps,
+} from "../constants";
 import KanbanBoard from "./KanbanBoard";
 import JobDialog from "./JobDialog";
 import EndingStatusDialog from "./EndingStatusDialog";
@@ -66,6 +74,7 @@ export default function JobManagementPage() {
 	const [favoritesOnly, setFavoritesOnly] = useState(false);
 	const [minFitScore, setMinFitScore] = useState<FitScore | null>(null);
 	const [hideWithdrawn, setHideWithdrawn] = useState(true);
+	const [filterTags, setFilterTags] = useState<JobTag[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [filterAnchor, setFilterAnchor] = useState<HTMLElement | null>(null);
 
@@ -250,13 +259,16 @@ export default function JobManagementPage() {
 
 	// Count of active filters shown in the Filters popover badge
 	const activeFilterCount =
-		(minFitScore !== null ? 1 : 0) + (hideWithdrawn ? 1 : 0);
+		(minFitScore !== null ? 1 : 0) +
+		(hideWithdrawn ? 1 : 0) +
+		(filterTags.length > 0 ? 1 : 0);
 
 	// Defer filter values so the input stays responsive while the board catches up
 	const deferredSearch = useDeferredValue(search);
 	const deferredFavoritesOnly = useDeferredValue(favoritesOnly);
 	const deferredMinFitScore = useDeferredValue(minFitScore);
 	const deferredHideWithdrawn = useDeferredValue(hideWithdrawn);
+	const deferredFilterTags = useDeferredValue(filterTags);
 
 	const filteredJobs = useMemo(
 		() =>
@@ -276,6 +288,11 @@ export default function JobManagementPage() {
 				}
 				if (deferredHideWithdrawn && j.ending_substatus === "Withdrawn")
 					return false;
+				if (
+					deferredFilterTags.length > 0 &&
+					!deferredFilterTags.some((t) => j.tags.includes(t))
+				)
+					return false;
 				return true;
 			}),
 		[
@@ -284,6 +301,7 @@ export default function JobManagementPage() {
 			deferredFavoritesOnly,
 			deferredMinFitScore,
 			deferredHideWithdrawn,
+			deferredFilterTags,
 		],
 	);
 
@@ -456,6 +474,37 @@ export default function JobManagementPage() {
 						}}
 					/>
 
+					<Box>
+						<Typography
+							variant="caption"
+							color="text.secondary"
+							sx={{ display: "block", mb: 0.75 }}
+						>
+							Tags
+						</Typography>
+						<Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+							{JOB_TAGS.map((tag) => {
+								const active = filterTags.includes(tag);
+								return (
+									<Chip
+										key={tag}
+										label={TAG_LABELS[tag]}
+										size="small"
+										{...(active
+											? tagChipProps(tag, true)
+											: { color: "default" as const })}
+										variant={active ? "filled" : "outlined"}
+										onClick={() =>
+											setFilterTags((prev) =>
+												active ? prev.filter((t) => t !== tag) : [...prev, tag],
+											)
+										}
+									/>
+								);
+							})}
+						</Box>
+					</Box>
+
 					{activeFilterCount > 0 && (
 						<>
 							<Divider />
@@ -464,6 +513,7 @@ export default function JobManagementPage() {
 								onClick={() => {
 									setMinFitScore(null);
 									setHideWithdrawn(false);
+									setFilterTags([]);
 								}}
 								sx={{ alignSelf: "flex-start", px: 0 }}
 							>

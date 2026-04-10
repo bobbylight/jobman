@@ -47,6 +47,7 @@ export function createJobsRouter(db: Database.Database) {
 			date_phone_screen: f.date_phone_screen ?? null,
 			date_last_onsite: f.date_last_onsite ?? null,
 			favorite: f.favorite ?? false,
+			tags: Array.isArray(f.tags) ? f.tags : [],
 		});
 		return res.status(201).json(job);
 	});
@@ -79,6 +80,7 @@ export function createJobsRouter(db: Database.Database) {
 				date_phone_screen: f.date_phone_screen ?? null,
 				date_last_onsite: f.date_last_onsite ?? null,
 				favorite: f.favorite ?? false,
+				tags: Array.isArray(f.tags) ? f.tags : [],
 			},
 		);
 		if (!job) return res.status(404).json({ error: "Job not found" });

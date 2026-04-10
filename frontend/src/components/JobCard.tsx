@@ -18,7 +18,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PeopleIcon from "@mui/icons-material/People";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import type { FitScore, Job, JobStatus } from "../types";
-import { STATUS_COLORS } from "../constants";
+import { STATUS_COLORS, TAG_LABELS, tagChipProps } from "../constants";
 
 function formatDate(dateStr: string | null): string | null {
 	if (!dateStr) return null;
@@ -267,6 +267,25 @@ const JobCard = React.memo(function JobCard({
 							/>
 						)}
 					</Box>
+
+					{job.tags.length > 0 && (
+						<Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 0.5 }}>
+							{job.tags.map((tag) => (
+								<Chip
+									key={tag}
+									label={TAG_LABELS[tag]}
+									size="small"
+									{...tagChipProps(tag)}
+									variant="outlined"
+									sx={{
+										height: 18,
+										fontSize: "0.65rem",
+										...tagChipProps(tag).sx,
+									}}
+								/>
+							))}
+						</Box>
+					)}
 
 					{job.recruiter && (
 						<Typography

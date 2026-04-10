@@ -38,6 +38,13 @@ const SCHEMA = `
     question_text TEXT NOT NULL,
     difficulty INTEGER NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS job_tags (
+    job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    tag    TEXT NOT NULL,
+    PRIMARY KEY (job_id, tag)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_job_tags_tag ON job_tags(tag);
 `;
 
 const TEST_USER_ID = 1;

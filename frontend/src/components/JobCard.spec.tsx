@@ -38,6 +38,7 @@ const BASE_JOB: Job = {
 	date_phone_screen: null,
 	date_last_onsite: null,
 	favorite: false,
+	tags: [],
 	created_at: "2024-01-01T00:00:00.000Z",
 	updated_at: "2024-01-01T00:00:00.000Z",
 };
@@ -190,6 +191,31 @@ describe("JobCard", () => {
 		// MUI v7 Tooltip sets aria-label on the child element instead of title
 		const link = screen.getByRole("link", { name: "Open job listing" });
 		expect(link).toHaveAttribute("href", "https://acme.example.com/job");
+	});
+
+	describe("tags", () => {
+		it("renders tag chips when tags are set", () => {
+			render(
+				<JobCard
+					job={{ ...BASE_JOB, tags: ["remote", "faang"] }}
+					onCardClick={vi.fn()}
+					onToggleFavorite={vi.fn()}
+				/>,
+			);
+			expect(screen.getByText("Remote")).toBeInTheDocument();
+			expect(screen.getByText("FAANG")).toBeInTheDocument();
+		});
+
+		it("does not render tag chips when tags are empty", () => {
+			render(
+				<JobCard
+					job={BASE_JOB}
+					onCardClick={vi.fn()}
+					onToggleFavorite={vi.fn()}
+				/>,
+			);
+			expect(screen.queryByText("Remote")).not.toBeInTheDocument();
+		});
 	});
 
 	describe("Rejected/Withdrawn date label", () => {

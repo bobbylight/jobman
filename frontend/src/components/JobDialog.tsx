@@ -4,7 +4,9 @@ import {
 	DialogTitle,
 	DialogContent,
 	DialogActions,
+	Autocomplete,
 	Button,
+	Chip,
 	TextField,
 	MenuItem,
 	Grid,
@@ -28,6 +30,9 @@ import {
 	FIT_SCORES,
 	ENDING_SUBSTATUSES,
 	TERMINAL_STATUSES,
+	JOB_TAGS,
+	TAG_LABELS,
+	tagChipProps,
 } from "../constants";
 import CompanyLogo from "./CompanyLogo";
 import MarkdownField from "./MarkdownField";
@@ -36,6 +41,7 @@ import type {
 	JobFormData,
 	FitScore,
 	JobStatus,
+	JobTag,
 	EndingSubstatus,
 	Interview,
 } from "../types";
@@ -57,6 +63,7 @@ const EMPTY: JobFormData = {
 	date_last_onsite: null,
 	updated_at: "",
 	favorite: false,
+	tags: [],
 };
 
 interface Props {
@@ -432,6 +439,30 @@ export default function JobDialog({
 									onChange={(e) => set("recruiter", e.target.value || null)}
 									fullWidth
 									size="small"
+								/>
+							</Grid>
+
+							<Grid size={12}>
+								<Autocomplete
+									multiple
+									options={JOB_TAGS}
+									getOptionLabel={(tag) => TAG_LABELS[tag as JobTag] ?? tag}
+									value={form.tags as JobTag[]}
+									onChange={(_, newValue) => set("tags", newValue)}
+									renderTags={(value, getTagProps) =>
+										value.map((tag, index) => (
+											<Chip
+												{...getTagProps({ index })}
+												{...tagChipProps(tag as JobTag, true)}
+												key={tag}
+												label={TAG_LABELS[tag as JobTag] ?? tag}
+												size="small"
+											/>
+										))
+									}
+									renderInput={(params) => (
+										<TextField {...params} label="Tags" size="small" />
+									)}
 								/>
 							</Grid>
 

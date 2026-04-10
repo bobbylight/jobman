@@ -1,4 +1,4 @@
-import type { JobStatus, FitScore, EndingSubstatus } from "./types";
+import type { JobStatus, FitScore, EndingSubstatus, JobTag } from "./types";
 
 export const STATUSES: JobStatus[] = [
 	"Not started",
@@ -42,6 +42,75 @@ export const STATUS_COLORS = {
 	"Offer!": "#66bb6a",
 	"Rejected/Withdrawn": "#ef5350",
 } satisfies Record<JobStatus, string>;
+
+// Sorted alphabetically by display label
+export const JOB_TAGS: JobTag[] = [
+	"faang",
+	"faang-adjacent",
+	"high-pay",
+	"hybrid",
+	"in-office",
+	"remote",
+	"startup",
+];
+
+export const TAG_LABELS: Record<JobTag, string> = {
+	faang: "FAANG",
+	"faang-adjacent": "FAANG-Adjacent",
+	"high-pay": "High Pay",
+	hybrid: "Hybrid",
+	"in-office": "In Office",
+	remote: "Remote",
+	startup: "Startup",
+};
+
+// Named MUI palette colors for most tags; hex for tags that exceed the palette.
+export const TAG_COLORS: Record<JobTag, string> = {
+	faang: "error",
+	"faang-adjacent": "#00897b",
+	"high-pay": "success",
+	hybrid: "secondary",
+	"in-office": "warning",
+	remote: "info",
+	startup: "primary",
+};
+
+type MuiChipColor =
+	| "primary"
+	| "secondary"
+	| "error"
+	| "info"
+	| "success"
+	| "warning"
+	| "default";
+const MUI_CHIP_COLORS = new Set<string>([
+	"primary",
+	"secondary",
+	"error",
+	"info",
+	"success",
+	"warning",
+	"default",
+]);
+
+/**
+ * Returns Chip props for a tag. Named MUI colors are passed as `color`;
+ * hex values fall back to `color="default"` with `sx` overrides so the
+ * chip still renders in the correct color.
+ */
+export function tagChipProps(
+	tag: JobTag,
+	filled = false,
+): { color: MuiChipColor; sx?: Record<string, string> } {
+	const c = TAG_COLORS[tag];
+	if (MUI_CHIP_COLORS.has(c)) return { color: c as MuiChipColor };
+	if (filled)
+		return {
+			color: "default",
+			sx: { backgroundColor: c, color: "#fff", borderColor: c },
+		};
+	return { color: "default", sx: { color: c, borderColor: c } };
+}
 
 export const FIT_SCORE_COLORS = {
 	"Not sure": "default",
