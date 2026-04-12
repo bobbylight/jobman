@@ -79,7 +79,8 @@ export function createApp(db: Database.Database) {
 // when server.ts is imported by tests. dotenv is loaded first so env vars
 // are available before db.ts runs its seed migration.
 if (process.env["NODE_ENV"] !== "test") {
-	await import("dotenv/config");
+	const { config } = await import("dotenv");
+	config({ path: `.env.${process.env["NODE_ENV"] ?? "development"}` });
 	const { default: rawDb } = await import("./db.js");
 	const app = createApp(rawDb);
 	app.listen(PORT, () => {
