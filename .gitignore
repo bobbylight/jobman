@@ -10,4 +10,6 @@ coverage/
 .idea/
 settings.local.json
 .env
+.env.deploy
+.env.development
 .env.production
