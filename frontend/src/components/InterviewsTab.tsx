@@ -17,6 +17,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import PhoneIcon from "@mui/icons-material/Phone";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import { api } from "../api";
+import { INTERVIEW_MAX_LENGTHS } from "../constants";
 import type {
 	Interview,
 	InterviewFormData,
@@ -189,6 +190,25 @@ export default function InterviewsTab({
 	async function handleSave() {
 		if (!form.interview_dttm) {
 			setFormError("Date and time are required");
+			return;
+		}
+		if (
+			form.interview_interviewers &&
+			form.interview_interviewers.length >
+				INTERVIEW_MAX_LENGTHS.interview_interviewers
+		) {
+			setFormError(
+				`Interviewers must be ${INTERVIEW_MAX_LENGTHS.interview_interviewers.toLocaleString()} characters or fewer`,
+			);
+			return;
+		}
+		if (
+			form.interview_notes &&
+			form.interview_notes.length > INTERVIEW_MAX_LENGTHS.interview_notes
+		) {
+			setFormError(
+				`Notes must be ${INTERVIEW_MAX_LENGTHS.interview_notes.toLocaleString()} characters or fewer`,
+			);
 			return;
 		}
 		setSaving(true);
@@ -562,6 +582,11 @@ function InterviewForm({
 				fullWidth
 				placeholder="e.g. Jane Smith, Bob Lee"
 				sx={{ mb: 1.5 }}
+				slotProps={{
+					htmlInput: {
+						maxLength: INTERVIEW_MAX_LENGTHS.interview_interviewers,
+					},
+				}}
 			/>
 			<Box sx={{ display: "flex", gap: 1.5, mb: 1.5, flexWrap: "wrap" }}>
 				<TextField

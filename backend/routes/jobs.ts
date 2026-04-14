@@ -1,7 +1,7 @@
 import type Database from "better-sqlite3";
 import express from "express";
 import * as JobsDb from "../db/jobs.js";
-import { validateEndingSubstatus } from "../validators.js";
+import { validateEndingSubstatus, validateJobFields } from "../validators.js";
 
 export function createJobsRouter(db: Database.Database) {
 	const router = express.Router();
@@ -19,6 +19,9 @@ export function createJobsRouter(db: Database.Database) {
 	router.post("/", (req, res) => {
 		const f = req.body;
 		const userId = req.session.userId!;
+
+		const lengthError = validateJobFields(f);
+		if (lengthError) return res.status(422).json({ error: lengthError });
 
 		const substatusError = validateEndingSubstatus(
 			f.status ?? "Not started",
@@ -54,6 +57,10 @@ export function createJobsRouter(db: Database.Database) {
 
 	router.put("/:id", (req, res) => {
 		const f = req.body;
+
+		const lengthError = validateJobFields(f);
+		if (lengthError) return res.status(422).json({ error: lengthError });
+
 		const substatusError = validateEndingSubstatus(
 			f.status,
 			f.ending_substatus ?? null,

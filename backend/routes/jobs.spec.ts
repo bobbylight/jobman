@@ -4,6 +4,7 @@ import Database from "better-sqlite3";
 import request from "supertest";
 import { createApp } from "../server.js";
 import {
+	JOB_MAX_LENGTHS,
 	TERMINAL_STATUSES,
 	VALID_ENDING_SUBSTATUSES,
 } from "../validators.js";
@@ -400,5 +401,54 @@ describe("date_phone_screen and date_last_onsite fields", () => {
 		expect(res.status).toBe(200);
 		expect(res.body.date_phone_screen).toBeNull();
 		expect(res.body.date_last_onsite).toBeNull();
+	});
+});
+
+describe("field length validation", () => {
+	const LENGTH_CASES = Object.entries(JOB_MAX_LENGTHS) as [
+		keyof typeof JOB_MAX_LENGTHS,
+		number,
+	][];
+
+	describe("POST /api/jobs", () => {
+		it.each(LENGTH_CASES)(
+			"returns 422 when %s exceeds %d characters",
+			async (field, max) => {
+				const res = await req("post", "/api/jobs").send({
+					...BASE_JOB,
+					[field]: "a".repeat(max + 1),
+				});
+				expect(res.status).toBe(422);
+				expect(res.body.error).toMatch(new RegExp(field));
+			},
+		);
+
+		it.each(LENGTH_CASES)(
+			"accepts %s at exactly %d characters",
+			async (field, max) => {
+				const res = await req("post", "/api/jobs").send({
+					...BASE_JOB,
+					[field]: "a".repeat(max),
+				});
+				expect(res.status).toBe(201);
+			},
+		);
+	});
+
+	describe("PUT /api/jobs/:id", () => {
+		it.each(LENGTH_CASES)(
+			"returns 422 when %s exceeds %d characters",
+			async (field, max) => {
+				const createRes = await req("post", "/api/jobs").send(BASE_JOB);
+				const id: number = createRes.body.id;
+
+				const res = await req("put", `/api/jobs/${id}`).send({
+					...BASE_JOB,
+					[field]: "a".repeat(max + 1),
+				});
+				expect(res.status).toBe(422);
+				expect(res.body.error).toMatch(new RegExp(field));
+			},
+		);
 	});
 });

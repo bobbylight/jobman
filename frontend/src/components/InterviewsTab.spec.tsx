@@ -381,4 +381,54 @@ describe("InterviewsTab", () => {
 			});
 		});
 	});
+
+	describe("field length validation", () => {
+		beforeEach(() => {
+			vi.mocked(api.getInterviews).mockResolvedValue([]);
+		});
+
+		async function openAddForm() {
+			render(<InterviewsTab {...DEFAULT_PROPS} />);
+			await waitFor(() =>
+				screen.getByRole("button", { name: "Add Interview" }),
+			);
+			fireEvent.click(screen.getByRole("button", { name: "Add Interview" }));
+			// Set a required date value
+			fireEvent.change(screen.getByLabelText(/Date & Time/i), {
+				target: { value: "2026-04-01T10:00" },
+			});
+		}
+
+		it("shows an error when interviewers exceeds 128 characters", async () => {
+			await openAddForm();
+			fireEvent.change(screen.getByLabelText(/Interviewers/i), {
+				target: { value: "a".repeat(129) },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Save Interview" }));
+			await waitFor(() => {
+				expect(
+					screen.getByText("Interviewers must be 128 characters or fewer"),
+				).toBeInTheDocument();
+			});
+			expect(api.createInterview).not.toHaveBeenCalled();
+		});
+
+		it("does not show an error when interviewers is within 128 characters", async () => {
+			vi.mocked(api.createInterview).mockResolvedValue(
+				makeInterview({ id: 99 }),
+			);
+			vi.mocked(api.getInterviews)
+				.mockResolvedValueOnce([])
+				.mockResolvedValueOnce([makeInterview({ id: 99 })]);
+			vi.mocked(api.getQuestions).mockResolvedValue([]);
+			await openAddForm();
+			fireEvent.change(screen.getByLabelText(/Interviewers/i), {
+				target: { value: "a".repeat(128) },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Save Interview" }));
+			await waitFor(() => {
+				expect(api.createInterview).toHaveBeenCalled();
+			});
+		});
+	});
 });

@@ -32,22 +32,22 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS jobs (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id          INTEGER REFERENCES users(id),
-    date_applied     TEXT,
-    company          TEXT NOT NULL,
-    role             TEXT NOT NULL,
-    link             TEXT NOT NULL,
-    salary           TEXT,
-    fit_score        TEXT,
-    referred_by      TEXT,
-    status           TEXT DEFAULT 'Not started',
-    recruiter        TEXT,
-    notes            TEXT,
+    date_applied     TEXT     CHECK(length(date_applied) <= 16),
+    company          TEXT NOT NULL CHECK(length(company) <= 128),
+    role             TEXT NOT NULL CHECK(length(role) <= 256),
+    link             TEXT NOT NULL CHECK(length(link) <= 4096),
+    salary           TEXT     CHECK(length(salary) <= 64),
+    fit_score        TEXT     CHECK(length(fit_score) <= 32),
+    referred_by      TEXT     CHECK(length(referred_by) <= 128),
+    status           TEXT DEFAULT 'Not started' CHECK(length(status) <= 128),
+    recruiter        TEXT     CHECK(length(recruiter) <= 128),
+    notes            TEXT     CHECK(length(notes) <= 20000),
     favorite         INTEGER DEFAULT 0,
     created_at       TEXT DEFAULT (datetime('now')),
-    job_description  TEXT,
-    ending_substatus TEXT,
-    date_phone_screen TEXT,
-    date_last_onsite TEXT,
+    job_description  TEXT     CHECK(length(job_description) <= 20000),
+    ending_substatus TEXT     CHECK(length(ending_substatus) <= 128),
+    date_phone_screen TEXT    CHECK(length(date_phone_screen) <= 16),
+    date_last_onsite TEXT     CHECK(length(date_last_onsite) <= 16),
     updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -60,20 +60,20 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS interviews (
     id                     INTEGER PRIMARY KEY AUTOINCREMENT,
     job_id                 INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-    interview_stage        TEXT NOT NULL,
-    interview_dttm         TEXT NOT NULL,
-    interview_interviewers TEXT,
-    interview_type         TEXT,
-    interview_vibe         TEXT,
-    interview_notes        TEXT
+    interview_stage        TEXT NOT NULL CHECK(length(interview_stage) <= 128),
+    interview_dttm         TEXT NOT NULL CHECK(length(interview_dttm) <= 16),
+    interview_interviewers TEXT     CHECK(length(interview_interviewers) <= 128),
+    interview_type         TEXT     CHECK(length(interview_type) <= 128),
+    interview_vibe         TEXT     CHECK(length(interview_vibe) <= 64),
+    interview_notes        TEXT     CHECK(length(interview_notes) <= 4096)
   );
 
   CREATE TABLE IF NOT EXISTS interview_questions (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
     interview_id   INTEGER NOT NULL REFERENCES interviews(id) ON DELETE CASCADE,
-    question_type  TEXT NOT NULL,
-    question_text  TEXT NOT NULL,
-    question_notes TEXT,
+    question_type  TEXT NOT NULL CHECK(length(question_type) <= 128),
+    question_text  TEXT NOT NULL CHECK(length(question_text) <= 4096),
+    question_notes TEXT     CHECK(length(question_notes) <= 4096),
     difficulty     INTEGER NOT NULL
   );
 
@@ -92,7 +92,7 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS job_tags (
     job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-    tag    TEXT NOT NULL,
+    tag    TEXT NOT NULL CHECK(length(tag) <= 64),
     PRIMARY KEY (job_id, tag)
   );
 

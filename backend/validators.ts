@@ -1,4 +1,48 @@
 export const TERMINAL_STATUSES = new Set(["Rejected/Withdrawn", "Offer!"]);
+
+// ── Max-length constants ───────────────────────────────────────────────────────
+export const JOB_MAX_LENGTHS = {
+	company: 128,
+	role: 256,
+	link: 4096,
+	salary: 64,
+	recruiter: 128,
+	referred_by: 128,
+	notes: 20_000,
+	job_description: 20_000,
+} as const;
+
+export const INTERVIEW_MAX_LENGTHS = {
+	interview_interviewers: 128,
+	interview_notes: 4_096,
+} as const;
+
+export const QUESTION_MAX_LENGTHS = {
+	question_text: 4_096,
+	question_notes: 4_096,
+} as const;
+
+function checkLength(
+	value: unknown,
+	field: string,
+	max: number,
+): string | null {
+	if (typeof value === "string" && value.length > max) {
+		return `${field} must be at most ${max.toLocaleString()} characters`;
+	}
+	return null;
+}
+
+export function validateJobFields(
+	body: Record<string, unknown>,
+): string | null {
+	for (const [field, max] of Object.entries(JOB_MAX_LENGTHS)) {
+		const err = checkLength(body[field], field, max);
+		if (err) return err;
+	}
+	return null;
+}
+
 export const VALID_INTERVIEW_STAGES = new Set(["phone_screen", "onsite"]);
 export const VALID_INTERVIEW_TYPES = new Set([
 	"behavioral",
@@ -68,6 +112,10 @@ export function validateInterview(
 	) {
 		return `interview_type must be one of: ${[...VALID_INTERVIEW_TYPES].join(", ")}`;
 	}
+	for (const [field, max] of Object.entries(INTERVIEW_MAX_LENGTHS)) {
+		const err = checkLength(body[field], field, max);
+		if (err) return err;
+	}
 	return null;
 }
 
@@ -89,6 +137,10 @@ export function validateInterviewQuestion(
 	const difficulty = Number(body.difficulty);
 	if (!Number.isInteger(difficulty) || difficulty < 1 || difficulty > 5) {
 		return "difficulty must be an integer between 1 and 5";
+	}
+	for (const [field, max] of Object.entries(QUESTION_MAX_LENGTHS)) {
+		const err = checkLength(body[field], field, max);
+		if (err) return err;
 	}
 	return null;
 }

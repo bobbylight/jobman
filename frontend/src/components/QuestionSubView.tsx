@@ -18,6 +18,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import PhoneIcon from "@mui/icons-material/Phone";
 import { api } from "../api";
+import { QUESTION_MAX_LENGTHS } from "../constants";
 import type {
 	Interview,
 	InterviewQuestion,
@@ -147,6 +148,21 @@ export default function QuestionSubView({ jobId, interview }: Props) {
 	async function handleSave() {
 		if (!form.question_text.trim()) {
 			setFormError("Question text is required");
+			return;
+		}
+		if (form.question_text.length > QUESTION_MAX_LENGTHS.question_text) {
+			setFormError(
+				`Question text must be ${QUESTION_MAX_LENGTHS.question_text.toLocaleString()} characters or fewer`,
+			);
+			return;
+		}
+		if (
+			form.question_notes &&
+			form.question_notes.length > QUESTION_MAX_LENGTHS.question_notes
+		) {
+			setFormError(
+				`Notes must be ${QUESTION_MAX_LENGTHS.question_notes.toLocaleString()} characters or fewer`,
+			);
 			return;
 		}
 		setSaving(true);
@@ -519,6 +535,9 @@ function QuestionForm({
 				minRows={2}
 				placeholder="What was the question?"
 				sx={{ mb: 1.5 }}
+				slotProps={{
+					htmlInput: { maxLength: QUESTION_MAX_LENGTHS.question_text },
+				}}
 			/>
 			<Box sx={{ mb: 1.5 }}>
 				<MarkdownField

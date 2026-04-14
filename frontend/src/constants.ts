@@ -112,6 +112,27 @@ export function tagChipProps(
 	return { color: "default", sx: { color: c, borderColor: c } };
 }
 
+export const JOB_MAX_LENGTHS = {
+	company: 128,
+	role: 256,
+	link: 4096,
+	salary: 64,
+	recruiter: 128,
+	referred_by: 128,
+	notes: 20_000,
+	job_description: 20_000,
+} as const;
+
+export const INTERVIEW_MAX_LENGTHS = {
+	interview_interviewers: 128,
+	interview_notes: 4_096,
+} as const;
+
+export const QUESTION_MAX_LENGTHS = {
+	question_text: 4_096,
+	question_notes: 4_096,
+} as const;
+
 export const FIT_SCORE_COLORS = {
 	"Not sure": "default",
 	"Very Low": "error",

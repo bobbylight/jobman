@@ -740,4 +740,107 @@ describe("JobDialog", () => {
 			});
 		});
 	});
+
+	describe("field length validation", () => {
+		function fillRequiredFields() {
+			fireEvent.change(screen.getByLabelText(/Company \*/i), {
+				target: { value: "Acme" },
+			});
+			fireEvent.change(screen.getByLabelText(/Role \*/i), {
+				target: { value: "Engineer" },
+			});
+			fireEvent.change(screen.getByPlaceholderText("https://..."), {
+				target: { value: "https://example.com" },
+			});
+		}
+
+		function clickSave() {
+			fireEvent.click(screen.getByRole("button", { name: "Add Job" }));
+		}
+
+		it("shows an error when company exceeds 128 characters", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
+			fillRequiredFields();
+			fireEvent.change(screen.getByLabelText(/Company \*/i), {
+				target: { value: "a".repeat(129) },
+			});
+			clickSave();
+			expect(
+				screen.getByText("Must be 128 characters or fewer"),
+			).toBeInTheDocument();
+			expect(DEFAULT_PROPS.onSave).not.toHaveBeenCalled();
+		});
+
+		it("shows an error when role exceeds 256 characters", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
+			fillRequiredFields();
+			fireEvent.change(screen.getByLabelText(/Role \*/i), {
+				target: { value: "a".repeat(257) },
+			});
+			clickSave();
+			expect(
+				screen.getByText("Must be 256 characters or fewer"),
+			).toBeInTheDocument();
+			expect(DEFAULT_PROPS.onSave).not.toHaveBeenCalled();
+		});
+
+		it("shows an error when link exceeds 4096 characters", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
+			fillRequiredFields();
+			fireEvent.change(screen.getByPlaceholderText("https://..."), {
+				target: { value: "a".repeat(4097) },
+			});
+			clickSave();
+			expect(
+				screen.getByText("Must be 4,096 characters or fewer"),
+			).toBeInTheDocument();
+			expect(DEFAULT_PROPS.onSave).not.toHaveBeenCalled();
+		});
+
+		it("shows an error when salary exceeds 64 characters", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
+			fillRequiredFields();
+			fireEvent.change(screen.getByLabelText(/Salary/i), {
+				target: { value: "a".repeat(65) },
+			});
+			clickSave();
+			expect(
+				screen.getByText("Must be 64 characters or fewer"),
+			).toBeInTheDocument();
+			expect(DEFAULT_PROPS.onSave).not.toHaveBeenCalled();
+		});
+
+		it("shows an error when recruiter exceeds 128 characters", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
+			fillRequiredFields();
+			fireEvent.change(screen.getByLabelText(/Recruiter/i), {
+				target: { value: "a".repeat(129) },
+			});
+			clickSave();
+			expect(
+				screen.getByText("Must be 128 characters or fewer"),
+			).toBeInTheDocument();
+			expect(DEFAULT_PROPS.onSave).not.toHaveBeenCalled();
+		});
+
+		it("shows an error when referred_by exceeds 128 characters", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
+			fillRequiredFields();
+			fireEvent.change(screen.getByLabelText(/Referred By/i), {
+				target: { value: "a".repeat(129) },
+			});
+			clickSave();
+			expect(
+				screen.getByText("Must be 128 characters or fewer"),
+			).toBeInTheDocument();
+			expect(DEFAULT_PROPS.onSave).not.toHaveBeenCalled();
+		});
+
+		it("calls onSave when all fields are within limits", () => {
+			render(<JobDialog {...DEFAULT_PROPS} initialValues={null} />);
+			fillRequiredFields();
+			clickSave();
+			expect(DEFAULT_PROPS.onSave).toHaveBeenCalled();
+		});
+	});
 });

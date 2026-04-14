@@ -4,6 +4,8 @@ import Database from "better-sqlite3";
 import request from "supertest";
 import { createApp } from "../server.js";
 import {
+	INTERVIEW_MAX_LENGTHS,
+	QUESTION_MAX_LENGTHS,
 	VALID_INTERVIEW_STAGES,
 	VALID_INTERVIEW_VIBES,
 	VALID_QUESTION_TYPES,
@@ -129,6 +131,15 @@ async function createJobAndInterview() {
 	const jobId = await createJob();
 	const interviewRes = await req("post", `/api/jobs/${jobId}/interviews`).send(BASE_INTERVIEW);
 	return { jobId, interviewId: interviewRes.body.id as number };
+}
+
+async function createJobInterviewAndQuestion() {
+	const { jobId, interviewId } = await createJobAndInterview();
+	const questionRes = await req(
+		"post",
+		`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+	).send(BASE_QUESTION);
+	return { jobId, interviewId, questionId: questionRes.body.id as number };
 }
 
 // --- Interview routes ---
@@ -859,4 +870,107 @@ describe("GET /api/interviews — cursor pagination (?after + ?limit)", () => {
 		expect(res.status).toBe(200);
 		expect(res.body[0].job).toMatchObject({ id: jobId, company: BASE_JOB.company });
 	});
+});
+
+describe("interview field length validation", () => {
+	const LENGTH_CASES = Object.entries(INTERVIEW_MAX_LENGTHS) as [
+		keyof typeof INTERVIEW_MAX_LENGTHS,
+		number,
+	][];
+
+	it.each(LENGTH_CASES)(
+		"POST returns 422 when %s exceeds %d characters",
+		async (field, max) => {
+			const jobId = await createJob();
+			const res = await req("post", `/api/jobs/${jobId}/interviews`).send({
+				...BASE_INTERVIEW,
+				[field]: "a".repeat(max + 1),
+			});
+			expect(res.status).toBe(422);
+			expect(res.body.error).toMatch(new RegExp(field));
+		},
+	);
+
+	it.each(LENGTH_CASES)(
+		"POST accepts %s at exactly %d characters",
+		async (field, max) => {
+			const jobId = await createJob();
+			const res = await req("post", `/api/jobs/${jobId}/interviews`).send({
+				...BASE_INTERVIEW,
+				[field]: "a".repeat(max),
+			});
+			expect(res.status).toBe(201);
+		},
+	);
+
+	it.each(LENGTH_CASES)(
+		"PUT returns 422 when %s exceeds %d characters",
+		async (field, max) => {
+			const { jobId, interviewId } = await createJobAndInterview();
+			const res = await req(
+				"put",
+				`/api/jobs/${jobId}/interviews/${interviewId}`,
+			).send({
+				...BASE_INTERVIEW,
+				[field]: "a".repeat(max + 1),
+			});
+			expect(res.status).toBe(422);
+			expect(res.body.error).toMatch(new RegExp(field));
+		},
+	);
+});
+
+describe("question field length validation", () => {
+	const LENGTH_CASES = Object.entries(QUESTION_MAX_LENGTHS) as [
+		keyof typeof QUESTION_MAX_LENGTHS,
+		number,
+	][];
+
+	it.each(LENGTH_CASES)(
+		"POST returns 422 when %s exceeds %d characters",
+		async (field, max) => {
+			const { jobId, interviewId } = await createJobAndInterview();
+			const res = await req(
+				"post",
+				`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+			).send({
+				...BASE_QUESTION,
+				[field]: "a".repeat(max + 1),
+			});
+			expect(res.status).toBe(422);
+			expect(res.body.error).toMatch(new RegExp(field));
+		},
+	);
+
+	it.each(LENGTH_CASES)(
+		"POST accepts %s at exactly %d characters",
+		async (field, max) => {
+			const { jobId, interviewId } = await createJobAndInterview();
+			const res = await req(
+				"post",
+				`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
+			).send({
+				...BASE_QUESTION,
+				[field]: "a".repeat(max),
+			});
+			expect(res.status).toBe(201);
+		},
+	);
+
+	it.each(LENGTH_CASES)(
+		"PUT returns 422 when %s exceeds %d characters",
+		async (field, max) => {
+			const { jobId, interviewId, questionId } =
+				await createJobInterviewAndQuestion();
+			const res = await req(
+				"put",
+				`/api/jobs/${jobId}/interviews/${interviewId}/questions/${questionId}`,
+			).send({
+				...BASE_QUESTION,
+				[field]: "a".repeat(max + 1),
+			});
+			expect(res.status).toBe(422);
+			expect(res.body.error).toMatch(new RegExp(field));
+		},
+	);
 });

@@ -423,4 +423,45 @@ describe("QuestionSubView", () => {
 			});
 		});
 	});
+
+	describe("field length validation", () => {
+		beforeEach(() => {
+			vi.mocked(api.getQuestions).mockResolvedValue([]);
+		});
+
+		async function openAddForm() {
+			render(<QuestionSubView {...DEFAULT_PROPS} />);
+			await waitFor(() => screen.getByText(/No questions recorded yet/i));
+			fireEvent.click(screen.getByText("Add one."));
+		}
+
+		it("shows an error when question text exceeds 4096 characters", async () => {
+			await openAddForm();
+			fireEvent.change(screen.getByLabelText(/Question/i), {
+				target: { value: "a".repeat(4097) },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Save Question" }));
+			await waitFor(() => {
+				expect(
+					screen.getByText("Question text must be 4,096 characters or fewer"),
+				).toBeInTheDocument();
+			});
+			expect(api.createQuestion).not.toHaveBeenCalled();
+		});
+
+		it("does not show an error when question text is within 4096 characters", async () => {
+			vi.mocked(api.createQuestion).mockResolvedValue(makeQuestion({ id: 99 }));
+			vi.mocked(api.getQuestions)
+				.mockResolvedValueOnce([])
+				.mockResolvedValueOnce([makeQuestion({ id: 99 })]);
+			await openAddForm();
+			fireEvent.change(screen.getByLabelText(/Question/i), {
+				target: { value: "a".repeat(4096) },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Save Question" }));
+			await waitFor(() => {
+				expect(api.createQuestion).toHaveBeenCalled();
+			});
+		});
+	});
 });
