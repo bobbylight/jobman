@@ -26,6 +26,7 @@ import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
+	JOB_MAX_LENGTHS,
 	STATUSES,
 	FIT_SCORES,
 	ENDING_SUBSTATUSES,
@@ -115,8 +116,34 @@ export default function JobDialog({
 	function validate() {
 		const e: typeof errors = {};
 		if (!form.company?.trim()) e.company = "Required";
+		else if (form.company.length > JOB_MAX_LENGTHS.company)
+			e.company = `Must be ${JOB_MAX_LENGTHS.company.toLocaleString()} characters or fewer`;
+
 		if (!form.role?.trim()) e.role = "Required";
+		else if (form.role.length > JOB_MAX_LENGTHS.role)
+			e.role = `Must be ${JOB_MAX_LENGTHS.role.toLocaleString()} characters or fewer`;
+
 		if (!form.link?.trim()) e.link = "Required";
+		else if (form.link.length > JOB_MAX_LENGTHS.link)
+			e.link = `Must be ${JOB_MAX_LENGTHS.link.toLocaleString()} characters or fewer`;
+
+		if (form.salary && form.salary.length > JOB_MAX_LENGTHS.salary)
+			e.salary = `Must be ${JOB_MAX_LENGTHS.salary.toLocaleString()} characters or fewer`;
+		if (form.recruiter && form.recruiter.length > JOB_MAX_LENGTHS.recruiter)
+			e.recruiter = `Must be ${JOB_MAX_LENGTHS.recruiter.toLocaleString()} characters or fewer`;
+		if (
+			form.referred_by &&
+			form.referred_by.length > JOB_MAX_LENGTHS.referred_by
+		)
+			e.referred_by = `Must be ${JOB_MAX_LENGTHS.referred_by.toLocaleString()} characters or fewer`;
+		if (form.notes && form.notes.length > JOB_MAX_LENGTHS.notes)
+			e.notes = `Must be ${JOB_MAX_LENGTHS.notes.toLocaleString()} characters or fewer`;
+		if (
+			form.job_description &&
+			form.job_description.length > JOB_MAX_LENGTHS.job_description
+		)
+			e.job_description = `Must be ${JOB_MAX_LENGTHS.job_description.toLocaleString()} characters or fewer`;
+
 		if (TERMINAL_STATUSES.has(form.status) && !form.ending_substatus)
 			e.ending_substatus = "Required for this status";
 		setErrors(e);
@@ -253,6 +280,9 @@ export default function JobDialog({
 									helperText={errors.company}
 									fullWidth
 									size="small"
+									slotProps={{
+										htmlInput: { maxLength: JOB_MAX_LENGTHS.company },
+									}}
 								/>
 							</Grid>
 							<Grid size={{ xs: 12, sm: 6 }}>
@@ -264,6 +294,7 @@ export default function JobDialog({
 									helperText={errors.role}
 									fullWidth
 									size="small"
+									slotProps={{ htmlInput: { maxLength: JOB_MAX_LENGTHS.role } }}
 								/>
 							</Grid>
 							<Grid size={12}>
@@ -296,6 +327,9 @@ export default function JobDialog({
 										fullWidth
 										size="small"
 										placeholder="https://..."
+										slotProps={{
+											htmlInput: { maxLength: JOB_MAX_LENGTHS.link },
+										}}
 									/>
 								)}
 							</Grid>
@@ -426,9 +460,14 @@ export default function JobDialog({
 									label="Salary"
 									value={form.salary ?? ""}
 									onChange={(e) => set("salary", e.target.value || null)}
+									error={!!errors.salary}
+									helperText={errors.salary}
 									fullWidth
 									size="small"
 									placeholder="e.g. $120k–$150k"
+									slotProps={{
+										htmlInput: { maxLength: JOB_MAX_LENGTHS.salary },
+									}}
 								/>
 							</Grid>
 
@@ -437,8 +476,13 @@ export default function JobDialog({
 									label="Recruiter"
 									value={form.recruiter ?? ""}
 									onChange={(e) => set("recruiter", e.target.value || null)}
+									error={!!errors.recruiter}
+									helperText={errors.recruiter}
 									fullWidth
 									size="small"
+									slotProps={{
+										htmlInput: { maxLength: JOB_MAX_LENGTHS.recruiter },
+									}}
 								/>
 							</Grid>
 
@@ -473,6 +517,15 @@ export default function JobDialog({
 									onChange={(v) => set("job_description", v)}
 									placeholder="Paste the job description here in case the posting gets removed..."
 								/>
+								{errors.job_description && (
+									<Typography
+										variant="caption"
+										color="error"
+										sx={{ display: "block", mt: 0.5, mx: "14px" }}
+									>
+										{errors.job_description}
+									</Typography>
+								)}
 							</Grid>
 
 							<Grid size={12}>
@@ -481,6 +534,15 @@ export default function JobDialog({
 									value={form.notes}
 									onChange={(v) => set("notes", v)}
 								/>
+								{errors.notes && (
+									<Typography
+										variant="caption"
+										color="error"
+										sx={{ display: "block", mt: 0.5, mx: "14px" }}
+									>
+										{errors.notes}
+									</Typography>
+								)}
 							</Grid>
 
 							<Grid size={{ xs: 12, sm: 6 }}>
@@ -488,9 +550,14 @@ export default function JobDialog({
 									label="Referred By"
 									value={form.referred_by ?? ""}
 									onChange={(e) => set("referred_by", e.target.value || null)}
+									error={!!errors.referred_by}
+									helperText={errors.referred_by}
 									fullWidth
 									size="small"
 									placeholder="Name of referrer"
+									slotProps={{
+										htmlInput: { maxLength: JOB_MAX_LENGTHS.referred_by },
+									}}
 								/>
 							</Grid>
 						</Grid>
