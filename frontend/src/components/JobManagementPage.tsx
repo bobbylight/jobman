@@ -545,7 +545,7 @@ export default function JobManagementPage() {
 				onClose={closeDialog}
 				onSave={handleSave}
 				onDelete={handleDelete}
-				initialValues={dialogJob}
+				jobId={dialogJob?.id ?? null}
 			/>
 
 			<EndingStatusDialog
