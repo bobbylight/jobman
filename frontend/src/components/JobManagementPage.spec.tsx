@@ -12,10 +12,13 @@ import type { Job, User } from "../types";
 vi.mock("../api", () => ({
 	api: {
 		getJobs: vi.fn(),
+		getJob: vi.fn(),
 		createJob: vi.fn(),
 		updateJob: vi.fn(),
 		deleteJob: vi.fn(),
 		getStats: vi.fn(),
+		getInterviews: vi.fn(),
+		getQuestions: vi.fn(),
 	},
 }));
 
@@ -52,6 +55,7 @@ vi.mock("@dnd-kit/utilities", () => ({
 }));
 
 const mockGetJobs = vi.mocked(api.getJobs);
+const mockGetJob = vi.mocked(api.getJob);
 const MockKanbanBoard = vi.mocked(KanbanBoard);
 
 const MOCK_USER: User = {
@@ -105,6 +109,8 @@ function renderPage(initialPath = "/jobs", onLogout = MOCK_ON_LOGOUT) {
 describe("JobManagementPage", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		vi.mocked(api.getInterviews).mockResolvedValue([]);
+		vi.mocked(api.getQuestions).mockResolvedValue([]);
 		MockKanbanBoard.mockImplementation(({ jobs }) => (
 			<>
 				{jobs.map((j) => (
@@ -377,6 +383,7 @@ describe("JobManagementPage", () => {
 		it("opens the edit dialog when navigated to /jobs/:jobId", async () => {
 			const job = makeJob({ id: 42, company: "DeepLink Co" });
 			mockGetJobs.mockResolvedValue([job]);
+			mockGetJob.mockResolvedValue(job);
 
 			renderPage("/jobs/42");
 

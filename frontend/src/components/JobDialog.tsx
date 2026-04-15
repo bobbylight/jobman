@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
 	Dialog,
 	DialogTitle,
 	DialogContent,
 	DialogActions,
 	Autocomplete,
+	Alert,
 	Button,
 	Chip,
+	CircularProgress,
 	TextField,
 	MenuItem,
 	Grid,
@@ -37,8 +39,8 @@ import {
 } from "../constants";
 import CompanyLogo from "./CompanyLogo";
 import MarkdownField from "./MarkdownField";
+import { api } from "../api";
 import type {
-	Job,
 	JobFormData,
 	FitScore,
 	JobStatus,
@@ -72,7 +74,8 @@ interface Props {
 	onClose: () => void;
 	onSave: (data: JobFormData) => void;
 	onDelete: (id: number) => void;
-	initialValues: Job | null;
+	/** null = "add new job" mode; a number = edit the job with that ID */
+	jobId: number | null;
 }
 
 export default function JobDialog({
@@ -80,10 +83,12 @@ export default function JobDialog({
 	onClose,
 	onSave,
 	onDelete,
-	initialValues,
+	jobId,
 }: Props) {
-	const isEdit = !!initialValues;
+	const isEdit = jobId !== null;
 	const [form, setForm] = useState<JobFormData>(EMPTY);
+	const [loadingJob, setLoadingJob] = useState(false);
+	const [loadError, setLoadError] = useState<string | null>(null);
 	const [errors, setErrors] = useState<
 		Partial<Record<keyof JobFormData, string>>
 	>({});
@@ -93,18 +98,53 @@ export default function JobDialog({
 	const [interviewCount, setInterviewCount] = useState<number | null>(null);
 	const [viewingQuestionsFor, setViewingQuestionsFor] =
 		useState<Interview | null>(null);
+	const abortRef = useRef<AbortController | null>(null);
 
 	useEffect(() => {
-		if (open) {
-			setForm(initialValues ? { ...EMPTY, ...initialValues } : EMPTY);
-			setErrors({});
-			setConfirmDelete(false);
-			setLinkEditing(false);
-			setActiveTab(0);
-			setInterviewCount(null);
-			setViewingQuestionsFor(null);
+		if (!open) return;
+
+		// Reset all state on open
+		setForm(EMPTY);
+		setErrors({});
+		setConfirmDelete(false);
+		setLinkEditing(false);
+		setActiveTab(0);
+		setInterviewCount(null);
+		setViewingQuestionsFor(null);
+		setLoadError(null);
+
+		if (jobId === null) {
+			setLoadingJob(false);
+			return;
 		}
-	}, [open, initialValues]);
+
+		// Fetch the job by ID
+		const controller = new AbortController();
+		abortRef.current = controller;
+		setLoadingJob(true);
+
+		api
+			.getJob(jobId)
+			.then((job) => {
+				if (controller.signal.aborted) return;
+				setForm({ ...EMPTY, ...job });
+				setLoadingJob(false);
+			})
+			.catch(() => {
+				if (controller.signal.aborted) return;
+				setLoadError("Failed to load job. Please close and try again.");
+				setLoadingJob(false);
+			});
+
+		return () => {
+			controller.abort();
+		};
+	}, [open, jobId]);
+
+	function handleClose() {
+		abortRef.current?.abort();
+		onClose();
+	}
 
 	function set<K extends keyof JobFormData>(field: K, value: JobFormData[K]) {
 		setForm((f) => ({ ...f, [field]: value }));
@@ -183,7 +223,7 @@ export default function JobDialog({
 					variant="contained"
 					onClick={() => {
 						setConfirmDelete(false);
-						onDelete(initialValues!.id);
+						onDelete(jobId!);
 					}}
 				>
 					Delete
@@ -192,10 +232,12 @@ export default function JobDialog({
 		</Dialog>
 	);
 
+	const formDisabled = loadingJob || !!loadError;
+
 	// ── Main dialog ────────────────────────────────────────────────────────────
 	return (
 		<>
-			<Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+			<Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
 				<DialogTitle
 					sx={{
 						display: "flex",
@@ -232,26 +274,30 @@ export default function JobDialog({
 						"Add Job"
 					)}
 					<Box sx={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-						<Tooltip title={form.favorite ? "Unfavorite" : "Favorite"}>
-							<IconButton
-								size="small"
-								onClick={() => set("favorite", !form.favorite)}
-								sx={{ color: form.favorite ? "warning.main" : "text.disabled" }}
-							>
-								{form.favorite ? (
-									<StarIcon fontSize="small" />
-								) : (
-									<StarBorderIcon fontSize="small" />
-								)}
-							</IconButton>
-						</Tooltip>
-						<IconButton onClick={onClose} size="small">
+						{!formDisabled && (
+							<Tooltip title={form.favorite ? "Unfavorite" : "Favorite"}>
+								<IconButton
+									size="small"
+									onClick={() => set("favorite", !form.favorite)}
+									sx={{
+										color: form.favorite ? "warning.main" : "text.disabled",
+									}}
+								>
+									{form.favorite ? (
+										<StarIcon fontSize="small" />
+									) : (
+										<StarBorderIcon fontSize="small" />
+									)}
+								</IconButton>
+							</Tooltip>
+						)}
+						<IconButton onClick={handleClose} size="small">
 							<CloseIcon />
 						</IconButton>
 					</Box>
 				</DialogTitle>
 
-				{isEdit && (
+				{isEdit && !loadingJob && !loadError && (
 					<Tabs
 						value={activeTab}
 						onChange={(_: React.SyntheticEvent, v: number) => setActiveTab(v)}
@@ -269,307 +315,333 @@ export default function JobDialog({
 				)}
 
 				<DialogContent dividers>
-					<Box sx={{ display: activeTab === 0 ? "block" : "none" }}>
-						<Grid container spacing={2} sx={{ pt: 0.5 }}>
-							<Grid size={{ xs: 12, sm: 6 }}>
-								<TextField
-									label="Company *"
-									value={form.company}
-									onChange={(e) => set("company", e.target.value)}
-									error={!!errors.company}
-									helperText={errors.company}
-									fullWidth
-									size="small"
-									slotProps={{
-										htmlInput: { maxLength: JOB_MAX_LENGTHS.company },
-									}}
-								/>
-							</Grid>
-							<Grid size={{ xs: 12, sm: 6 }}>
-								<TextField
-									label="Role *"
-									value={form.role}
-									onChange={(e) => set("role", e.target.value)}
-									error={!!errors.role}
-									helperText={errors.role}
-									fullWidth
-									size="small"
-									slotProps={{ htmlInput: { maxLength: JOB_MAX_LENGTHS.role } }}
-								/>
-							</Grid>
-							<Grid size={12}>
-								{isEdit && !linkEditing ? (
-									<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-										<Link
-											href={form.link}
-											target="_blank"
-											rel="noopener noreferrer"
-											sx={{ wordBreak: "break-all" }}
-										>
-											{form.link}
-										</Link>
-										<IconButton
-											size="small"
-											onClick={() => setLinkEditing(true)}
-											aria-label="Edit link"
-											title="Edit link"
-										>
-											<EditIcon fontSize="small" />
-										</IconButton>
-									</Box>
-								) : (
+					{loadingJob && (
+						<Box
+							sx={{ display: "flex", justifyContent: "center", py: 4 }}
+							role="status"
+							aria-label="Loading job"
+						>
+							<CircularProgress />
+						</Box>
+					)}
+					{loadError && (
+						<Alert severity="error" sx={{ mb: 2 }}>
+							{loadError}
+						</Alert>
+					)}
+					<Box
+						component="fieldset"
+						disabled={formDisabled}
+						sx={{ border: "none", p: 0, m: 0 }}
+					>
+						<Box sx={{ display: activeTab === 0 ? "block" : "none" }}>
+							<Grid container spacing={2} sx={{ pt: 0.5 }}>
+								<Grid size={{ xs: 12, sm: 6 }}>
 									<TextField
-										label="Link *"
-										value={form.link}
-										onChange={(e) => set("link", e.target.value)}
-										error={!!errors.link}
-										helperText={errors.link}
+										label="Company *"
+										value={form.company}
+										onChange={(e) => set("company", e.target.value)}
+										error={!!errors.company}
+										helperText={errors.company}
 										fullWidth
 										size="small"
-										placeholder="https://..."
 										slotProps={{
-											htmlInput: { maxLength: JOB_MAX_LENGTHS.link },
+											htmlInput: { maxLength: JOB_MAX_LENGTHS.company },
 										}}
 									/>
-								)}
-							</Grid>
-
-							<Grid size={{ xs: 12, sm: 6 }}>
-								<TextField
-									select
-									label="Status"
-									value={form.status}
-									onChange={(e) => {
-										const newStatus = e.target.value as JobStatus;
-										const isTerminal = TERMINAL_STATUSES.has(newStatus);
-										setForm((f) => ({
-											...f,
-											status: newStatus,
-											ending_substatus: isTerminal ? f.ending_substatus : null,
-										}));
-										if (errors.status)
-											setErrors(({ status: _, ...rest }) => rest);
-										if (!isTerminal)
-											setErrors(({ ending_substatus: _, ...rest }) => rest);
-									}}
-									fullWidth
-									size="small"
-								>
-									{STATUSES.map((s) => (
-										<MenuItem key={s} value={s}>
-											{s}
-										</MenuItem>
-									))}
-								</TextField>
-							</Grid>
-
-							<Grid size={{ xs: 12, sm: 6 }}>
-								<TextField
-									select
-									label="Final Resolution"
-									value={form.ending_substatus ?? ""}
-									onChange={(e) =>
-										set(
-											"ending_substatus",
-											(e.target.value || null) as EndingSubstatus | null,
-										)
-									}
-									disabled={!TERMINAL_STATUSES.has(form.status)}
-									error={!!errors.ending_substatus}
-									helperText={errors.ending_substatus}
-									fullWidth
-									size="small"
-								>
-									<MenuItem value="">
-										<em>None</em>
-									</MenuItem>
-									{ENDING_SUBSTATUSES.map((s) => (
-										<MenuItem key={s} value={s}>
-											{s}
-										</MenuItem>
-									))}
-								</TextField>
-							</Grid>
-
-							<Grid size={{ xs: 12, sm: 6 }}>
-								<TextField
-									select
-									label="Fit Score"
-									value={form.fit_score ?? ""}
-									onChange={(e) =>
-										set(
-											"fit_score",
-											(e.target.value || null) as FitScore | null,
-										)
-									}
-									fullWidth
-									size="small"
-								>
-									<MenuItem value="">
-										<em>None</em>
-									</MenuItem>
-									{FIT_SCORES.map((s) => (
-										<MenuItem key={s} value={s}>
-											{s}
-										</MenuItem>
-									))}
-								</TextField>
-							</Grid>
-
-							<Grid size={{ xs: 12, sm: 6 }}>
-								<TextField
-									label="Date Applied"
-									type="date"
-									value={form.date_applied ?? ""}
-									onChange={(e) => set("date_applied", e.target.value || null)}
-									fullWidth
-									size="small"
-									slotProps={{ inputLabel: { shrink: true } }}
-								/>
-							</Grid>
-
-							<Grid size={{ xs: 12, sm: 6 }}>
-								<TextField
-									label="Phone Screen Date"
-									type="datetime-local"
-									value={form.date_phone_screen?.slice(0, 16) ?? ""}
-									onChange={(e) =>
-										set("date_phone_screen", e.target.value || null)
-									}
-									fullWidth
-									size="small"
-									slotProps={{ inputLabel: { shrink: true } }}
-								/>
-							</Grid>
-							<Grid size={{ xs: 12, sm: 6 }}>
-								<TextField
-									label="Last Onsite Date"
-									type="datetime-local"
-									value={form.date_last_onsite?.slice(0, 16) ?? ""}
-									onChange={(e) =>
-										set("date_last_onsite", e.target.value || null)
-									}
-									fullWidth
-									size="small"
-									slotProps={{ inputLabel: { shrink: true } }}
-								/>
-							</Grid>
-
-							<Grid size={{ xs: 12, sm: 6 }}>
-								<TextField
-									label="Salary"
-									value={form.salary ?? ""}
-									onChange={(e) => set("salary", e.target.value || null)}
-									error={!!errors.salary}
-									helperText={errors.salary}
-									fullWidth
-									size="small"
-									placeholder="e.g. $120k–$150k"
-									slotProps={{
-										htmlInput: { maxLength: JOB_MAX_LENGTHS.salary },
-									}}
-								/>
-							</Grid>
-
-							<Grid size={{ xs: 12, sm: 6 }}>
-								<TextField
-									label="Recruiter"
-									value={form.recruiter ?? ""}
-									onChange={(e) => set("recruiter", e.target.value || null)}
-									error={!!errors.recruiter}
-									helperText={errors.recruiter}
-									fullWidth
-									size="small"
-									slotProps={{
-										htmlInput: { maxLength: JOB_MAX_LENGTHS.recruiter },
-									}}
-								/>
-							</Grid>
-
-							<Grid size={12}>
-								<Autocomplete
-									multiple
-									options={JOB_TAGS}
-									getOptionLabel={(tag) => TAG_LABELS[tag as JobTag] ?? tag}
-									value={form.tags as JobTag[]}
-									onChange={(_, newValue) => set("tags", newValue)}
-									renderTags={(value, getTagProps) =>
-										value.map((tag, index) => (
-											<Chip
-												{...getTagProps({ index })}
-												{...tagChipProps(tag as JobTag, true)}
-												key={tag}
-												label={TAG_LABELS[tag as JobTag] ?? tag}
+								</Grid>
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<TextField
+										label="Role *"
+										value={form.role}
+										onChange={(e) => set("role", e.target.value)}
+										error={!!errors.role}
+										helperText={errors.role}
+										fullWidth
+										size="small"
+										slotProps={{
+											htmlInput: { maxLength: JOB_MAX_LENGTHS.role },
+										}}
+									/>
+								</Grid>
+								<Grid size={12}>
+									{isEdit && !linkEditing ? (
+										<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+											<Link
+												href={form.link}
+												target="_blank"
+												rel="noopener noreferrer"
+												sx={{ wordBreak: "break-all" }}
+											>
+												{form.link}
+											</Link>
+											<IconButton
 												size="small"
-											/>
-										))
-									}
-									renderInput={(params) => (
-										<TextField {...params} label="Tags" size="small" />
+												onClick={() => setLinkEditing(true)}
+												aria-label="Edit link"
+												title="Edit link"
+											>
+												<EditIcon fontSize="small" />
+											</IconButton>
+										</Box>
+									) : (
+										<TextField
+											label="Link *"
+											value={form.link}
+											onChange={(e) => set("link", e.target.value)}
+											error={!!errors.link}
+											helperText={errors.link}
+											fullWidth
+											size="small"
+											placeholder="https://..."
+											slotProps={{
+												htmlInput: { maxLength: JOB_MAX_LENGTHS.link },
+											}}
+										/>
 									)}
-								/>
-							</Grid>
+								</Grid>
 
-							<Grid size={12}>
-								<MarkdownField
-									label="Job Description"
-									value={form.job_description}
-									onChange={(v) => set("job_description", v)}
-									placeholder="Paste the job description here in case the posting gets removed..."
-								/>
-								{errors.job_description && (
-									<Typography
-										variant="caption"
-										color="error"
-										sx={{ display: "block", mt: 0.5, mx: "14px" }}
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<TextField
+										select
+										label="Status"
+										value={form.status}
+										onChange={(e) => {
+											const newStatus = e.target.value as JobStatus;
+											const isTerminal = TERMINAL_STATUSES.has(newStatus);
+											setForm((f) => ({
+												...f,
+												status: newStatus,
+												ending_substatus: isTerminal
+													? f.ending_substatus
+													: null,
+											}));
+											if (errors.status)
+												setErrors(({ status: _, ...rest }) => rest);
+											if (!isTerminal)
+												setErrors(({ ending_substatus: _, ...rest }) => rest);
+										}}
+										fullWidth
+										size="small"
 									>
-										{errors.job_description}
-									</Typography>
-								)}
-							</Grid>
+										{STATUSES.map((s) => (
+											<MenuItem key={s} value={s}>
+												{s}
+											</MenuItem>
+										))}
+									</TextField>
+								</Grid>
 
-							<Grid size={12}>
-								<MarkdownField
-									label="Notes"
-									value={form.notes}
-									onChange={(v) => set("notes", v)}
-								/>
-								{errors.notes && (
-									<Typography
-										variant="caption"
-										color="error"
-										sx={{ display: "block", mt: 0.5, mx: "14px" }}
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<TextField
+										select
+										label="Final Resolution"
+										value={form.ending_substatus ?? ""}
+										onChange={(e) =>
+											set(
+												"ending_substatus",
+												(e.target.value || null) as EndingSubstatus | null,
+											)
+										}
+										disabled={!TERMINAL_STATUSES.has(form.status)}
+										error={!!errors.ending_substatus}
+										helperText={errors.ending_substatus}
+										fullWidth
+										size="small"
 									>
-										{errors.notes}
-									</Typography>
-								)}
-							</Grid>
+										<MenuItem value="">
+											<em>None</em>
+										</MenuItem>
+										{ENDING_SUBSTATUSES.map((s) => (
+											<MenuItem key={s} value={s}>
+												{s}
+											</MenuItem>
+										))}
+									</TextField>
+								</Grid>
 
-							<Grid size={{ xs: 12, sm: 6 }}>
-								<TextField
-									label="Referred By"
-									value={form.referred_by ?? ""}
-									onChange={(e) => set("referred_by", e.target.value || null)}
-									error={!!errors.referred_by}
-									helperText={errors.referred_by}
-									fullWidth
-									size="small"
-									placeholder="Name of referrer"
-									slotProps={{
-										htmlInput: { maxLength: JOB_MAX_LENGTHS.referred_by },
-									}}
-								/>
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<TextField
+										select
+										label="Fit Score"
+										value={form.fit_score ?? ""}
+										onChange={(e) =>
+											set(
+												"fit_score",
+												(e.target.value || null) as FitScore | null,
+											)
+										}
+										fullWidth
+										size="small"
+									>
+										<MenuItem value="">
+											<em>None</em>
+										</MenuItem>
+										{FIT_SCORES.map((s) => (
+											<MenuItem key={s} value={s}>
+												{s}
+											</MenuItem>
+										))}
+									</TextField>
+								</Grid>
+
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<TextField
+										label="Date Applied"
+										type="date"
+										value={form.date_applied ?? ""}
+										onChange={(e) =>
+											set("date_applied", e.target.value || null)
+										}
+										fullWidth
+										size="small"
+										slotProps={{ inputLabel: { shrink: true } }}
+									/>
+								</Grid>
+
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<TextField
+										label="Phone Screen Date"
+										type="datetime-local"
+										value={form.date_phone_screen?.slice(0, 16) ?? ""}
+										onChange={(e) =>
+											set("date_phone_screen", e.target.value || null)
+										}
+										fullWidth
+										size="small"
+										slotProps={{ inputLabel: { shrink: true } }}
+									/>
+								</Grid>
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<TextField
+										label="Last Onsite Date"
+										type="datetime-local"
+										value={form.date_last_onsite?.slice(0, 16) ?? ""}
+										onChange={(e) =>
+											set("date_last_onsite", e.target.value || null)
+										}
+										fullWidth
+										size="small"
+										slotProps={{ inputLabel: { shrink: true } }}
+									/>
+								</Grid>
+
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<TextField
+										label="Salary"
+										value={form.salary ?? ""}
+										onChange={(e) => set("salary", e.target.value || null)}
+										error={!!errors.salary}
+										helperText={errors.salary}
+										fullWidth
+										size="small"
+										placeholder="e.g. $120k–$150k"
+										slotProps={{
+											htmlInput: { maxLength: JOB_MAX_LENGTHS.salary },
+										}}
+									/>
+								</Grid>
+
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<TextField
+										label="Recruiter"
+										value={form.recruiter ?? ""}
+										onChange={(e) => set("recruiter", e.target.value || null)}
+										error={!!errors.recruiter}
+										helperText={errors.recruiter}
+										fullWidth
+										size="small"
+										slotProps={{
+											htmlInput: { maxLength: JOB_MAX_LENGTHS.recruiter },
+										}}
+									/>
+								</Grid>
+
+								<Grid size={12}>
+									<Autocomplete
+										multiple
+										options={JOB_TAGS}
+										getOptionLabel={(tag) => TAG_LABELS[tag as JobTag] ?? tag}
+										value={form.tags as JobTag[]}
+										onChange={(_, newValue) => set("tags", newValue)}
+										renderTags={(value, getTagProps) =>
+											value.map((tag, index) => (
+												<Chip
+													{...getTagProps({ index })}
+													{...tagChipProps(tag as JobTag, true)}
+													key={tag}
+													label={TAG_LABELS[tag as JobTag] ?? tag}
+													size="small"
+												/>
+											))
+										}
+										renderInput={(params) => (
+											<TextField {...params} label="Tags" size="small" />
+										)}
+									/>
+								</Grid>
+
+								<Grid size={12}>
+									<MarkdownField
+										label="Job Description"
+										value={form.job_description}
+										onChange={(v) => set("job_description", v)}
+										placeholder="Paste the job description here in case the posting gets removed..."
+									/>
+									{errors.job_description && (
+										<Typography
+											variant="caption"
+											color="error"
+											sx={{ display: "block", mt: 0.5, mx: "14px" }}
+										>
+											{errors.job_description}
+										</Typography>
+									)}
+								</Grid>
+
+								<Grid size={12}>
+									<MarkdownField
+										label="Notes"
+										value={form.notes}
+										onChange={(v) => set("notes", v)}
+									/>
+									{errors.notes && (
+										<Typography
+											variant="caption"
+											color="error"
+											sx={{ display: "block", mt: 0.5, mx: "14px" }}
+										>
+											{errors.notes}
+										</Typography>
+									)}
+								</Grid>
+
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<TextField
+										label="Referred By"
+										value={form.referred_by ?? ""}
+										onChange={(e) => set("referred_by", e.target.value || null)}
+										error={!!errors.referred_by}
+										helperText={errors.referred_by}
+										fullWidth
+										size="small"
+										placeholder="Name of referrer"
+										slotProps={{
+											htmlInput: { maxLength: JOB_MAX_LENGTHS.referred_by },
+										}}
+									/>
+								</Grid>
 							</Grid>
-						</Grid>
+						</Box>
+						{isEdit && activeTab === 1 && (
+							<InterviewsTab
+								jobId={jobId!}
+								onCountChange={setInterviewCount}
+								viewingQuestionsFor={viewingQuestionsFor}
+								onViewingQuestionsChange={setViewingQuestionsFor}
+							/>
+						)}
 					</Box>
-					{isEdit && activeTab === 1 && (
-						<InterviewsTab
-							jobId={initialValues!.id}
-							onCountChange={setInterviewCount}
-							viewingQuestionsFor={viewingQuestionsFor}
-							onViewingQuestionsChange={setViewingQuestionsFor}
-						/>
-					)}
 				</DialogContent>
 
 				<DialogActions
@@ -589,15 +661,23 @@ export default function JobDialog({
 					{activeTab === 0 && (
 						<>
 							{isEdit && (
-								<Button color="error" onClick={() => setConfirmDelete(true)}>
+								<Button
+									color="error"
+									onClick={() => setConfirmDelete(true)}
+									disabled={formDisabled}
+								>
 									Delete
 								</Button>
 							)}
 							<div>
-								<Button onClick={onClose} sx={{ mr: 1 }}>
+								<Button onClick={handleClose} sx={{ mr: 1 }}>
 									Cancel
 								</Button>
-								<Button variant="contained" onClick={handleSave}>
+								<Button
+									variant="contained"
+									onClick={handleSave}
+									disabled={formDisabled}
+								>
 									{isEdit ? "Save" : "Add Job"}
 								</Button>
 							</div>
@@ -613,7 +693,7 @@ export default function JobDialog({
 									Back to interviews
 								</Button>
 							)}
-							<Button onClick={onClose}>Close</Button>
+							<Button onClick={handleClose}>Close</Button>
 						</>
 					)}
 				</DialogActions>

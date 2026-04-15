@@ -46,6 +46,7 @@ export const api = {
 
 	// Jobs
 	getJobs: () => request<Job[]>("/jobs"),
+	getJob: (id: number) => request<Job>(`/jobs/${id}`),
 	createJob: (data: JobFormData) =>
 		request<Job>("/jobs", { method: "POST", body: JSON.stringify(data) }),
 	updateJob: (id: number, data: Partial<JobFormData>) =>
