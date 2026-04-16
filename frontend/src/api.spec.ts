@@ -132,11 +132,11 @@ describe("api", () => {
 	});
 
 	describe("getJobs", () => {
-		it("fetches GET /api/jobs and returns the parsed JSON", async () => {
+		it("fetches GET /api/jobs?view=summary and returns the parsed JSON", async () => {
 			mockFetch.mockResolvedValue(makeResponse([MOCK_JOB]));
 			const result = await api.getJobs();
 			expect(mockFetch).toHaveBeenCalledWith(
-				"/api/jobs",
+				"/api/jobs?view=summary",
 				expect.objectContaining({
 					headers: { "Content-Type": "application/json" },
 				}),

@@ -584,7 +584,7 @@ export default function JobDialog({
 								<Grid size={12}>
 									<MarkdownField
 										label="Job Description"
-										value={form.job_description}
+										value={form.job_description ?? null}
 										onChange={(v) => set("job_description", v)}
 										placeholder="Paste the job description here in case the posting gets removed..."
 									/>
@@ -602,7 +602,7 @@ export default function JobDialog({
 								<Grid size={12}>
 									<MarkdownField
 										label="Notes"
-										value={form.notes}
+										value={form.notes ?? null}
 										onChange={(v) => set("notes", v)}
 									/>
 									{errors.notes && (

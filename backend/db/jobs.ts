@@ -24,10 +24,16 @@ interface JobDbRow {
 }
 
 // SQLite stores booleans as 0/1 — convert for the client
-export type Job = Omit<JobDbRow, "favorite" | "tags_csv"> & {
+export type Job = Omit<JobDbRow, "favorite" | "tags_csv" | "notes" | "job_description"> & {
 	favorite: boolean;
 	tags: string[];
+	/** Absent in summary view; present in full view. */
+	notes?: string | null;
+	/** Absent in summary view; present in full view. */
+	job_description?: string | null;
 };
+
+export type JobView = "full" | "summary";
 
 function toClient(row: unknown): Job {
 	const r = row as JobDbRow;
@@ -55,7 +61,15 @@ export interface JobCreateData {
 	tags: string[];
 }
 
-export type JobUpdateData = Omit<JobCreateData, "user_id">;
+/**
+ * notes and job_description are optional here — if absent the existing DB
+ * values are preserved (useful for status/favorite-only updates where the
+ * caller doesn't have those fields loaded).
+ */
+export type JobUpdateData = Omit<JobCreateData, "user_id" | "notes" | "job_description"> & {
+	notes?: string | null;
+	job_description?: string | null;
+};
 
 const JOBS_WITH_TAGS_SQL = `
   SELECT j.*, GROUP_CONCAT(jt.tag) AS tags_csv
@@ -71,11 +85,15 @@ function setTags(db: Database.Database, jobId: number | bigint, tags: string[]):
 	}
 }
 
-export function listJobs(db: Database.Database, userId: number): Job[] {
-	return db
+export function listJobs(db: Database.Database, userId: number, view: JobView = "summary"): Job[] {
+	const rows = db
 		.prepare(`${JOBS_WITH_TAGS_SQL} WHERE j.user_id = ? GROUP BY j.id ORDER BY j.created_at DESC`)
 		.all(userId)
 		.map(toClient);
+	if (view === "summary") {
+		return rows.map(({ notes: _n, job_description: _jd, ...rest }) => rest);
+	}
+	return rows;
 }
 
 export function findJob(
@@ -156,12 +174,19 @@ export function updateJob(
 			.get(jobId, userId) as { status: string } | undefined;
 		if (!current) return null;
 
+		// notes/job_description are optional — only update them when explicitly
+		// provided; otherwise keep the existing DB value.
+		const notesProvided = "notes" in data;
+		const jdProvided = "job_description" in data;
+
 		const info = db
 			.prepare(
 				`UPDATE jobs SET
           date_applied = ?, company = ?, role = ?, link = ?, salary = ?,
-          fit_score = ?, referred_by = ?, status = ?, recruiter = ?, notes = ?,
-          job_description = ?, ending_substatus = ?, date_phone_screen = ?,
+          fit_score = ?, referred_by = ?, status = ?, recruiter = ?,
+          notes = CASE WHEN ? THEN ? ELSE notes END,
+          job_description = CASE WHEN ? THEN ? ELSE job_description END,
+          ending_substatus = ?, date_phone_screen = ?,
           date_last_onsite = ?, favorite = ?
         WHERE id = ? AND user_id = ?`,
 			)
@@ -175,8 +200,8 @@ export function updateJob(
 				data.referred_by,
 				data.status,
 				data.recruiter,
-				data.notes,
-				data.job_description,
+				notesProvided ? 1 : 0, data.notes ?? null,
+				jdProvided ? 1 : 0, data.job_description ?? null,
 				data.ending_substatus,
 				data.date_phone_screen,
 				data.date_last_onsite,

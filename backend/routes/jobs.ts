@@ -1,13 +1,15 @@
 import type Database from "better-sqlite3";
 import express from "express";
 import * as JobsDb from "../db/jobs.js";
+import type { JobView } from "../db/jobs.js";
 import { validateEndingSubstatus, validateJobFields } from "../validators.js";
 
 export function createJobsRouter(db: Database.Database) {
 	const router = express.Router();
 
 	router.get("/", (req, res) => {
-		res.json(JobsDb.listJobs(db, req.session.userId!));
+		const view: JobView = req.query.view === "full" ? "full" : "summary";
+		res.json(JobsDb.listJobs(db, req.session.userId!, view));
 	});
 
 	router.get("/:jobId", (req, res) => {
@@ -81,8 +83,10 @@ export function createJobsRouter(db: Database.Database) {
 				referred_by: f.referred_by ?? null,
 				status: f.status,
 				recruiter: f.recruiter ?? null,
-				notes: f.notes ?? null,
-				job_description: f.job_description ?? null,
+				// Only update notes/job_description when explicitly present in the
+				// request body — omitting them preserves the existing DB value.
+				...("notes" in f && { notes: f.notes ?? null }),
+				...("job_description" in f && { job_description: f.job_description ?? null }),
 				ending_substatus: f.ending_substatus ?? null,
 				date_phone_screen: f.date_phone_screen ?? null,
 				date_last_onsite: f.date_last_onsite ?? null,

@@ -49,8 +49,10 @@ export interface Job {
 	referred_by: string | null;
 	status: JobStatus;
 	recruiter: string | null;
-	notes: string | null;
-	job_description: string | null;
+	/** Absent when loaded via the summary view; present via the full view or individual job fetch. */
+	notes?: string | null;
+	/** Absent when loaded via the summary view; present via the full view or individual job fetch. */
+	job_description?: string | null;
 	ending_substatus: EndingSubstatus | null;
 	date_phone_screen: string | null;
 	date_last_onsite: string | null;
