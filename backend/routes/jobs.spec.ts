@@ -121,6 +121,54 @@ describe("GET /api/jobs", () => {
 		expect(res.body).toHaveLength(1);
 		expect(res.body[0].company).toBe("Acme Corp");
 	});
+
+	describe("view param", () => {
+		it("omits notes and job_description when view=summary", async () => {
+			await req("post", "/api/jobs").send({
+				...BASE_JOB,
+				notes: "some notes",
+				job_description: "job description text",
+			});
+			const res = await req("get", "/api/jobs?view=summary");
+			expect(res.status).toBe(200);
+			expect(res.body[0]).not.toHaveProperty("notes");
+			expect(res.body[0]).not.toHaveProperty("job_description");
+		});
+
+		it("defaults to summary when view param is omitted", async () => {
+			await req("post", "/api/jobs").send({
+				...BASE_JOB,
+				notes: "some notes",
+				job_description: "job description text",
+			});
+			const res = await req("get", "/api/jobs");
+			expect(res.status).toBe(200);
+			expect(res.body[0]).not.toHaveProperty("notes");
+			expect(res.body[0]).not.toHaveProperty("job_description");
+		});
+
+		it("includes notes and job_description when view=full", async () => {
+			await req("post", "/api/jobs").send({
+				...BASE_JOB,
+				notes: "some notes",
+				job_description: "job description text",
+			});
+			const res = await req("get", "/api/jobs?view=full");
+			expect(res.status).toBe(200);
+			expect(res.body[0].notes).toBe("some notes");
+			expect(res.body[0].job_description).toBe("job description text");
+		});
+
+		it("falls back to summary for an unknown view value", async () => {
+			await req("post", "/api/jobs").send({
+				...BASE_JOB,
+				notes: "some notes",
+			});
+			const res = await req("get", "/api/jobs?view=unknown");
+			expect(res.status).toBe(200);
+			expect(res.body[0]).not.toHaveProperty("notes");
+		});
+	});
 });
 
 describe("GET /api/jobs/:jobId", () => {
@@ -213,6 +261,41 @@ describe("PUT /api/jobs/:id", () => {
 		expect(res.body.company).toBe("Updated Corp");
 		expect(res.body.status).toBe("Resume submitted");
 		expect(res.body.referred_by).toBe("Jane Doe");
+	});
+
+	it("preserves notes and job_description when they are absent from the request body", async () => {
+		const createRes = await req("post", "/api/jobs").send({
+			...BASE_JOB,
+			notes: "keep me",
+			job_description: "keep me too",
+		});
+		const id: number = createRes.body.id;
+
+		// Update only status — notes/job_description intentionally omitted from body
+		// (mirrors a summary-state client that never loaded those fields)
+		const { notes: _n, ...withoutDetailFields } = BASE_JOB;
+		const res = await req("put", `/api/jobs/${id}`).send({
+			...withoutDetailFields,
+			status: "Phone screen",
+		});
+		expect(res.status).toBe(200);
+		expect(res.body.notes).toBe("keep me");
+		expect(res.body.job_description).toBe("keep me too");
+	});
+
+	it("clears notes when null is explicitly sent", async () => {
+		const createRes = await req("post", "/api/jobs").send({
+			...BASE_JOB,
+			notes: "clear me",
+		});
+		const id: number = createRes.body.id;
+
+		const res = await req("put", `/api/jobs/${id}`).send({
+			...BASE_JOB,
+			notes: null,
+		});
+		expect(res.status).toBe(200);
+		expect(res.body.notes).toBeNull();
 	});
 
 	it("returns 404 when job does not exist", async () => {

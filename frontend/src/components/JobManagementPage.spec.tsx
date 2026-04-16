@@ -546,4 +546,52 @@ describe("JobManagementPage", () => {
 			expect(mockOnLogout).toHaveBeenCalledOnce();
 		});
 	});
+
+	describe("summary view state management", () => {
+		it("calls getJobs on mount to load jobs", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			renderPage();
+			await waitFor(() =>
+				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+			);
+			expect(mockGetJobs).toHaveBeenCalledOnce();
+		});
+
+		it("strips notes and job_description from state after a status change", async () => {
+			const job = makeJob({ id: 1, company: "Acme" });
+			mockGetJobs.mockResolvedValue([job]);
+			// API returns a full job (with notes) after the status change PUT
+			vi.mocked(api.updateJob).mockResolvedValue(
+				makeJob({
+					id: 1,
+					company: "Acme",
+					notes: "secret",
+					job_description: "secret jd",
+				}),
+			);
+
+			let boardJobs: Job[] = [];
+			MockKanbanBoard.mockImplementation(({ jobs, onStatusChange }) => {
+				boardJobs = jobs;
+				return (
+					<button onClick={() => onStatusChange(jobs[0]!, "Phone screen")}>
+						change status
+					</button>
+				);
+			});
+
+			renderPage();
+			await waitFor(() =>
+				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+			);
+
+			fireEvent.click(screen.getByRole("button", { name: "change status" }));
+
+			await waitFor(() => expect(vi.mocked(api.updateJob)).toHaveBeenCalled());
+
+			// State should not carry notes/job_description — board only needs summary fields
+			expect(boardJobs[0]).not.toHaveProperty("notes");
+			expect(boardJobs[0]).not.toHaveProperty("job_description");
+		});
+	});
 });

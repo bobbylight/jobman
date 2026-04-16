@@ -45,7 +45,7 @@ export const api = {
 		request<{ success: boolean }>("/auth/logout", { method: "POST" }),
 
 	// Jobs
-	getJobs: () => request<Job[]>("/jobs"),
+	getJobs: () => request<Job[]>("/jobs?view=summary"),
 	getJob: (id: number) => request<Job>(`/jobs/${id}`),
 	createJob: (data: JobFormData) =>
 		request<Job>("/jobs", { method: "POST", body: JSON.stringify(data) }),

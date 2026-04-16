@@ -55,6 +55,12 @@ import EndingStatusDialog from "./EndingStatusDialog";
 
 type Severity = "success" | "error" | "info" | "warning";
 
+/** Strip heavy fields not needed by the Kanban board to keep state lean. */
+function toSummaryJob(job: Job): Job {
+	const { notes: _n, job_description: _jd, ...rest } = job;
+	return rest;
+}
+
 // Minimum fit score filter: show jobs at or above this threshold
 // "Not sure" is excluded when any threshold is set
 const MIN_FIT_SCORE_OPTIONS: { label: string; value: FitScore | null }[] = [
@@ -172,12 +178,12 @@ export default function JobManagementPage() {
 				if (dialogJob) {
 					const updated = await api.updateJob(dialogJob.id, formData);
 					setJobs((prev) =>
-						prev.map((j) => (j.id === updated.id ? updated : j)),
+						prev.map((j) => (j.id === updated.id ? toSummaryJob(updated) : j)),
 					);
 					notify("Job updated");
 				} else {
 					const created = await api.createJob(formData);
-					setJobs((prev) => [created, ...prev]);
+					setJobs((prev) => [toSummaryJob(created), ...prev]);
 					notify("Job added");
 				}
 				closeDialog();
@@ -212,7 +218,9 @@ export default function JobManagementPage() {
 					status: newStatus,
 					...extraUpdates,
 				});
-				setJobs((prev) => prev.map((j) => (j.id === updated.id ? updated : j)));
+				setJobs((prev) =>
+					prev.map((j) => (j.id === updated.id ? toSummaryJob(updated) : j)),
+				);
 				notify("Job status updated successfully");
 			} catch {
 				setJobs((prev) => prev.map((j) => (j.id === job.id ? job : j)));
