@@ -16,6 +16,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PhoneIcon from "@mui/icons-material/Phone";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
+import { formatTime } from "../jobUtils";
 import type {
 	EnrichedInterview,
 	InterviewStage,
@@ -51,19 +52,6 @@ const VIBE_LABELS: Record<InterviewVibe, string> = {
 	intense: "Intense",
 };
 
-function formatDttm(dttm: string): string {
-	const d = new Date(dttm);
-	if (isNaN(d.getTime())) return dttm;
-	return d.toLocaleString("en-US", {
-		weekday: "short",
-		month: "short",
-		day: "numeric",
-		year: "numeric",
-		hour: "numeric",
-		minute: "2-digit",
-	});
-}
-
 /**
  * Returns {from, to} strings (YYYY-MM-DD) covering today through the Sunday
  * after next Sunday — i.e. "this week and next week".
@@ -84,10 +72,13 @@ export function getDefaultDateRange(): { from: string; to: string } {
 	return { from: fmt(today), to: fmt(sundayAfterNext) };
 }
 
+type BucketType = "past" | "this_week" | "next_week" | "future";
+
 interface WeekBucket {
 	label: string;
 	items: EnrichedInterview[];
 	isPast: boolean;
+	type: BucketType;
 }
 
 /**
@@ -143,6 +134,7 @@ export function groupByWeek(
 			label: `Past interviews (${past.length}):`,
 			items: past,
 			isPast: true,
+			type: "past",
 		});
 	}
 	if (showThisWeek) {
@@ -150,6 +142,7 @@ export function groupByWeek(
 			label: `Remaining this week (${thisWeek.length}):`,
 			items: thisWeek,
 			isPast: false,
+			type: "this_week",
 		});
 	}
 	if (showNextWeek) {
@@ -157,6 +150,7 @@ export function groupByWeek(
 			label: `Next week (${nextWeek.length}):`,
 			items: nextWeek,
 			isPast: false,
+			type: "next_week",
 		});
 	}
 	if (future.length > 0) {
@@ -164,6 +158,7 @@ export function groupByWeek(
 			label: `Future (${future.length}):`,
 			items: future,
 			isPast: false,
+			type: "future",
 		});
 	}
 	return result;
@@ -315,35 +310,108 @@ export default function InterviewsPage() {
 						No interviews found in this date range.
 					</Typography>
 				) : (
-					grouped.map(({ label, items, isPast }) => (
-						<Box key={label} sx={{ mb: 3 }}>
-							<Typography
-								variant="subtitle2"
-								color="text.secondary"
-								sx={{ display: "block", mb: 1 }}
-							>
-								{label}
-							</Typography>
-							{items.length === 0 ? (
+					grouped.map(({ label, items, isPast }) => {
+						// Group by calendar day
+						const dayMap = new Map<string, EnrichedInterview[]>();
+						for (const iv of items) {
+							const key = new Date(iv.interview_dttm).toDateString();
+							if (!dayMap.has(key)) dayMap.set(key, []);
+							dayMap.get(key)!.push(iv);
+						}
+
+						return (
+							<Box key={label} sx={{ mb: 3 }}>
 								<Typography
-									variant="body2"
-									color="text.disabled"
-									sx={{ textAlign: "center", py: 1.5 }}
+									variant="subtitle2"
+									color="text.secondary"
+									sx={{ display: "block", mb: 1 }}
 								>
-									No interviews this week
+									{label}
 								</Typography>
-							) : (
-								items.map((iv) => (
-									<InterviewRow
-										key={iv.id}
-										interview={iv}
-										onJobClick={() => navigate(`/jobs/${iv.job.id}`)}
-										dimmed={isPast}
-									/>
-								))
-							)}
-						</Box>
-					))
+
+								{items.length === 0 ? (
+									<Typography
+										variant="body2"
+										color="text.disabled"
+										sx={{ textAlign: "center", py: 1.5 }}
+									>
+										No interviews this week
+									</Typography>
+								) : (
+									Array.from(dayMap.entries()).map(([dateStr, dayItems]) => {
+										const d = new Date(dateStr);
+										const isToday =
+											d.toDateString() === new Date().toDateString();
+										const weekday = d.toLocaleDateString("en-US", {
+											weekday: "short",
+										});
+										const dateLabel = d.toLocaleDateString("en-US", {
+											month: "short",
+											day: "numeric",
+										});
+										return (
+											<Box
+												key={dateStr}
+												sx={{ display: "flex", alignItems: "stretch", mb: 1.5 }}
+											>
+												{/* Left rail: day label */}
+												<Box
+													sx={{
+														width: 48,
+														flexShrink: 0,
+														textAlign: "right",
+														pr: 1.5,
+														pt: 0.5,
+													}}
+												>
+													<Typography
+														variant="caption"
+														fontWeight={600}
+														color={isToday ? "primary.main" : "text.secondary"}
+														sx={{ display: "block", lineHeight: 1.3 }}
+													>
+														{weekday}
+													</Typography>
+													<Typography
+														variant="caption"
+														color={isToday ? "primary.main" : "text.disabled"}
+														sx={{
+															display: "block",
+															lineHeight: 1.3,
+															fontSize: "0.65rem",
+														}}
+													>
+														{dateLabel}
+													</Typography>
+												</Box>
+												{/* Vertical line */}
+												<Box
+													sx={{
+														width: "2px",
+														flexShrink: 0,
+														mr: 1.5,
+														borderRadius: "2px",
+														bgcolor: isToday ? "primary.light" : "divider",
+													}}
+												/>
+												{/* Cards */}
+												<Box sx={{ flex: 1, minWidth: 0 }}>
+													{dayItems.map((iv) => (
+														<InterviewRow
+															key={iv.id}
+															interview={iv}
+															onJobClick={() => navigate(`/jobs/${iv.job.id}`)}
+															dimmed={isPast}
+														/>
+													))}
+												</Box>
+											</Box>
+										);
+									})
+								)}
+							</Box>
+						);
+					})
 				)}
 
 				{!loading && !error && interviews.length > 0 && (
@@ -442,7 +510,7 @@ function InterviewRow({
 						{typeLabel}
 					</Typography>
 					<Typography variant="body2" color="text.secondary">
-						&middot; {formatDttm(interview.interview_dttm)}
+						&middot; {formatTime(interview.interview_dttm)}
 					</Typography>
 					{interview.interview_type && (
 						<Chip

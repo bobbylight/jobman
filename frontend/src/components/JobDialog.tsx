@@ -332,7 +332,7 @@ export default function JobDialog({
 					<Box
 						component="fieldset"
 						disabled={formDisabled}
-						sx={{ border: "none", p: 0, m: 0 }}
+						sx={{ border: "none", p: 0, m: 0, minWidth: 0 }}
 					>
 						<Box sx={{ display: activeTab === 0 ? "block" : "none" }}>
 							<Grid container spacing={2} sx={{ pt: 0.5 }}>

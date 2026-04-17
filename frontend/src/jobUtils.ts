@@ -1,5 +1,11 @@
 import type { Job, JobStatus } from "./types";
 
+export function formatTime(dttm: string): string {
+	const d = new Date(dttm);
+	if (isNaN(d.getTime())) return dttm;
+	return d.toLocaleString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
 export function computeDateUpdates(
 	job: Pick<Job, "date_phone_screen" | "date_last_onsite">,
 	_newStatus: JobStatus,

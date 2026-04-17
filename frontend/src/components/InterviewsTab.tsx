@@ -27,6 +27,7 @@ import type {
 } from "../types";
 import MarkdownField from "./MarkdownField";
 import QuestionSubView from "./QuestionSubView";
+import { formatTime } from "../jobUtils";
 
 const INTERVIEW_STAGE_LABELS: Record<InterviewStage, string> = {
 	phone_screen: "Phone Screen",
@@ -62,18 +63,6 @@ const EMPTY_FORM: InterviewFormData = {
 };
 
 type Mode = "list" | "add" | { editId: number } | { confirmDeleteId: number };
-
-function formatDttm(dttm: string): string {
-	const d = new Date(dttm);
-	if (isNaN(d.getTime())) return dttm;
-	return d.toLocaleString("en-US", {
-		month: "short",
-		day: "numeric",
-		year: "numeric",
-		hour: "numeric",
-		minute: "2-digit",
-	});
-}
 
 interface Props {
 	jobId: number;
@@ -246,8 +235,179 @@ export default function InterviewsTab({
 		);
 	}
 
+	// ---- Date bucketing ----
+	const now = new Date();
+	const upcomingInterviews = [...interviews]
+		.filter((iv) => new Date(iv.interview_dttm) >= now)
+		.sort((a, b) => a.interview_dttm.localeCompare(b.interview_dttm));
+	// interviews is already sorted descending from load()
+	const priorInterviews = interviews.filter(
+		(iv) => new Date(iv.interview_dttm) < now,
+	);
+
 	const isFormMode =
 		mode === "add" || (typeof mode === "object" && "editId" in mode);
+
+	const renderItem = (interview: Interview, questionsDisabled: boolean) => {
+		const isEditing =
+			typeof mode === "object" &&
+			"editId" in mode &&
+			mode.editId === interview.id;
+		const isConfirmingDelete =
+			typeof mode === "object" &&
+			"confirmDeleteId" in mode &&
+			mode.confirmDeleteId === interview.id;
+
+		if (isConfirmingDelete) {
+			return (
+				<Box
+					key={interview.id}
+					sx={{
+						border: "1px solid",
+						borderColor: "error.light",
+						borderRadius: 1,
+						p: 1.5,
+						mb: 1,
+						display: "flex",
+						alignItems: "center",
+						gap: 2,
+					}}
+				>
+					<Typography variant="body2" sx={{ flex: 1 }}>
+						Delete this interview?
+					</Typography>
+					<Button size="small" onClick={handleCancel}>
+						Cancel
+					</Button>
+					<Button
+						size="small"
+						color="error"
+						variant="contained"
+						disabled={saving}
+						onClick={() => void handleDeleteConfirm(interview.id)}
+					>
+						Delete
+					</Button>
+				</Box>
+			);
+		}
+
+		if (isEditing) {
+			return (
+				<Box key={interview.id} sx={{ mb: 1 }}>
+					<InterviewForm
+						data={form}
+						onChange={setField}
+						onSave={() => void handleSave()}
+						onCancel={handleCancel}
+						saving={saving}
+						error={formError}
+					/>
+				</Box>
+			);
+		}
+
+		return (
+			<InterviewCard
+				key={interview.id}
+				interview={interview}
+				questionCount={questionCounts[interview.id] ?? 0}
+				questionsDisabled={questionsDisabled}
+				onEdit={() => handleEditClick(interview)}
+				onDelete={() => setMode({ confirmDeleteId: interview.id })}
+				onViewQuestions={() => onViewingQuestionsChange(interview)}
+			/>
+		);
+	};
+
+	const renderWeekSection = (
+		title: string,
+		sectionInterviews: Interview[],
+		questionsDisabled = false,
+	) => {
+		if (sectionInterviews.length === 0) return null;
+
+		// Group by calendar day
+		const dayMap = new Map<string, Interview[]>();
+		for (const iv of sectionInterviews) {
+			const key = new Date(iv.interview_dttm).toDateString();
+			if (!dayMap.has(key)) dayMap.set(key, []);
+			dayMap.get(key)!.push(iv);
+		}
+
+		return (
+			<Box sx={{ mb: 2 }}>
+				<Typography
+					variant="overline"
+					color="text.secondary"
+					sx={{ display: "block", mb: 0.75, lineHeight: 2 }}
+				>
+					{title}
+				</Typography>
+				{Array.from(dayMap.entries()).map(([dateStr, dayInterviews]) => {
+					const d = new Date(dateStr);
+					const isToday = d.toDateString() === new Date().toDateString();
+					const weekday = d.toLocaleDateString("en-US", { weekday: "short" });
+					const dateLabel = d.toLocaleDateString("en-US", {
+						month: "short",
+						day: "numeric",
+					});
+
+					return (
+						<Box
+							key={dateStr}
+							sx={{ display: "flex", alignItems: "stretch", mb: 1.5 }}
+						>
+							{/* Left rail: day label */}
+							<Box
+								sx={{
+									width: 48,
+									flexShrink: 0,
+									textAlign: "right",
+									pr: 1.5,
+									pt: 0.5,
+								}}
+							>
+								<Typography
+									variant="caption"
+									fontWeight={600}
+									color={isToday ? "primary.main" : "text.secondary"}
+									sx={{ display: "block", lineHeight: 1.3 }}
+								>
+									{weekday}
+								</Typography>
+								<Typography
+									variant="caption"
+									color={isToday ? "primary.main" : "text.disabled"}
+									sx={{
+										display: "block",
+										lineHeight: 1.3,
+										fontSize: "0.65rem",
+									}}
+								>
+									{dateLabel}
+								</Typography>
+							</Box>
+							{/* Vertical line */}
+							<Box
+								sx={{
+									width: "2px",
+									flexShrink: 0,
+									mr: 1.5,
+									borderRadius: "2px",
+									bgcolor: isToday ? "primary.light" : "divider",
+								}}
+							/>
+							{/* Cards */}
+							<Box sx={{ flex: 1, minWidth: 0 }}>
+								{dayInterviews.map((iv) => renderItem(iv, questionsDisabled))}
+							</Box>
+						</Box>
+					);
+				})}
+			</Box>
+		);
+	};
 
 	return (
 		<Box sx={{ overflow: "hidden" }}>
@@ -262,7 +422,7 @@ export default function InterviewsTab({
 				}}
 			>
 				{/* Panel 1: Interview list */}
-				<Box sx={{ width: "50%", minWidth: "50%" }}>
+				<Box sx={{ width: "50%", minWidth: "50%", overflow: "hidden" }}>
 					<Box
 						sx={{
 							display: "flex",
@@ -283,77 +443,6 @@ export default function InterviewsTab({
 						)}
 					</Box>
 
-					{interviews.map((interview) => {
-						const isEditing =
-							typeof mode === "object" &&
-							"editId" in mode &&
-							mode.editId === interview.id;
-						const isConfirmingDelete =
-							typeof mode === "object" &&
-							"confirmDeleteId" in mode &&
-							mode.confirmDeleteId === interview.id;
-
-						if (isConfirmingDelete) {
-							return (
-								<Box
-									key={interview.id}
-									sx={{
-										border: "1px solid",
-										borderColor: "error.light",
-										borderRadius: 1,
-										p: 1.5,
-										mb: 1,
-										display: "flex",
-										alignItems: "center",
-										gap: 2,
-									}}
-								>
-									<Typography variant="body2" sx={{ flex: 1 }}>
-										Delete this interview?
-									</Typography>
-									<Button size="small" onClick={handleCancel}>
-										Cancel
-									</Button>
-									<Button
-										size="small"
-										color="error"
-										variant="contained"
-										disabled={saving}
-										onClick={() => void handleDeleteConfirm(interview.id)}
-									>
-										Delete
-									</Button>
-								</Box>
-							);
-						}
-
-						if (isEditing) {
-							return (
-								<Box key={interview.id} sx={{ mb: 1 }}>
-									<InterviewForm
-										data={form}
-										onChange={setField}
-										onSave={() => void handleSave()}
-										onCancel={handleCancel}
-										saving={saving}
-										error={formError}
-									/>
-								</Box>
-							);
-						}
-
-						return (
-							<InterviewCard
-								key={interview.id}
-								interview={interview}
-								questionCount={questionCounts[interview.id] ?? 0}
-								onEdit={() => handleEditClick(interview)}
-								onDelete={() => setMode({ confirmDeleteId: interview.id })}
-								onViewQuestions={() => onViewingQuestionsChange(interview)}
-							/>
-						);
-					})}
-
 					{interviews.length === 0 && !isFormMode && (
 						<Typography
 							variant="body2"
@@ -366,15 +455,20 @@ export default function InterviewsTab({
 					)}
 
 					{mode === "add" && (
-						<InterviewForm
-							data={form}
-							onChange={setField}
-							onSave={() => void handleSave()}
-							onCancel={handleCancel}
-							saving={saving}
-							error={formError}
-						/>
+						<Box sx={{ ml: "62px", mb: 2 }}>
+							<InterviewForm
+								data={form}
+								onChange={setField}
+								onSave={() => void handleSave()}
+								onCancel={handleCancel}
+								saving={saving}
+								error={formError}
+							/>
+						</Box>
 					)}
+
+					{renderWeekSection("Upcoming", upcomingInterviews, true)}
+					{renderWeekSection("Prior", priorInterviews)}
 				</Box>
 
 				{/* Panel 2: Questions sub-view */}
@@ -391,12 +485,14 @@ export default function InterviewsTab({
 function InterviewCard({
 	interview,
 	questionCount,
+	questionsDisabled,
 	onEdit,
 	onDelete,
 	onViewQuestions,
 }: {
 	interview: Interview;
 	questionCount: number;
+	questionsDisabled: boolean;
 	onEdit: () => void;
 	onDelete: () => void;
 	onViewQuestions: () => void;
@@ -413,6 +509,7 @@ function InterviewCard({
 				borderRadius: 1,
 				p: 1.5,
 				mb: 1,
+				overflow: "hidden",
 			}}
 		>
 			<Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
@@ -437,7 +534,7 @@ function InterviewCard({
 							{typeLabel}
 						</Typography>
 						<Typography variant="body2" color="text.secondary">
-							&middot; {formatDttm(interview.interview_dttm)}
+							&middot; {formatTime(interview.interview_dttm)}
 						</Typography>
 						{interview.interview_type && (
 							<Chip
@@ -482,6 +579,7 @@ function InterviewCard({
 						size="small"
 						startIcon={<QuizOutlinedIcon sx={{ fontSize: 14 }} />}
 						onClick={onViewQuestions}
+						disabled={questionsDisabled}
 						sx={{ mt: 0.5, p: 0, minWidth: 0, textTransform: "none" }}
 					>
 						{questionCount > 0 ? `Questions (${questionCount})` : "Questions"}
