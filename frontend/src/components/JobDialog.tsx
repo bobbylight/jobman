@@ -141,7 +141,8 @@ export default function JobDialog({
 		};
 	}, [open, jobId]);
 
-	function handleClose() {
+	function handleClose(_: unknown, reason?: string) {
+		if (reason === "backdropClick") return;
 		abortRef.current?.abort();
 		onClose();
 	}
