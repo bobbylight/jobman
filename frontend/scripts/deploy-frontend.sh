@@ -19,7 +19,7 @@ echo "Building frontend..."
 npm run build --prefix "${SCRIPT_ROOT}/.."
 
 echo "Syncing to S3..."
-aws s3 sync "${SCRIPT_ROOT}/../dist/" "s3://${S3_BUCKET}" --delete
+aws s3 sync "${SCRIPT_ROOT}/../dist/" "s3://${S3_BUCKET}" --delete --exclude "backups/*"
 
 echo "Invalidating CloudFront cache..."
 aws cloudfront create-invalidation --distribution-id "${CLOUDFRONT_ID}" --paths "/*"
