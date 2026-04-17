@@ -172,6 +172,17 @@ describe("JobDialog", () => {
 			expect(DEFAULT_PROPS.onClose).toHaveBeenCalledTimes(1);
 		});
 
+		it("does not call onClose when backdrop is clicked", () => {
+			const { baseElement } = render(
+				<JobDialog {...DEFAULT_PROPS} jobId={null} />,
+			);
+			const backdrop = baseElement.querySelector(
+				".MuiBackdrop-root",
+			) as HTMLElement;
+			fireEvent.click(backdrop);
+			expect(DEFAULT_PROPS.onClose).not.toHaveBeenCalled();
+		});
+
 		it("does not call api.getJob in add mode", () => {
 			render(<JobDialog {...DEFAULT_PROPS} jobId={null} />);
 			expect(vi.mocked(api.getJob)).not.toHaveBeenCalled();
