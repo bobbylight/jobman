@@ -1,6 +1,5 @@
 import React from "react";
 import { act, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
 import App from "./App";
 import { api, setUnauthorizedHandler } from "./api";
 import { computeDateUpdates } from "./jobUtils";
@@ -9,40 +8,48 @@ import type { User } from "./types";
 let capturedUnauthorizedHandler: (() => void) | null = null;
 let capturedOnLogout: (() => Promise<void>) | null = null;
 
-vi.mock("./api", () => ({
-	setUnauthorizedHandler: vi.fn((handler: () => void) => {
-		capturedUnauthorizedHandler = handler;
-	}),
-	api: {
-		getMe: vi.fn(),
-		logout: vi.fn(),
-	},
-}));
+vi.mock(
+	import("./api"),
+	() =>
+		({
+			api: {
+				getMe: vi.fn(),
+				logout: vi.fn(),
+			},
+			setUnauthorizedHandler: vi.fn((handler: () => void) => {
+				capturedUnauthorizedHandler = handler;
+			}),
+		}) as any,
+);
 
-vi.mock("./components/AppShell", () => ({
-	default: ({
-		currentUser,
-		onLogout,
-	}: {
-		currentUser: User;
-		onLogout: () => Promise<void>;
-	}) => {
-		capturedOnLogout = onLogout;
-		return <div data-testid="job-management-page">{currentUser.email}</div>;
-	},
-}));
+vi.mock(
+	import("./components/AppShell"),
+	() =>
+		({
+			default: ({
+				currentUser,
+				onLogout,
+			}: {
+				currentUser: User;
+				onLogout: () => Promise<void>;
+			}) => {
+				capturedOnLogout = onLogout;
+				return <div data-testid="job-management-page">{currentUser.email}</div>;
+			},
+		}) as any,
+);
 
 const mockGetMe = vi.mocked(api.getMe);
 const mockLogout = vi.mocked(api.logout);
 
 const MOCK_USER: User = {
-	id: 1,
-	email: "test@example.com",
-	displayName: "Test User",
 	avatarUrl: "https://example.com/avatar.jpg",
+	displayName: "Test User",
+	email: "test@example.com",
+	id: 1,
 };
 
-describe("App", () => {
+describe(App, () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		capturedUnauthorizedHandler = null;
@@ -115,13 +122,13 @@ describe("App", () => {
 	});
 });
 
-describe("computeDateUpdates", () => {
+describe(computeDateUpdates, () => {
 	const NOW = "2026-03-25T14:30";
 	const jobWithDates = {
-		date_phone_screen: "2026-03-20T10:00",
 		date_last_onsite: "2026-03-23T09:00",
+		date_phone_screen: "2026-03-20T10:00",
 	};
-	const jobNoDates = { date_phone_screen: null, date_last_onsite: null };
+	const jobNoDates = { date_last_onsite: null, date_phone_screen: null };
 
 	it("preserves both dates when moving to Phone screen", () => {
 		const result = computeDateUpdates(jobWithDates, "Phone screen", NOW);

@@ -1,11 +1,23 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type {
-	getCachedLogo as GetCachedLogo,
 	fetchLogo as FetchLogo,
+	getCachedLogo as GetCachedLogo,
 } from "./logoCache";
 
+function mockFetchOk() {
+	vi.mocked(fetch).mockResolvedValue({
+		blob: () => Promise.resolve(new Blob(["img"], { type: "image/png" })),
+		ok: true,
+	} as Response);
+}
+
+function mockFetchNotFound() {
+	vi.mocked(fetch).mockResolvedValue({
+		ok: false,
+	} as Response);
+}
+
 // The cache is a module-level Map, so we reset modules before each test to get
-// a fresh cache, then dynamically import the module.
+// A fresh cache, then dynamically import the module.
 describe("logoCache", () => {
 	let getCachedLogo: typeof GetCachedLogo;
 	let fetchLogo: typeof FetchLogo;
@@ -15,26 +27,13 @@ describe("logoCache", () => {
 		vi.stubGlobal("fetch", vi.fn());
 		URL.createObjectURL = vi.fn().mockReturnValue("blob:mock-url");
 		const mod = await import("./logoCache");
-		getCachedLogo = mod.getCachedLogo;
-		fetchLogo = mod.fetchLogo;
+		({ getCachedLogo } = mod);
+		({ fetchLogo } = mod);
 	});
 
 	afterEach(() => {
 		vi.unstubAllGlobals();
 	});
-
-	function mockFetchOk() {
-		vi.mocked(fetch).mockResolvedValue({
-			ok: true,
-			blob: () => Promise.resolve(new Blob(["img"], { type: "image/png" })),
-		} as Response);
-	}
-
-	function mockFetchNotFound() {
-		vi.mocked(fetch).mockResolvedValue({
-			ok: false,
-		} as Response);
-	}
 
 	describe("getCachedLogo", () => {
 		it("returns undefined when the cache is empty", () => {
@@ -51,8 +50,8 @@ describe("logoCache", () => {
 			mockFetchOk();
 			await fetchLogo("Acme");
 			expect(getCachedLogo("Acme")).toEqual({
-				status: "resolved",
 				src: "blob:mock-url",
+				status: "resolved",
 			});
 		});
 
@@ -82,7 +81,7 @@ describe("logoCache", () => {
 			mockFetchOk();
 			const entry = await fetchLogo("Acme");
 			expect(URL.createObjectURL).toHaveBeenCalledOnce();
-			expect(entry).toEqual({ status: "resolved", src: "blob:mock-url" });
+			expect(entry).toEqual({ src: "blob:mock-url", status: "resolved" });
 		});
 
 		it("returns a not-found entry when the response is not ok", async () => {

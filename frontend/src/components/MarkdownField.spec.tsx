@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { render, screen, fireEvent, act } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import MarkdownField from "./MarkdownField";
 
 const DEFAULT_PROPS = {
@@ -24,13 +23,13 @@ function Controlled({ initialValue }: { initialValue: string | null }) {
 	);
 }
 
-describe("MarkdownField", () => {
+describe(MarkdownField, () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		Object.defineProperty(navigator, "clipboard", {
+			configurable: true,
 			value: { writeText: vi.fn().mockResolvedValue(undefined) },
 			writable: true,
-			configurable: true,
 		});
 	});
 
@@ -68,8 +67,8 @@ describe("MarkdownField", () => {
 
 		it("stays editable after the first character is typed (regression)", () => {
 			// Bug: without onFocus setting editing=true, typing the first char would
-			// flip value from null→"H", making !value false and editing still false,
-			// which caused the field to switch to read-only mid-typing.
+			// Flip value from null→"H", making !value false and editing still false,
+			// Which caused the field to switch to read-only mid-typing.
 			render(<Controlled initialValue={null} />);
 			const textarea = screen.getByLabelText("Job Description");
 			fireEvent.focus(textarea);
@@ -243,7 +242,7 @@ describe("MarkdownField", () => {
 				},
 			});
 			expect(onChange).toHaveBeenCalledOnce();
-			const result: string = onChange.mock.calls[0]![0];
+			const [result] = onChange.mock.calls[0]! as [string];
 			expect(result).toContain("**Requirements**");
 			expect(result).toContain("TypeScript");
 		});

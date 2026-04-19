@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCachedLogo, fetchLogo } from "./logoCache";
+import { fetchLogo, getCachedLogo } from "./logoCache";
 
 export function useCompanyLogo(company: string): string | null {
 	const cached = getCachedLogo(company);
@@ -8,10 +8,14 @@ export function useCompanyLogo(company: string): string | null {
 	);
 
 	useEffect(() => {
-		if (cached) return;
+		if (cached) {
+			return;
+		}
 		let cancelled = false;
 		fetchLogo(company).then((entry) => {
-			if (!cancelled && entry.status === "resolved") setSrc(entry.src);
+			if (!cancelled && entry.status === "resolved") {
+				setSrc(entry.src);
+			}
 		});
 		return () => {
 			cancelled = true;

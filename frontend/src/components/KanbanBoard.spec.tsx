@@ -1,58 +1,67 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
 import KanbanBoard from "./KanbanBoard";
 import type { Job } from "../types";
 import { STATUSES } from "../constants";
 
-vi.mock("@dnd-kit/core", () => ({
-	DndContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-	DragOverlay: () => null,
-	useDraggable: () => ({
-		attributes: {},
-		listeners: {},
-		setNodeRef: () => {},
-		transform: null,
-		isDragging: false,
-	}),
-	useDroppable: () => ({ setNodeRef: () => {}, isOver: false }),
-	pointerWithin: () => [],
-}));
+vi.mock(
+	import("@dnd-kit/core"),
+	() =>
+		({
+			DndContext: ({ children }: { children: React.ReactNode }) => (
+				<>{children}</>
+			),
+			DragOverlay: () => null,
+			pointerWithin: () => [],
+			useDraggable: () => ({
+				attributes: {},
+				listeners: {},
+				setNodeRef: () => {},
+				transform: null,
+				isDragging: false,
+			}),
+			useDroppable: () => ({ setNodeRef: () => {}, isOver: false }),
+		}) as any,
+);
 
-vi.mock("@dnd-kit/utilities", () => ({
-	CSS: { Translate: { toString: () => "" } },
-}));
+vi.mock(
+	import("@dnd-kit/utilities"),
+	() =>
+		({
+			CSS: { Translate: { toString: () => "" } },
+		}) as any,
+);
 
 const makeJob = (
 	overrides: Partial<Job> & Pick<Job, "id" | "status">,
 ): Job => ({
 	company: "Acme",
-	role: "Engineer",
-	link: "https://acme.com",
-	fit_score: null,
-	salary: null,
-	date_applied: null,
-	recruiter: null,
-	notes: null,
-	job_description: null,
-	ending_substatus: null,
-	referred_by: null,
-	date_phone_screen: null,
-	date_last_onsite: null,
-	favorite: false,
-	tags: [],
 	created_at: "2024-01-01T00:00:00.000Z",
+	date_applied: null,
+	date_last_onsite: null,
+	date_phone_screen: null,
+	ending_substatus: null,
+	favorite: false,
+	fit_score: null,
+	job_description: null,
+	link: "https://acme.com",
+	notes: null,
+	recruiter: null,
+	referred_by: null,
+	role: "Engineer",
+	salary: null,
+	tags: [],
 	updated_at: "2024-01-01T00:00:00.000Z",
 	...overrides,
 });
 
 const DEFAULT_PROPS = {
-	onStatusChange: vi.fn(),
 	onCardClick: vi.fn(),
+	onStatusChange: vi.fn(),
 	onToggleFavorite: vi.fn(),
 };
 
-describe("KanbanBoard", () => {
+describe(KanbanBoard, () => {
 	it("renders all 6 status columns", () => {
 		render(<KanbanBoard {...DEFAULT_PROPS} jobs={[]} />);
 		for (const status of STATUSES) {
@@ -68,9 +77,9 @@ describe("KanbanBoard", () => {
 
 	it("places each job in the correct column", () => {
 		const jobs: Job[] = [
-			makeJob({ id: 1, status: "Not started", company: "Alpha" }),
-			makeJob({ id: 2, status: "Offer!", company: "Beta" }),
-			makeJob({ id: 3, status: "Not started", company: "Gamma" }),
+			makeJob({ company: "Alpha", id: 1, status: "Not started" }),
+			makeJob({ company: "Beta", id: 2, status: "Offer!" }),
+			makeJob({ company: "Gamma", id: 3, status: "Not started" }),
 		];
 		render(<KanbanBoard {...DEFAULT_PROPS} jobs={jobs} />);
 
@@ -81,8 +90,8 @@ describe("KanbanBoard", () => {
 
 	it("renders all provided jobs as cards", () => {
 		const jobs: Job[] = [
-			makeJob({ id: 1, status: "Not started", company: "Alpha" }),
-			makeJob({ id: 2, status: "Resume submitted", company: "Beta" }),
+			makeJob({ company: "Alpha", id: 1, status: "Not started" }),
+			makeJob({ company: "Beta", id: 2, status: "Resume submitted" }),
 		];
 		render(<KanbanBoard {...DEFAULT_PROPS} jobs={jobs} />);
 		expect(screen.getByText("Alpha")).toBeInTheDocument();

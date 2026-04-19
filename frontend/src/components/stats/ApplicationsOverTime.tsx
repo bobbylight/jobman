@@ -1,14 +1,14 @@
 import React from "react";
 import {
-	LineChart,
+	CartesianGrid,
 	Line,
+	LineChart,
+	ResponsiveContainer,
+	Tooltip,
 	XAxis,
 	YAxis,
-	Tooltip,
-	CartesianGrid,
-	ResponsiveContainer,
 } from "recharts";
-import { Typography, Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 
 interface Props {
 	applicationsByWeek: { week: string; count: number }[];
@@ -19,10 +19,10 @@ export default function ApplicationsOverTime({ applicationsByWeek }: Props) {
 		return (
 			<Box
 				sx={{
-					display: "flex",
 					alignItems: "center",
-					justifyContent: "center",
+					display: "flex",
 					height: 220,
+					justifyContent: "center",
 				}}
 			>
 				<Typography color="text.secondary" variant="body2">
@@ -36,7 +36,7 @@ export default function ApplicationsOverTime({ applicationsByWeek }: Props) {
 		<ResponsiveContainer width="100%" height={220}>
 			<LineChart
 				data={applicationsByWeek}
-				margin={{ top: 4, right: 16, bottom: 4, left: 0 }}
+				margin={{ bottom: 4, left: 0, right: 16, top: 4 }}
 			>
 				<CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.08)" />
 				<XAxis

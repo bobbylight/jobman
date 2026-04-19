@@ -1,26 +1,31 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import StatusDonutChart from "./StatusDonutChart";
 
-// recharts requires real DOM layout which jsdom doesn't provide.
+// Recharts requires real DOM layout which jsdom doesn't provide.
 // Mock the parts we don't want to test here.
-vi.mock("recharts", () => ({
-	ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
-		<div data-testid="recharts-container">{children}</div>
-	),
-	PieChart: ({ children }: { children: React.ReactNode }) => (
-		<div data-testid="pie-chart">{children}</div>
-	),
-	Pie: () => <div data-testid="pie" />,
-	Cell: () => null,
-	Tooltip: () => null,
-	Legend: ({ formatter }: { formatter: (v: string) => React.ReactNode }) => (
-		<div data-testid="legend">{formatter("Not started")}</div>
-	),
-}));
+vi.mock(
+	import("recharts"),
+	() =>
+		({
+			Cell: () => null,
+			Legend: ({
+				formatter,
+			}: {
+				formatter: (v: string) => React.ReactNode;
+			}) => <div data-testid="legend">{formatter("Not started")}</div>,
+			Pie: () => <div data-testid="pie" />,
+			PieChart: ({ children }: { children: React.ReactNode }) => (
+				<div data-testid="pie-chart">{children}</div>
+			),
+			ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
+				<div data-testid="recharts-container">{children}</div>
+			),
+			Tooltip: () => null,
+		}) as any,
+);
 
-describe("StatusDonutChart", () => {
+describe(StatusDonutChart, () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -39,8 +44,8 @@ describe("StatusDonutChart", () => {
 		render(
 			<StatusDonutChart
 				byStatus={[
-					{ status: "Not started", count: 3 },
-					{ status: "Interviewing", count: 1 },
+					{ count: 3, status: "Not started" },
+					{ count: 1, status: "Interviewing" },
 				]}
 			/>,
 		);
@@ -51,13 +56,13 @@ describe("StatusDonutChart", () => {
 	});
 
 	it("omits statuses with zero count from the chart", () => {
-		// byStatus comes from the API already filtered, but if a status has count=0
-		// the toChartData helper should still filter it out defensively.
+		// ByStatus comes from the API already filtered, but if a status has count=0
+		// The toChartData helper should still filter it out defensively.
 		render(
 			<StatusDonutChart
 				byStatus={[
-					{ status: "Not started", count: 0 },
-					{ status: "Phone screen", count: 2 },
+					{ count: 0, status: "Not started" },
+					{ count: 2, status: "Phone screen" },
 				]}
 			/>,
 		);
@@ -69,8 +74,8 @@ describe("StatusDonutChart", () => {
 		render(
 			<StatusDonutChart
 				byStatus={[
-					{ status: "Not started", count: 0 },
-					{ status: "Phone screen", count: 0 },
+					{ count: 0, status: "Not started" },
+					{ count: 0, status: "Phone screen" },
 				]}
 			/>,
 		);
@@ -79,7 +84,7 @@ describe("StatusDonutChart", () => {
 
 	it("renders a legend entry for each status in the data", () => {
 		render(
-			<StatusDonutChart byStatus={[{ status: "Not started", count: 5 }]} />,
+			<StatusDonutChart byStatus={[{ count: 5, status: "Not started" }]} />,
 		);
 		// The mocked Legend calls formatter("Not started") and renders the result
 		expect(screen.getByText("Not started")).toBeInTheDocument();

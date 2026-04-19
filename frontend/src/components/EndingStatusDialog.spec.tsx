@@ -1,28 +1,27 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import EndingStatusDialog from "./EndingStatusDialog";
 import type { Job } from "../types";
 
 const BASE_JOB: Job = {
-	id: 1,
 	company: "Acme Corp",
-	role: "Engineer",
-	link: "https://acme.example.com/job",
-	status: "Interviewing",
-	fit_score: null,
-	salary: null,
-	date_applied: null,
-	recruiter: null,
-	notes: "Some existing notes",
-	job_description: null,
-	ending_substatus: null,
-	referred_by: null,
-	date_phone_screen: null,
-	date_last_onsite: null,
-	favorite: false,
-	tags: [],
 	created_at: "2024-01-01T00:00:00.000Z",
+	date_applied: null,
+	date_last_onsite: null,
+	date_phone_screen: null,
+	ending_substatus: null,
+	favorite: false,
+	fit_score: null,
+	id: 1,
+	job_description: null,
+	link: "https://acme.example.com/job",
+	notes: "Some existing notes",
+	recruiter: null,
+	referred_by: null,
+	role: "Engineer",
+	salary: null,
+	status: "Interviewing",
+	tags: [],
 	updated_at: "2024-01-01T00:00:00.000Z",
 };
 
@@ -33,14 +32,14 @@ function changeSelect(labelText: RegExp | string, optionName: string) {
 
 // Default uses Rejected/Withdrawn — the general case where the user picks a resolution
 const DEFAULT_PROPS = {
-	open: true,
 	job: BASE_JOB,
 	newStatus: "Rejected/Withdrawn" as const,
-	onConfirm: vi.fn(),
 	onCancel: vi.fn(),
+	onConfirm: vi.fn(),
+	open: true,
 };
 
-describe("EndingStatusDialog", () => {
+describe(EndingStatusDialog, () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("renders the job name and destination status", () => {

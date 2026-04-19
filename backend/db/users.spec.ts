@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach } from "vitest";
+
 import Database from "better-sqlite3";
 import {
-	findUserById,
-	findUserByGoogleId,
-	updateGoogleTokens,
 	createUserWithGoogleIdentity,
+	findUserByGoogleId,
+	findUserById,
+	updateGoogleTokens,
 } from "./users.js";
 
 const SCHEMA = `
@@ -33,11 +33,11 @@ function makeDb() {
 }
 
 const GOOGLE_PARAMS = {
-	email: "user@example.com",
-	displayName: "Test User",
-	avatarUrl: "https://example.com/avatar.jpg",
-	googleId: "google-uid-123",
 	accessToken: "access-token-abc",
+	avatarUrl: "https://example.com/avatar.jpg",
+	displayName: "Test User",
+	email: "user@example.com",
+	googleId: "google-uid-123",
 	refreshToken: "refresh-token-xyz",
 };
 
@@ -48,7 +48,7 @@ describe("users db", () => {
 		db = makeDb();
 	});
 
-	describe("findUserById", () => {
+	describe(findUserById, () => {
 		it("returns undefined for non-existent user", () => {
 			expect(findUserById(db, 999)).toBeUndefined();
 		});
@@ -70,7 +70,7 @@ describe("users db", () => {
 		});
 	});
 
-	describe("findUserByGoogleId", () => {
+	describe(findUserByGoogleId, () => {
 		it("returns undefined for unknown google id", () => {
 			expect(findUserByGoogleId(db, "unknown-google-id")).toBeUndefined();
 		});
@@ -88,7 +88,7 @@ describe("users db", () => {
 		});
 	});
 
-	describe("updateGoogleTokens", () => {
+	describe(updateGoogleTokens, () => {
 		it("updates access and refresh tokens for the given google id", () => {
 			createUserWithGoogleIdentity(db, GOOGLE_PARAMS);
 			updateGoogleTokens(db, "google-uid-123", "new-access-token", "new-refresh-token");
@@ -120,7 +120,7 @@ describe("users db", () => {
 		});
 	});
 
-	describe("createUserWithGoogleIdentity", () => {
+	describe(createUserWithGoogleIdentity, () => {
 		it("returns the created user with correct fields", () => {
 			const user = createUserWithGoogleIdentity(db, GOOGLE_PARAMS);
 			expect(user.id).toBeGreaterThan(0);
@@ -142,8 +142,8 @@ describe("users db", () => {
 		it("handles null displayName and avatarUrl", () => {
 			const user = createUserWithGoogleIdentity(db, {
 				...GOOGLE_PARAMS,
-				displayName: null,
 				avatarUrl: null,
+				displayName: null,
 			});
 			expect(user.display_name).toBeNull();
 			expect(user.avatar_url).toBeNull();

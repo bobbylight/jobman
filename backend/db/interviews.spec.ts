@@ -1,20 +1,6 @@
-import { describe, it, expect, beforeEach } from "vitest";
+
 import Database from "better-sqlite3";
-import {
-	jobBelongsToUser,
-	listInterviews,
-	findInterview,
-	createInterview,
-	updateInterview,
-	deleteInterview,
-	listQuestions,
-	findQuestion,
-	createQuestion,
-	updateQuestion,
-	deleteQuestion,
-	type InterviewCreateData,
-	type QuestionCreateData,
-} from "./interviews.js";
+import { jobBelongsToUser, listInterviews, findInterview, createInterview, updateInterview, deleteInterview, listQuestions, findQuestion, createQuestion, updateQuestion, deleteQuestion, type InterviewCreateData, type QuestionCreateData } from './interviews.js';
 
 const SCHEMA = `
   CREATE TABLE users (
@@ -59,19 +45,19 @@ function makeDb() {
 }
 
 const BASE_INTERVIEW: Omit<InterviewCreateData, "job_id"> = {
-	interview_stage: "Technical",
 	interview_dttm: "2025-06-01T10:00:00Z",
 	interview_interviewers: "Alice",
+	interview_notes: "Went well",
+	interview_stage: "Technical",
 	interview_type: null,
 	interview_vibe: "Good",
-	interview_notes: "Went well",
 };
 
 const BASE_QUESTION: Omit<QuestionCreateData, "interview_id"> = {
-	question_type: "Coding",
-	question_text: "Reverse a linked list",
-	question_notes: "Classic problem",
 	difficulty: 2,
+	question_notes: "Classic problem",
+	question_text: "Reverse a linked list",
+	question_type: "Coding",
 };
 
 describe("interviews db", () => {
@@ -97,28 +83,28 @@ describe("interviews db", () => {
 		otherJobId = Number(j2.lastInsertRowid);
 	});
 
-	describe("jobBelongsToUser", () => {
+	describe(jobBelongsToUser, () => {
 		it("returns true when the job belongs to the user", () => {
-			expect(jobBelongsToUser(db, jobId, USER_ID)).toBe(true);
+			expect(jobBelongsToUser(db, jobId, USER_ID)).toBeTruthy();
 		});
 
 		it("returns false for another user's job", () => {
-			expect(jobBelongsToUser(db, otherJobId, USER_ID)).toBe(false);
+			expect(jobBelongsToUser(db, otherJobId, USER_ID)).toBeFalsy();
 		});
 
 		it("returns false for a non-existent job", () => {
-			expect(jobBelongsToUser(db, 999, USER_ID)).toBe(false);
+			expect(jobBelongsToUser(db, 999, USER_ID)).toBeFalsy();
 		});
 	});
 
-	describe("listInterviews", () => {
+	describe(listInterviews, () => {
 		it("returns empty array when no interviews exist", () => {
 			expect(listInterviews(db, jobId)).toEqual([]);
 		});
 
 		it("returns all interviews for the given job", () => {
 			createInterview(db, { ...BASE_INTERVIEW, job_id: jobId });
-			createInterview(db, { ...BASE_INTERVIEW, job_id: jobId, interview_stage: "HR" });
+			createInterview(db, { ...BASE_INTERVIEW, interview_stage: "HR", job_id: jobId });
 			expect(listInterviews(db, jobId)).toHaveLength(2);
 		});
 
@@ -128,7 +114,7 @@ describe("interviews db", () => {
 		});
 	});
 
-	describe("findInterview", () => {
+	describe(findInterview, () => {
 		it("returns undefined for non-existent interview", () => {
 			expect(findInterview(db, 999, jobId)).toBeUndefined();
 		});
@@ -146,7 +132,7 @@ describe("interviews db", () => {
 		});
 	});
 
-	describe("createInterview", () => {
+	describe(createInterview, () => {
 		it("inserts and returns the new interview", () => {
 			const interview = createInterview(db, { ...BASE_INTERVIEW, job_id: jobId });
 			expect(interview.id).toBeGreaterThan(0);
@@ -158,10 +144,10 @@ describe("interviews db", () => {
 		it("stores nullable fields as null", () => {
 			const interview = createInterview(db, {
 				...BASE_INTERVIEW,
-				job_id: jobId,
 				interview_interviewers: null,
-				interview_vibe: null,
 				interview_notes: null,
+				interview_vibe: null,
+				job_id: jobId,
 			});
 			expect(interview.interview_interviewers).toBeNull();
 			expect(interview.interview_vibe).toBeNull();
@@ -169,7 +155,7 @@ describe("interviews db", () => {
 		});
 	});
 
-	describe("updateInterview", () => {
+	describe(updateInterview, () => {
 		it("updates the interview and returns it", () => {
 			const created = createInterview(db, { ...BASE_INTERVIEW, job_id: jobId });
 			const updated = updateInterview(db, created.id, jobId, {
@@ -191,24 +177,24 @@ describe("interviews db", () => {
 		});
 	});
 
-	describe("deleteInterview", () => {
+	describe(deleteInterview, () => {
 		it("deletes an existing interview and returns true", () => {
 			const created = createInterview(db, { ...BASE_INTERVIEW, job_id: jobId });
-			expect(deleteInterview(db, created.id, jobId)).toBe(true);
+			expect(deleteInterview(db, created.id, jobId)).toBeTruthy();
 			expect(findInterview(db, created.id, jobId)).toBeUndefined();
 		});
 
 		it("returns false for non-existent interview", () => {
-			expect(deleteInterview(db, 999, jobId)).toBe(false);
+			expect(deleteInterview(db, 999, jobId)).toBeFalsy();
 		});
 
 		it("returns false when job_id does not match", () => {
 			const created = createInterview(db, { ...BASE_INTERVIEW, job_id: jobId });
-			expect(deleteInterview(db, created.id, otherJobId)).toBe(false);
+			expect(deleteInterview(db, created.id, otherJobId)).toBeFalsy();
 		});
 	});
 
-	describe("listQuestions", () => {
+	describe(listQuestions, () => {
 		let interviewId: number;
 
 		beforeEach(() => {
@@ -232,7 +218,7 @@ describe("interviews db", () => {
 		});
 	});
 
-	describe("findQuestion", () => {
+	describe(findQuestion, () => {
 		let interviewId: number;
 
 		beforeEach(() => {
@@ -257,7 +243,7 @@ describe("interviews db", () => {
 		});
 	});
 
-	describe("createQuestion", () => {
+	describe(createQuestion, () => {
 		let interviewId: number;
 
 		beforeEach(() => {
@@ -278,7 +264,7 @@ describe("interviews db", () => {
 		});
 	});
 
-	describe("updateQuestion", () => {
+	describe(updateQuestion, () => {
 		let interviewId: number;
 
 		beforeEach(() => {
@@ -289,8 +275,8 @@ describe("interviews db", () => {
 			const created = createQuestion(db, { ...BASE_QUESTION, interview_id: interviewId });
 			const updated = updateQuestion(db, created.id, interviewId, {
 				...BASE_QUESTION,
-				question_text: "Implement a queue",
 				difficulty: 3,
+				question_text: "Implement a queue",
 			});
 			expect(updated?.question_text).toBe("Implement a queue");
 			expect(updated?.difficulty).toBe(3);
@@ -307,7 +293,7 @@ describe("interviews db", () => {
 		});
 	});
 
-	describe("deleteQuestion", () => {
+	describe(deleteQuestion, () => {
 		let interviewId: number;
 
 		beforeEach(() => {
@@ -316,18 +302,18 @@ describe("interviews db", () => {
 
 		it("deletes an existing question and returns true", () => {
 			const created = createQuestion(db, { ...BASE_QUESTION, interview_id: interviewId });
-			expect(deleteQuestion(db, created.id, interviewId)).toBe(true);
+			expect(deleteQuestion(db, created.id, interviewId)).toBeTruthy();
 			expect(findQuestion(db, created.id, interviewId)).toBeUndefined();
 		});
 
 		it("returns false for non-existent question", () => {
-			expect(deleteQuestion(db, 999, interviewId)).toBe(false);
+			expect(deleteQuestion(db, 999, interviewId)).toBeFalsy();
 		});
 
 		it("returns false when interview_id does not match", () => {
 			const otherId = createInterview(db, { ...BASE_INTERVIEW, job_id: jobId }).id;
 			const created = createQuestion(db, { ...BASE_QUESTION, interview_id: interviewId });
-			expect(deleteQuestion(db, created.id, otherId)).toBe(false);
+			expect(deleteQuestion(db, created.id, otherId)).toBeFalsy();
 		});
 	});
 });

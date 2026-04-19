@@ -1,30 +1,29 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import TopCompaniesTable from "./TopCompaniesTable";
 
 const TOP_COMPANIES = [
 	{
-		company: "Acme Corp",
-		applications: 3,
 		active: 2,
+		applications: 3,
 		bestStage: "Interviewing",
+		company: "Acme Corp",
 	},
 	{
-		company: "Globex",
-		applications: 2,
 		active: 1,
+		applications: 2,
 		bestStage: "Phone screen",
+		company: "Globex",
 	},
 	{
-		company: "Initech",
-		applications: 1,
 		active: 0,
+		applications: 1,
 		bestStage: "Rejected/Withdrawn",
+		company: "Initech",
 	},
 ];
 
-describe("TopCompaniesTable", () => {
+describe(TopCompaniesTable, () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("shows empty state when topCompanies is empty", () => {
@@ -72,20 +71,20 @@ describe("TopCompaniesTable", () => {
 
 	it("renders all rows when given a full list of 5 companies", () => {
 		const FIVE_COMPANIES = [
-			{ company: "A", applications: 5, active: 3, bestStage: "Offer!" },
-			{ company: "B", applications: 4, active: 2, bestStage: "Interviewing" },
-			{ company: "C", applications: 3, active: 1, bestStage: "Phone screen" },
+			{ active: 3, applications: 5, bestStage: "Offer!", company: "A" },
+			{ active: 2, applications: 4, bestStage: "Interviewing", company: "B" },
+			{ active: 1, applications: 3, bestStage: "Phone screen", company: "C" },
 			{
-				company: "D",
-				applications: 2,
 				active: 0,
+				applications: 2,
 				bestStage: "Rejected/Withdrawn",
+				company: "D",
 			},
 			{
-				company: "E",
-				applications: 1,
 				active: 1,
+				applications: 1,
 				bestStage: "Resume submitted",
+				company: "E",
 			},
 		];
 		render(<TopCompaniesTable topCompanies={FIVE_COMPANIES} />);

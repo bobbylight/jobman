@@ -1,19 +1,18 @@
 import React from "react";
 import {
+	fireEvent,
 	render,
 	screen,
-	fireEvent,
 	waitFor,
 	within,
 } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
 import JobDialog from "./JobDialog";
-import type { Job, JobStatus, EndingSubstatus, Interview } from "../types";
+import type { EndingSubstatus, Interview, Job, JobStatus } from "../types";
 import { api } from "../api";
 
-vi.mock("../api");
+vi.mock(import("../api"));
 
-vi.mock("./CompanyLogo", () => ({
+vi.mock(import("./CompanyLogo"), () => ({
 	default: ({ company }: { company: string }) => (
 		<span
 			data-testid="company-logo"
@@ -24,42 +23,42 @@ vi.mock("./CompanyLogo", () => ({
 }));
 
 const BASE_JOB: Job = {
-	id: 42,
 	company: "Acme Corp",
-	role: "Engineer",
-	link: "https://acme.example.com/job",
-	status: "Resume submitted",
-	fit_score: "High",
-	salary: "$120k",
-	date_applied: "2024-03-01",
-	recruiter: "Jane",
-	notes: "Great team",
-	referred_by: "Alice",
-	job_description: null,
-	ending_substatus: null,
-	date_phone_screen: null,
-	date_last_onsite: null,
-	favorite: false,
-	tags: [],
 	created_at: "2024-01-01T00:00:00.000Z",
+	date_applied: "2024-03-01",
+	date_last_onsite: null,
+	date_phone_screen: null,
+	ending_substatus: null,
+	favorite: false,
+	fit_score: "High",
+	id: 42,
+	job_description: null,
+	link: "https://acme.example.com/job",
+	notes: "Great team",
+	recruiter: "Jane",
+	referred_by: "Alice",
+	role: "Engineer",
+	salary: "$120k",
+	status: "Resume submitted",
+	tags: [],
 	updated_at: "2024-01-01T00:00:00.000Z",
 };
 
 const MOCK_INTERVIEW: Interview = {
 	id: 1,
-	job_id: 42,
-	interview_stage: "phone_screen",
 	interview_dttm: "2024-03-12T14:00",
 	interview_interviewers: "Jane Smith",
+	interview_notes: null,
+	interview_stage: "phone_screen",
 	interview_type: null,
 	interview_vibe: "casual",
-	interview_notes: null,
+	job_id: 42,
 };
 
 const terminalJob = (
 	status: JobStatus,
 	ending_substatus: EndingSubstatus | null,
-): Job => ({ ...BASE_JOB, status, ending_substatus });
+): Job => ({ ...BASE_JOB, ending_substatus, status });
 
 function changeSelect(labelText: RegExp | string, optionName: string) {
 	fireEvent.mouseDown(screen.getByLabelText(labelText));
@@ -67,10 +66,10 @@ function changeSelect(labelText: RegExp | string, optionName: string) {
 }
 
 const DEFAULT_PROPS = {
-	open: true,
 	onClose: vi.fn(),
-	onSave: vi.fn(),
 	onDelete: vi.fn(),
+	onSave: vi.fn(),
+	open: true,
 };
 
 /** Render in edit mode and wait for the job to finish loading. */
@@ -83,7 +82,7 @@ async function renderEditMode(job: Job = BASE_JOB) {
 	return utils;
 }
 
-describe("JobDialog", () => {
+describe(JobDialog, () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.mocked(api.getJob).mockResolvedValue(BASE_JOB);
@@ -148,8 +147,8 @@ describe("JobDialog", () => {
 			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
 				expect.objectContaining({
 					company: "New Co",
-					role: "Developer",
 					link: "https://newco.com/job",
+					role: "Developer",
 				}),
 			);
 		});
@@ -169,7 +168,7 @@ describe("JobDialog", () => {
 		it("calls onClose when Cancel is clicked", () => {
 			render(<JobDialog {...DEFAULT_PROPS} jobId={null} />);
 			fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-			expect(DEFAULT_PROPS.onClose).toHaveBeenCalledTimes(1);
+			expect(DEFAULT_PROPS.onClose).toHaveBeenCalledOnce();
 		});
 
 		it("does not call onClose when backdrop is clicked", () => {
@@ -228,7 +227,7 @@ describe("JobDialog", () => {
 			vi.mocked(api.getJob).mockReturnValue(new Promise(() => {}));
 			render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 			fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-			expect(DEFAULT_PROPS.onClose).toHaveBeenCalledTimes(1);
+			expect(DEFAULT_PROPS.onClose).toHaveBeenCalledOnce();
 		});
 
 		it("enables Save and Delete after job loads", async () => {
@@ -278,7 +277,7 @@ describe("JobDialog", () => {
 			render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 			await waitFor(() => screen.getByRole("alert"));
 			fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-			expect(DEFAULT_PROPS.onClose).toHaveBeenCalledTimes(1);
+			expect(DEFAULT_PROPS.onClose).toHaveBeenCalledOnce();
 		});
 	});
 
@@ -504,7 +503,7 @@ describe("JobDialog", () => {
 			fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
 			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledOnce();
-			const saved = DEFAULT_PROPS.onSave.mock.calls[0]![0];
+			const [saved] = DEFAULT_PROPS.onSave.mock.calls[0]!;
 			expect(saved.link).toBe(BASE_JOB.link);
 			expect(saved.company).toBe("New Corp");
 		});
@@ -708,8 +707,8 @@ describe("JobDialog", () => {
 				fireEvent.click(screen.getByRole("button", { name: "Save" }));
 				expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
 					expect.objectContaining({
-						status: "Rejected/Withdrawn",
 						ending_substatus: "Ghosted",
+						status: "Rejected/Withdrawn",
 					}),
 				);
 			});

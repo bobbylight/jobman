@@ -1,15 +1,15 @@
 import React from "react";
 import {
-	BarChart,
 	Bar,
+	BarChart,
+	Cell,
+	LabelList,
+	ResponsiveContainer,
+	Tooltip,
 	XAxis,
 	YAxis,
-	Tooltip,
-	Cell,
-	ResponsiveContainer,
-	LabelList,
 } from "recharts";
-import { Typography, Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { STATUS_COLORS } from "../../constants";
 import type { JobStatus } from "../../types";
 
@@ -22,10 +22,10 @@ export default function AvgDaysChart({ avgDaysPerStage }: Props) {
 		return (
 			<Box
 				sx={{
-					display: "flex",
 					alignItems: "center",
-					justifyContent: "center",
+					display: "flex",
 					height: 220,
+					justifyContent: "center",
 				}}
 			>
 				<Typography color="text.secondary" variant="body2">
@@ -40,7 +40,7 @@ export default function AvgDaysChart({ avgDaysPerStage }: Props) {
 			<BarChart
 				data={avgDaysPerStage}
 				layout="vertical"
-				margin={{ top: 4, right: 64, bottom: 4, left: 8 }}
+				margin={{ bottom: 4, left: 8, right: 64, top: 4 }}
 			>
 				<XAxis type="number" hide />
 				<YAxis

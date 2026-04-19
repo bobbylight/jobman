@@ -26,9 +26,9 @@ type Window = "all" | "90" | "30";
 
 function dateFilter(window: Window): string {
 	if (window === "30")
-		return "AND COALESCE(date(date_applied), date(created_at)) >= date('now', '-30 days')";
+		{return "AND COALESCE(date(date_applied), date(created_at)) >= date('now', '-30 days')";}
 	if (window === "90")
-		return "AND COALESCE(date(date_applied), date(created_at)) >= date('now', '-90 days')";
+		{return "AND COALESCE(date(date_applied), date(created_at)) >= date('now', '-90 days')";}
 	return "";
 }
 
@@ -67,8 +67,8 @@ export function getStats(
 	).count;
 
 	// Response rate: jobs that got a phone screen or beyond, divided by all
-	// submitted apps (anything past "Not started"). For Rejected/Withdrawn jobs
-	// we use date_phone_screen IS NOT NULL as a signal they progressed.
+	// Submitted apps (anything past "Not started"). For Rejected/Withdrawn jobs
+	// We use date_phone_screen IS NOT NULL as a signal they progressed.
 	const denominator = (
 		db
 			.prepare(
@@ -239,7 +239,7 @@ export function getStats(
 	}[];
 
 	// For "all" the recursive CTE terminates at the earliest history entry;
-	// for windowed views it terminates at the window boundary.
+	// For windowed views it terminates at the window boundary.
 	const sotCutoff =
 		window === "all"
 			? `(SELECT date(MIN(h.entered_at), '-7 days')
@@ -286,15 +286,15 @@ export function getStats(
 		) as { week: string; status: string; count: number }[];
 
 	return {
-		totalApplications: total,
 		activePipeline: active,
-		offersReceived: offers,
-		responseRate,
-		byStatus,
 		applicationsByWeek,
 		avgDaysPerStage,
-		transitions,
+		byStatus,
+		offersReceived: offers,
+		responseRate,
 		statusOverTime,
 		topCompanies,
+		totalApplications: total,
+		transitions,
 	};
 }

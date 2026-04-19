@@ -29,17 +29,17 @@ type Severity = "success" | "info" | "warning" | "error";
 const PAGE_SIZE = 10;
 
 const INTERVIEW_STAGE_LABELS: Record<InterviewStage, string> = {
-	phone_screen: "Phone Screen",
 	onsite: "Onsite",
+	phone_screen: "Phone Screen",
 };
 
 const INTERVIEW_TYPE_LABELS: Record<InterviewType, string> = {
 	behavioral: "Behavioral",
-	leadership: "Leadership",
 	coding: "Coding",
-	system_design: "System Design",
-	past_experience: "Past Experience",
 	culture_fit: "Culture Fit",
+	leadership: "Leadership",
+	past_experience: "Past Experience",
+	system_design: "System Design",
 };
 
 const VIBE_CHIP_SX: Record<InterviewVibe, object> = {
@@ -112,10 +112,15 @@ export function groupByWeek(
 
 	for (const iv of interviews) {
 		const d = new Date(iv.interview_dttm);
-		if (isNaN(d.getTime()) || d < today) past.push(iv);
-		else if (d < nextMonday) thisWeek.push(iv);
-		else if (d < mondayAfterNext) nextWeek.push(iv);
-		else future.push(iv);
+		if (isNaN(d.getTime()) || d < today) {
+			past.push(iv);
+		} else if (d < nextMonday) {
+			thisWeek.push(iv);
+		} else if (d < mondayAfterNext) {
+			nextWeek.push(iv);
+		} else {
+			future.push(iv);
+		}
 	}
 
 	const todayStr = today.toISOString().slice(0, 10);
@@ -132,33 +137,33 @@ export function groupByWeek(
 	const result: WeekBucket[] = [];
 	if (past.length > 0) {
 		result.push({
-			label: `Past interviews (${past.length}):`,
-			items: past,
 			isPast: true,
+			items: past,
+			label: `Past interviews (${past.length}):`,
 			type: "past",
 		});
 	}
 	if (showThisWeek) {
 		result.push({
-			label: `Remaining this week (${thisWeek.length}):`,
-			items: thisWeek,
 			isPast: false,
+			items: thisWeek,
+			label: `Remaining this week (${thisWeek.length}):`,
 			type: "this_week",
 		});
 	}
 	if (showNextWeek) {
 		result.push({
-			label: `Next week (${nextWeek.length}):`,
-			items: nextWeek,
 			isPast: false,
+			items: nextWeek,
+			label: `Next week (${nextWeek.length}):`,
 			type: "next_week",
 		});
 	}
 	if (future.length > 0) {
 		result.push({
-			label: `Future (${future.length}):`,
-			items: future,
 			isPast: false,
+			items: future,
+			label: `Future (${future.length}):`,
 			type: "future",
 		});
 	}
@@ -176,19 +181,19 @@ export default function InterviewsPage() {
 		open: boolean;
 		message: string;
 		severity: Severity;
-	}>({ open: false, message: "", severity: "success" });
+	}>({ message: "", open: false, severity: "success" });
 	const defaults = getDefaultDateRange();
 	const [from, setFrom] = useState(defaults.from);
 	const [to, setTo] = useState(defaults.to);
 
 	const notify = useCallback(
 		(message: string, severity: Severity = "success") =>
-			setSnack({ open: true, message, severity }),
+			setSnack({ message, open: true, severity }),
 		[],
 	);
 
 	// When Load More advances `to`, we suppress the re-fetch that would otherwise
-	// be triggered by the date change (the list is already up to date).
+	// Be triggered by the date change (the list is already up to date).
 	const suppressFetch = useRef(false);
 
 	useEffect(() => {
@@ -208,7 +213,9 @@ export default function InterviewsPage() {
 
 	const handleLoadMore = useCallback(async () => {
 		const last = interviews[interviews.length - 1];
-		if (!last) return;
+		if (!last) {
+			return;
+		}
 		const lastDttm = last.interview_dttm;
 		setLoadingMore(true);
 		try {
@@ -218,12 +225,14 @@ export default function InterviewsPage() {
 				notify("No more interviews scheduled", "info");
 			} else {
 				setInterviews((prev) => [...prev, ...newItems]);
-				if (newItems.length < PAGE_SIZE) setReachedEnd(true);
+				if (newItems.length < PAGE_SIZE) {
+					setReachedEnd(true);
+				}
 				notify(
 					`Loaded ${newItems.length} new interview${newItems.length !== 1 ? "s" : ""}`,
 				);
 				// Advance the "To" date to cover the newly loaded interviews,
-				// suppressing the re-fetch that the state change would normally trigger.
+				// Suppressing the re-fetch that the state change would normally trigger.
 				const lastNew = newItems[newItems.length - 1];
 				if (lastNew) {
 					const newToDate = lastNew.interview_dttm.slice(0, 10);
@@ -242,14 +251,26 @@ export default function InterviewsPage() {
 
 	const grouped = groupByWeek(interviews, from, to);
 
+	const loadMoreControl = loadingMore ? (
+		<CircularProgress size={24} />
+	) : (
+		<Button
+			variant="outlined"
+			size="small"
+			onClick={() => void handleLoadMore()}
+		>
+			Load More
+		</Button>
+	);
+
 	return (
 		<>
 			<Box sx={{ maxWidth: 860, mx: "auto", px: 3, py: 4 }}>
 				{/* Header */}
 				<Box
 					sx={{
-						display: "flex",
 						alignItems: "center",
+						display: "flex",
 						flexWrap: "wrap",
 						gap: 2,
 						mb: 3,
@@ -258,7 +279,7 @@ export default function InterviewsPage() {
 					<Typography variant="h5" fontWeight={700} sx={{ flex: 1 }}>
 						Upcoming Interviews
 					</Typography>
-					<Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+					<Box sx={{ alignItems: "center", display: "flex", gap: 1.5 }}>
 						<TextField
 							label="From"
 							type="date"
@@ -302,7 +323,8 @@ export default function InterviewsPage() {
 					<Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
 						<CircularProgress />
 					</Box>
-				) : grouped.length === 0 ? (
+				) : null}
+				{!loading && grouped.length === 0 && (
 					<Typography
 						variant="body2"
 						color="text.disabled"
@@ -310,13 +332,17 @@ export default function InterviewsPage() {
 					>
 						No interviews found in this date range.
 					</Typography>
-				) : (
+				)}
+				{!loading &&
+					grouped.length > 0 &&
 					grouped.map(({ label, items, isPast }) => {
 						// Group by calendar day
 						const dayMap = new Map<string, EnrichedInterview[]>();
 						for (const iv of items) {
 							const key = new Date(iv.interview_dttm).toDateString();
-							if (!dayMap.has(key)) dayMap.set(key, []);
+							if (!dayMap.has(key)) {
+								dayMap.set(key, []);
+							}
 							dayMap.get(key)!.push(iv);
 						}
 
@@ -339,7 +365,7 @@ export default function InterviewsPage() {
 										No interviews this week
 									</Typography>
 								) : (
-									Array.from(dayMap.entries()).map(([dateStr, dayItems]) => {
+									[...dayMap.entries()].map(([dateStr, dayItems]) => {
 										const d = new Date(dateStr);
 										const isToday =
 											d.toDateString() === new Date().toDateString();
@@ -412,17 +438,16 @@ export default function InterviewsPage() {
 								)}
 							</Box>
 						);
-					})
-				)}
+					})}
 
 				{!loading && !error && interviews.length > 0 && (
 					<Box
 						sx={{
-							mt: 2,
+							alignItems: "center",
 							display: "flex",
 							flexDirection: "column",
-							alignItems: "center",
 							gap: 1.5,
+							mt: 2,
 						}}
 					>
 						<Typography variant="caption" color="text.disabled">
@@ -432,16 +457,8 @@ export default function InterviewsPage() {
 							<Typography variant="body2" color="text.disabled">
 								No more scheduled interviews
 							</Typography>
-						) : loadingMore ? (
-							<CircularProgress size={24} />
 						) : (
-							<Button
-								variant="outlined"
-								size="small"
-								onClick={() => void handleLoadMore()}
-							>
-								Load More
-							</Button>
+							loadMoreControl
 						)}
 					</Box>
 				)}
@@ -451,7 +468,7 @@ export default function InterviewsPage() {
 				open={snack.open}
 				autoHideDuration={3000}
 				onClose={() => setSnack((s) => ({ ...s, open: false }))}
-				anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+				anchorOrigin={{ horizontal: "center", vertical: "bottom" }}
 			>
 				<Alert
 					severity={snack.severity}
@@ -483,28 +500,28 @@ function InterviewRow({
 			data-testid="interview-card"
 			data-dimmed={String(dimmed)}
 			sx={{
+				alignItems: "flex-start",
+				bgcolor: dimmed ? "action.hover" : "background.paper",
 				border: "1px solid",
 				borderColor: "divider",
 				borderRadius: 1,
-				p: 1.5,
-				mb: 1,
 				display: "flex",
 				gap: 1.5,
-				alignItems: "flex-start",
-				bgcolor: dimmed ? "action.hover" : "background.paper",
+				mb: 1,
+				p: 1.5,
 			}}
 		>
 			<TypeIcon
-				sx={{ fontSize: 18, color: "text.secondary", mt: 0.25, flexShrink: 0 }}
+				sx={{ color: "text.secondary", flexShrink: 0, fontSize: 18, mt: 0.25 }}
 			/>
 			<Box sx={{ flex: 1, minWidth: 0 }}>
 				{/* Top row: type + date + vibe */}
 				<Box
 					sx={{
-						display: "flex",
 						alignItems: "center",
-						gap: 1,
+						display: "flex",
 						flexWrap: "wrap",
+						gap: 1,
 					}}
 				>
 					<Typography variant="body2" fontWeight={600}>
@@ -530,7 +547,7 @@ function InterviewRow({
 				</Box>
 
 				{/* Job link */}
-				<Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.25 }}>
+				<Box sx={{ alignItems: "center", display: "flex", gap: 0.5, mt: 0.25 }}>
 					<Link
 						component="button"
 						variant="caption"
@@ -545,7 +562,7 @@ function InterviewRow({
 							href={interview.job.link}
 							target="_blank"
 							rel="noopener noreferrer"
-							sx={{ display: "flex", color: "text.disabled" }}
+							sx={{ color: "text.disabled", display: "flex" }}
 							aria-label="Open job posting"
 						>
 							<OpenInNewIcon sx={{ fontSize: 12 }} />

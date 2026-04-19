@@ -1,4 +1,4 @@
-import type { JobStatus, FitScore, EndingSubstatus, JobTag } from "./types";
+import type { EndingSubstatus, FitScore, JobStatus, JobTag } from "./types";
 
 export const STATUSES: JobStatus[] = [
 	"Not started",
@@ -33,14 +33,14 @@ export const FIT_SCORES: FitScore[] = [
 ];
 
 // `satisfies` checks the shape at the definition site without widening the type,
-// so STATUS_COLORS['Not started'] stays '#90a4ae' (literal) not just `string`.
+// So STATUS_COLORS['Not started'] stays '#90a4ae' (literal) not just `string`.
 export const STATUS_COLORS = {
-	"Not started": "#90a4ae",
-	"Resume submitted": "#ffa726",
-	"Phone screen": "#ab47bc",
 	Interviewing: "#1e88e5",
+	"Not started": "#90a4ae",
 	"Offer!": "#66bb6a",
+	"Phone screen": "#ab47bc",
 	"Rejected/Withdrawn": "#ef5350",
+	"Resume submitted": "#ffa726",
 } satisfies Record<JobStatus, string>;
 
 // Sorted alphabetically by display label
@@ -103,43 +103,46 @@ export function tagChipProps(
 	filled = false,
 ): { color: MuiChipColor; sx?: Record<string, string> } {
 	const c = TAG_COLORS[tag];
-	if (MUI_CHIP_COLORS.has(c)) return { color: c as MuiChipColor };
-	if (filled)
+	if (MUI_CHIP_COLORS.has(c)) {
+		return { color: c as MuiChipColor };
+	}
+	if (filled) {
 		return {
 			color: "default",
 			sx: { backgroundColor: c, color: "#fff", borderColor: c },
 		};
-	return { color: "default", sx: { color: c, borderColor: c } };
+	}
+	return { color: "default", sx: { borderColor: c, color: c } };
 }
 
 export const JOB_MAX_LENGTHS = {
 	company: 128,
-	role: 256,
+	job_description: 20_000,
 	link: 4096,
-	salary: 64,
+	notes: 20_000,
 	recruiter: 128,
 	referred_by: 128,
-	notes: 20_000,
-	job_description: 20_000,
+	role: 256,
+	salary: 64,
 } as const;
 
 export const INTERVIEW_MAX_LENGTHS = {
 	interview_interviewers: 128,
-	interview_notes: 4_096,
+	interview_notes: 4096,
 } as const;
 
 export const QUESTION_MAX_LENGTHS = {
-	question_text: 4_096,
-	question_notes: 4_096,
+	question_notes: 4096,
+	question_text: 4096,
 } as const;
 
 export const FIT_SCORE_COLORS = {
-	"Not sure": "default",
-	"Very Low": "error",
+	High: "success",
 	Low: "warning",
 	Medium: "info",
-	High: "success",
+	"Not sure": "default",
 	"Very High": "success",
+	"Very Low": "error",
 } satisfies Record<
 	FitScore,
 	"default" | "error" | "warning" | "info" | "success"

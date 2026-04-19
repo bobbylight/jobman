@@ -1,26 +1,26 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import AppShell from "./AppShell";
 import type { User } from "../types";
 
 const mockNavigate = vi.fn();
 
-vi.mock("react-router-dom", async (importOriginal) => {
+vi.mock(import("react-router-dom"), async (importOriginal) => {
+	// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 	const actual = await importOriginal<typeof import("react-router-dom")>();
 	return {
 		...actual,
-		useNavigate: () => mockNavigate,
 		Outlet: () => <div data-testid="outlet" />,
+		useNavigate: () => mockNavigate,
 	};
 });
 
 const MOCK_USER: User = {
-	id: 1,
-	email: "test@example.com",
-	displayName: "Test User",
 	avatarUrl: null,
+	displayName: "Test User",
+	email: "test@example.com",
+	id: 1,
 };
 
 const DEFAULT_PROPS = {
@@ -36,7 +36,7 @@ function renderAppShell(props = DEFAULT_PROPS, initialPath = "/jobs") {
 	);
 }
 
-describe("AppShell", () => {
+describe(AppShell, () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("renders the logo", () => {

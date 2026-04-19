@@ -1,54 +1,61 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
 import KanbanColumn from "./KanbanColumn";
 import type { Job } from "../types";
 
-vi.mock("@dnd-kit/core", () => ({
-	useDroppable: () => ({ setNodeRef: () => {}, isOver: false }),
-	useDraggable: () => ({
-		attributes: {},
-		listeners: {},
-		setNodeRef: () => {},
-		transform: null,
-		isDragging: false,
-	}),
-}));
+vi.mock(
+	import("@dnd-kit/core"),
+	() =>
+		({
+			useDraggable: () => ({
+				attributes: {},
+				listeners: {},
+				setNodeRef: () => {},
+				transform: null,
+				isDragging: false,
+			}),
+			useDroppable: () => ({ setNodeRef: () => {}, isOver: false }),
+		}) as any,
+);
 
-vi.mock("@dnd-kit/utilities", () => ({
-	CSS: { Translate: { toString: () => "" } },
-}));
+vi.mock(
+	import("@dnd-kit/utilities"),
+	() =>
+		({
+			CSS: { Translate: { toString: () => "" } },
+		}) as any,
+);
 
 const makeJob = (
 	overrides: Partial<Job> & Pick<Job, "id" | "status">,
 ): Job => ({
 	company: "Acme",
-	role: "Engineer",
-	link: "https://acme.com",
-	fit_score: null,
-	salary: null,
-	date_applied: null,
-	recruiter: null,
-	notes: null,
-	job_description: null,
-	ending_substatus: null,
-	referred_by: null,
-	date_phone_screen: null,
-	date_last_onsite: null,
-	favorite: false,
-	tags: [],
 	created_at: "2024-01-01T00:00:00.000Z",
+	date_applied: null,
+	date_last_onsite: null,
+	date_phone_screen: null,
+	ending_substatus: null,
+	favorite: false,
+	fit_score: null,
+	job_description: null,
+	link: "https://acme.com",
+	notes: null,
+	recruiter: null,
+	referred_by: null,
+	role: "Engineer",
+	salary: null,
+	tags: [],
 	updated_at: "2024-01-01T00:00:00.000Z",
 	...overrides,
 });
 
 const DEFAULT_PROPS = {
-	status: "Not started" as const,
 	onCardClick: vi.fn(),
 	onToggleFavorite: vi.fn(),
+	status: "Not started" as const,
 };
 
-describe("KanbanColumn", () => {
+describe(KanbanColumn, () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -89,8 +96,8 @@ describe("KanbanColumn", () => {
 
 	it("renders a card for each job", () => {
 		const jobs = [
-			makeJob({ id: 1, status: "Not started", company: "Alpha Corp" }),
-			makeJob({ id: 2, status: "Not started", company: "Beta Inc" }),
+			makeJob({ company: "Alpha Corp", id: 1, status: "Not started" }),
+			makeJob({ company: "Beta Inc", id: 2, status: "Not started" }),
 		];
 		render(<KanbanColumn {...DEFAULT_PROPS} jobs={jobs} />);
 		expect(screen.getByText("Alpha Corp")).toBeInTheDocument();

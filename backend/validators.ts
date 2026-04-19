@@ -3,23 +3,23 @@ export const TERMINAL_STATUSES = new Set(["Rejected/Withdrawn", "Offer!"]);
 // ── Max-length constants ───────────────────────────────────────────────────────
 export const JOB_MAX_LENGTHS = {
 	company: 128,
-	role: 256,
+	job_description: 20_000,
 	link: 4096,
-	salary: 64,
+	notes: 20_000,
 	recruiter: 128,
 	referred_by: 128,
-	notes: 20_000,
-	job_description: 20_000,
+	role: 256,
+	salary: 64,
 } as const;
 
 export const INTERVIEW_MAX_LENGTHS = {
 	interview_interviewers: 128,
-	interview_notes: 4_096,
+	interview_notes: 4096,
 } as const;
 
 export const QUESTION_MAX_LENGTHS = {
-	question_text: 4_096,
-	question_notes: 4_096,
+	question_notes: 4096,
+	question_text: 4096,
 } as const;
 
 function checkLength(
@@ -38,7 +38,9 @@ export function validateJobFields(
 ): string | null {
 	for (const [field, max] of Object.entries(JOB_MAX_LENGTHS)) {
 		const err = checkLength(body[field], field, max);
-		if (err) return err;
+		if (err) {
+			return err;
+		}
 	}
 	return null;
 }
@@ -114,7 +116,9 @@ export function validateInterview(
 	}
 	for (const [field, max] of Object.entries(INTERVIEW_MAX_LENGTHS)) {
 		const err = checkLength(body[field], field, max);
-		if (err) return err;
+		if (err) {
+			return err;
+		}
 	}
 	return null;
 }
@@ -140,7 +144,9 @@ export function validateInterviewQuestion(
 	}
 	for (const [field, max] of Object.entries(QUESTION_MAX_LENGTHS)) {
 		const err = checkLength(body[field], field, max);
-		if (err) return err;
+		if (err) {
+			return err;
+		}
 	}
 	return null;
 }

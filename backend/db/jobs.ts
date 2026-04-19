@@ -38,7 +38,7 @@ export type JobView = "full" | "summary";
 function toClient(row: unknown): Job {
 	const r = row as JobDbRow;
 	const { tags_csv, ...rest } = r;
-	return { ...rest, favorite: !!r.favorite, tags: tags_csv ? tags_csv.split(",") : [] };
+	return { ...rest, favorite: Boolean(r.favorite), tags: tags_csv ? tags_csv.split(",") : [] };
 }
 
 export interface JobCreateData {
@@ -62,7 +62,7 @@ export interface JobCreateData {
 }
 
 /**
- * notes and job_description are optional here — if absent the existing DB
+ * Notes and job_description are optional here — if absent the existing DB
  * values are preserved (useful for status/favorite-only updates where the
  * caller doesn't have those fields loaded).
  */
@@ -113,11 +113,11 @@ export function jobExists(
 	link: string,
 	userId: number,
 ): boolean {
-	return !!db
+	return Boolean(db
 		.prepare(
 			"SELECT id FROM jobs WHERE company = ? AND link = ? AND user_id = ? LIMIT 1",
 		)
-		.get(company, link, userId);
+		.get(company, link, userId));
 }
 
 export function createJob(
@@ -172,10 +172,10 @@ export function updateJob(
 		const current = db
 			.prepare("SELECT status FROM jobs WHERE id = ? AND user_id = ?")
 			.get(jobId, userId) as { status: string } | undefined;
-		if (!current) return null;
+		if (!current) {return null;}
 
-		// notes/job_description are optional — only update them when explicitly
-		// provided; otherwise keep the existing DB value.
+		// Notes/job_description are optional — only update them when explicitly
+		// Provided; otherwise keep the existing DB value.
 		const notesProvided = "notes" in data;
 		const jdProvided = "job_description" in data;
 
@@ -209,7 +209,7 @@ export function updateJob(
 				jobId,
 				userId,
 			);
-		if (info.changes === 0) return null;
+		if (info.changes === 0) {return null;}
 
 		if (current.status !== data.status) {
 			db.prepare(

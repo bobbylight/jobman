@@ -1,49 +1,60 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import JobCard from "./JobCard";
 import type { Job } from "../types";
-vi.mock("../useCompanyLogo", () => ({
-	useCompanyLogo: vi.fn(() => null),
-}));
+vi.mock(
+	import("../useCompanyLogo"),
+	() =>
+		({
+			useCompanyLogo: vi.fn(() => null),
+		}) as any,
+);
 
-vi.mock("@dnd-kit/core", () => ({
-	useDraggable: () => ({
-		attributes: {},
-		listeners: {},
-		setNodeRef: () => {},
-		transform: null,
-		isDragging: false,
-	}),
-}));
+vi.mock(
+	import("@dnd-kit/core"),
+	() =>
+		({
+			useDraggable: () => ({
+				attributes: {},
+				isDragging: false,
+				listeners: {},
+				setNodeRef: () => {},
+				transform: null,
+			}),
+		}) as any,
+);
 
-vi.mock("@dnd-kit/utilities", () => ({
-	CSS: { Translate: { toString: () => "" } },
-}));
+vi.mock(
+	import("@dnd-kit/utilities"),
+	() =>
+		({
+			CSS: { Translate: { toString: () => "" } },
+		}) as any,
+);
 
 const BASE_JOB: Job = {
-	id: 1,
 	company: "Acme Corp",
-	role: "Software Engineer",
-	link: "https://acme.example.com/job",
-	status: "Not started",
-	fit_score: null,
-	salary: null,
-	date_applied: null,
-	recruiter: null,
-	notes: null,
-	job_description: null,
-	ending_substatus: null,
-	referred_by: null,
-	date_phone_screen: null,
-	date_last_onsite: null,
-	favorite: false,
-	tags: [],
 	created_at: "2024-01-01T00:00:00.000Z",
+	date_applied: null,
+	date_last_onsite: null,
+	date_phone_screen: null,
+	ending_substatus: null,
+	favorite: false,
+	fit_score: null,
+	id: 1,
+	job_description: null,
+	link: "https://acme.example.com/job",
+	notes: null,
+	recruiter: null,
+	referred_by: null,
+	role: "Software Engineer",
+	salary: null,
+	status: "Not started",
+	tags: [],
 	updated_at: "2024-01-01T00:00:00.000Z",
 };
 
-describe("JobCard", () => {
+describe(JobCard, () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});

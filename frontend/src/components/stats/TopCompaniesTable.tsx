@@ -29,10 +29,10 @@ export default function TopCompaniesTable({ topCompanies }: Props) {
 		return (
 			<Box
 				sx={{
-					display: "flex",
 					alignItems: "center",
-					justifyContent: "center",
+					display: "flex",
 					height: 120,
+					justifyContent: "center",
 				}}
 			>
 				<Typography color="text.secondary" variant="body2">
@@ -56,7 +56,7 @@ export default function TopCompaniesTable({ topCompanies }: Props) {
 				{topCompanies.map((row) => (
 					<TableRow key={row.company}>
 						<TableCell>
-							<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+							<Box sx={{ alignItems: "center", display: "flex", gap: 1 }}>
 								<CompanyLogo company={row.company} />
 								<Typography variant="body2" fontWeight={500}>
 									{row.company}

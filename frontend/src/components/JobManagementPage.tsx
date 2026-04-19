@@ -1,31 +1,31 @@
 import React, {
-	useState,
-	useEffect,
 	useCallback,
 	useDeferredValue,
+	useEffect,
 	useMemo,
 	useRef,
+	useState,
 } from "react";
 import {
-	Button,
+	Alert,
+	Badge,
 	Box,
+	Button,
 	Chip,
 	CircularProgress,
-	Snackbar,
-	Alert,
-	InputAdornment,
-	TextField,
-	Select,
-	MenuItem,
 	Divider,
-	IconButton,
-	Tooltip,
-	Badge,
-	Popover,
-	Typography,
 	FormControlLabel,
-	Switch,
+	IconButton,
+	InputAdornment,
+	MenuItem,
+	Popover,
+	Select,
+	Snackbar,
 	Stack,
+	Switch,
+	TextField,
+	Tooltip,
+	Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
@@ -35,12 +35,12 @@ import TuneIcon from "@mui/icons-material/Tune";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import type {
+	EndingSubstatus,
+	FitScore,
 	Job,
 	JobFormData,
 	JobStatus,
 	JobTag,
-	FitScore,
-	EndingSubstatus,
 } from "../types";
 import {
 	FIT_SCORES,
@@ -99,13 +99,13 @@ export default function JobManagementPage() {
 		message: string;
 		severity: Severity;
 	}>({
-		open: false,
 		message: "",
+		open: false,
 		severity: "success",
 	});
 
 	const notify = (message: string, severity: Severity = "success") =>
-		setSnack({ open: true, message, severity });
+		setSnack({ message, open: true, severity });
 
 	const loadJobs = useCallback(async () => {
 		try {
@@ -128,7 +128,9 @@ export default function JobManagementPage() {
 			setEditJob(null);
 			return;
 		}
-		if (loading) return;
+		if (loading) {
+			return;
+		}
 		const id = parseInt(jobId, 10);
 		const found = jobs.find((j) => j.id === id) ?? null;
 		if (!found) {
@@ -140,14 +142,17 @@ export default function JobManagementPage() {
 
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
-			if (e.key !== "/") return;
+			if (e.key !== "/") {
+				return;
+			}
 			const tag = (e.target as HTMLElement).tagName;
 			if (
 				tag === "INPUT" ||
 				tag === "TEXTAREA" ||
 				(e.target as HTMLElement).isContentEditable
-			)
+			) {
 				return;
+			}
 			e.preventDefault();
 			searchRef.current?.focus();
 		}
@@ -243,7 +248,9 @@ export default function JobManagementPage() {
 
 	const handleTerminalConfirm = useCallback(
 		(substatus: EndingSubstatus, notes: string | null) => {
-			if (!pendingTerminalChange) return;
+			if (!pendingTerminalChange) {
+				return;
+			}
 			const { job, newStatus } = pendingTerminalChange;
 			setPendingTerminalChange(null);
 			void applyStatusChange(job, newStatus, {
@@ -286,21 +293,28 @@ export default function JobManagementPage() {
 					q &&
 					!j.company.toLowerCase().includes(q) &&
 					!j.role.toLowerCase().includes(q)
-				)
+				) {
 					return false;
-				if (deferredFavoritesOnly && !j.favorite) return false;
+				}
+				if (deferredFavoritesOnly && !j.favorite) {
+					return false;
+				}
 				if (deferredMinFitScore !== null) {
 					const minIdx = FIT_SCORES.indexOf(deferredMinFitScore);
 					const jobIdx = j.fit_score ? FIT_SCORES.indexOf(j.fit_score) : -1;
-					if (jobIdx < minIdx) return false;
+					if (jobIdx < minIdx) {
+						return false;
+					}
 				}
-				if (deferredHideWithdrawn && j.ending_substatus === "Withdrawn")
+				if (deferredHideWithdrawn && j.ending_substatus === "Withdrawn") {
 					return false;
+				}
 				if (
 					deferredFilterTags.length > 0 &&
 					!deferredFilterTags.some((t) => j.tags.includes(t))
-				)
+				) {
 					return false;
+				}
 				return true;
 			}),
 		[
@@ -318,16 +332,16 @@ export default function JobManagementPage() {
 			{/* Board toolbar: Add Job button + filters */}
 			<Box
 				sx={{
-					position: "sticky",
-					top: 0,
-					zIndex: (theme) => theme.zIndex.appBar - 1,
+					alignItems: "center",
 					bgcolor: "primary.main",
-					px: 2,
-					py: 0.5,
+					borderTop: "1px solid rgba(99,102,241,0.15)",
 					display: "flex",
 					gap: 1.5,
-					alignItems: "center",
-					borderTop: "1px solid rgba(99,102,241,0.15)",
+					position: "sticky",
+					px: 2,
+					py: 0.5,
+					top: 0,
+					zIndex: (theme) => theme.zIndex.appBar - 1,
 				}}
 			>
 				<Button variant="contained" startIcon={<AddIcon />} onClick={openAdd}>
@@ -353,16 +367,16 @@ export default function JobManagementPage() {
 						},
 					}}
 					sx={{
-						flex: 1,
-						maxWidth: 360,
 						"& .MuiOutlinedInput-root": {
 							bgcolor: "rgba(255,255,255,0.7)",
 							borderRadius: 2,
 						},
+						flex: 1,
+						maxWidth: 360,
 					}}
 				/>
 
-				<Box sx={{ ml: "auto", display: "flex", gap: 1, alignItems: "center" }}>
+				<Box sx={{ alignItems: "center", display: "flex", gap: 1, ml: "auto" }}>
 					<Tooltip
 						title={favoritesOnly ? "Showing favorites only" : "Favorites only"}
 					>
@@ -371,15 +385,15 @@ export default function JobManagementPage() {
 							size="small"
 							onClick={() => setFavoritesOnly((v) => !v)}
 							sx={{
-								color: favoritesOnly ? "warning.main" : "rgba(255,255,255,0.7)",
-								bgcolor: favoritesOnly
-									? "rgba(255,193,7,0.15)"
-									: "rgba(255,255,255,0.1)",
 								"&:hover": {
 									bgcolor: favoritesOnly
 										? "rgba(255,193,7,0.25)"
 										: "rgba(255,255,255,0.2)",
 								},
+								bgcolor: favoritesOnly
+									? "rgba(255,193,7,0.15)"
+									: "rgba(255,255,255,0.1)",
+								color: favoritesOnly ? "warning.main" : "rgba(255,255,255,0.7)",
 							}}
 						>
 							{favoritesOnly ? <StarIcon /> : <StarBorderIcon />}
@@ -393,18 +407,6 @@ export default function JobManagementPage() {
 							onClick={(e) => setFilterAnchor(e.currentTarget)}
 							variant="outlined"
 							sx={{
-								borderRadius: "16px",
-								fontWeight: 500,
-								fontSize: "0.8125rem",
-								bgcolor:
-									activeFilterCount > 0
-										? "rgba(255,255,255,0.2)"
-										: "rgba(255,255,255,0.7)",
-								color: activeFilterCount > 0 ? "white" : "text.primary",
-								borderColor:
-									activeFilterCount > 0
-										? "rgba(255,255,255,0.5)"
-										: "rgba(0,0,0,0.23)",
 								"&:hover": {
 									bgcolor:
 										activeFilterCount > 0
@@ -415,6 +417,18 @@ export default function JobManagementPage() {
 											? "rgba(255,255,255,0.7)"
 											: "rgba(0,0,0,0.87)",
 								},
+								bgcolor:
+									activeFilterCount > 0
+										? "rgba(255,255,255,0.2)"
+										: "rgba(255,255,255,0.7)",
+								borderColor:
+									activeFilterCount > 0
+										? "rgba(255,255,255,0.5)"
+										: "rgba(0,0,0,0.23)",
+								borderRadius: "16px",
+								color: activeFilterCount > 0 ? "white" : "text.primary",
+								fontSize: "0.8125rem",
+								fontWeight: 500,
 							}}
 						>
 							Filters
@@ -428,11 +442,11 @@ export default function JobManagementPage() {
 				open={Boolean(filterAnchor)}
 				anchorEl={filterAnchor}
 				onClose={() => setFilterAnchor(null)}
-				anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-				transformOrigin={{ vertical: "top", horizontal: "right" }}
-				slotProps={{ paper: { sx: { mt: 0.5, width: 260, p: 2 } } }}
+				anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+				transformOrigin={{ horizontal: "right", vertical: "top" }}
+				slotProps={{ paper: { sx: { mt: 0.5, p: 2, width: 260 } } }}
 			>
-				<Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+				<Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
 					Filters
 				</Typography>
 				<Stack spacing={2}>
@@ -477,8 +491,8 @@ export default function JobManagementPage() {
 						}
 						label="Hide withdrawn"
 						sx={{
-							mx: 0,
 							"& .MuiFormControlLabel-label": { fontSize: "0.875rem" },
+							mx: 0,
 						}}
 					/>
 
@@ -568,7 +582,7 @@ export default function JobManagementPage() {
 				open={snack.open}
 				autoHideDuration={3000}
 				onClose={() => setSnack((s) => ({ ...s, open: false }))}
-				anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+				anchorOrigin={{ horizontal: "center", vertical: "bottom" }}
 			>
 				<Alert
 					severity={snack.severity}

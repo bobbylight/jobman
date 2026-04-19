@@ -8,8 +8,12 @@ interface DifficultySelectorProps {
 }
 
 function getDifficultyColor(value: number): string {
-	if (value <= 2) return "success.main";
-	if (value === 3) return "warning.main";
+	if (value <= 2) {
+		return "success.main";
+	}
+	if (value === 3) {
+		return "warning.main";
+	}
 	return "error.main";
 }
 
@@ -24,7 +28,7 @@ export default function DifficultySelector({
 	const color = getDifficultyColor(displayValue);
 
 	return (
-		<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+		<Box sx={{ alignItems: "center", display: "flex", gap: 1 }}>
 			<Typography variant="caption" color="text.secondary">
 				Difficulty
 			</Typography>
@@ -38,14 +42,14 @@ export default function DifficultySelector({
 							onMouseEnter={readOnly ? undefined : () => setHovered(n)}
 							onMouseLeave={readOnly ? undefined : () => setHovered(null)}
 							sx={{
-								width: 12,
-								height: 12,
-								borderRadius: "50%",
 								bgcolor: filled ? color : "transparent",
 								border: "1.5px solid",
 								borderColor: filled ? color : "text.disabled",
+								borderRadius: "50%",
 								cursor: readOnly ? "default" : "pointer",
+								height: 12,
 								transition: "background-color 0.1s, border-color 0.1s",
+								width: 12,
 							}}
 						/>
 					);

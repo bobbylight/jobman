@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import {
 	AppBar,
-	Toolbar,
-	Box,
 	Avatar,
-	IconButton,
-	Menu,
-	MenuItem,
+	Box,
 	Divider,
+	IconButton,
 	ListItemIcon,
 	ListItemText,
+	Menu,
+	MenuItem,
+	Toolbar,
 } from "@mui/material";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
@@ -18,17 +18,17 @@ import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined
 import InsightsIcon from "@mui/icons-material/Insights";
 import ViewKanbanOutlinedIcon from "@mui/icons-material/ViewKanbanOutlined";
 import Tooltip from "@mui/material/Tooltip";
-import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import type { User } from "../types";
 
 const NAV_ITEMS = [
-	{ path: "/jobs", icon: <ViewKanbanOutlinedIcon />, label: "Board" },
+	{ icon: <ViewKanbanOutlinedIcon />, label: "Board", path: "/jobs" },
 	{
-		path: "/interviews",
 		icon: <CalendarMonthOutlinedIcon />,
 		label: "Interviews",
+		path: "/interviews",
 	},
-	{ path: "/stats", icon: <InsightsIcon />, label: "Stats" },
+	{ icon: <InsightsIcon />, label: "Stats", path: "/stats" },
 ] as const;
 
 interface Props {
@@ -63,16 +63,16 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 						<Avatar
 							src={currentUser.avatarUrl ?? undefined}
 							alt={currentUser.displayName ?? currentUser.email}
-							sx={{ width: 32, height: 32 }}
+							sx={{ height: 32, width: 32 }}
 						/>
 					</IconButton>
 					<Menu
 						anchorEl={userMenuAnchor}
 						open={Boolean(userMenuAnchor)}
 						onClose={() => setUserMenuAnchor(null)}
-						anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-						transformOrigin={{ vertical: "top", horizontal: "right" }}
-						slotProps={{ paper: { sx: { mt: 0.5, minWidth: 160 } } }}
+						anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+						transformOrigin={{ horizontal: "right", vertical: "top" }}
+						slotProps={{ paper: { sx: { minWidth: 160, mt: 0.5 } } }}
 					>
 						<MenuItem onClick={() => setUserMenuAnchor(null)}>
 							<ListItemIcon>
@@ -113,15 +113,15 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 				<Box
 					component="nav"
 					sx={{
-						width: 56,
-						flexShrink: 0,
+						alignItems: "center",
 						bgcolor: "#e0e7ff",
 						borderRight: "1px solid rgba(99,102,241,0.2)",
 						display: "flex",
 						flexDirection: "column",
-						alignItems: "center",
-						pt: 1.5,
+						flexShrink: 0,
 						gap: 0.5,
+						pt: 1.5,
+						width: 56,
 					}}
 				>
 					{NAV_ITEMS.map(({ path, icon, label }) => {
@@ -132,16 +132,16 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 									aria-label={label}
 									onClick={() => navigate(path)}
 									sx={{
-										width: 40,
-										height: 40,
-										borderRadius: 2,
-										color: active ? "primary.main" : "text.secondary",
-										bgcolor: active ? "rgba(99,102,241,0.12)" : "transparent",
 										"&:hover": {
 											bgcolor: active
 												? "rgba(99,102,241,0.18)"
 												: "rgba(0,0,0,0.04)",
 										},
+										bgcolor: active ? "rgba(99,102,241,0.12)" : "transparent",
+										borderRadius: 2,
+										color: active ? "primary.main" : "text.secondary",
+										height: 40,
+										width: 40,
 									}}
 								>
 									{icon}
@@ -154,8 +154,8 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 				{/* Page content */}
 				<Box
 					sx={{
-						flex: 1,
 						bgcolor: "background.default",
+						flex: 1,
 						minWidth: 0,
 						overflowY: "auto",
 					}}

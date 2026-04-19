@@ -1,7 +1,6 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import { formatTime } from "./jobUtils";
 
-describe("formatTime", () => {
+describe(formatTime, () => {
 	beforeEach(() => {
 		// No mocks needed; tests use explicit datetime strings
 	});

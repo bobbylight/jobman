@@ -1,5 +1,4 @@
 import { createHmac } from "node:crypto";
-import { afterEach, describe, expect, it } from "vitest";
 import Database from "better-sqlite3";
 import request from "supertest";
 import { createApp } from "../server.js";
@@ -83,7 +82,7 @@ testDb
 	)
 	.run(
 		TEST_SESSION_ID,
-		JSON.stringify({ userId: TEST_USER_ID, cookie: { originalMaxAge: 604800000 } }),
+		JSON.stringify({ cookie: { originalMaxAge: 604_800_000 }, userId: TEST_USER_ID }),
 	);
 
 const sig = createHmac("sha256", SESSION_SECRET)
@@ -112,17 +111,17 @@ describe("GET /api/stats", () => {
 		const res = await req("/api/stats");
 		expect(res.status).toBe(200);
 		expect(res.body).toMatchObject({
-			totalApplications: expect.any(Number),
 			activePipeline: expect.any(Number),
-			offersReceived: expect.any(Number),
-			byStatus: expect.any(Array),
 			applicationsByWeek: expect.any(Array),
+			byStatus: expect.any(Array),
+			offersReceived: expect.any(Number),
+			totalApplications: expect.any(Number),
 		});
-		// responseRate may be number or null
+		// ResponseRate may be number or null
 		expect(
 			res.body.responseRate === null ||
 				typeof res.body.responseRate === "number",
-		).toBe(true);
+		).toBeTruthy();
 	});
 
 	it("returns correct counts for the authenticated user's jobs", async () => {
@@ -132,20 +131,20 @@ describe("GET /api/stats", () => {
 			.set("Cookie", AUTH_COOKIE)
 			.send({
 				company: "Alpha",
-				role: "Dev",
-				link: "https://alpha.com",
-				status: "Not started",
 				favorite: false,
+				link: "https://alpha.com",
+				role: "Dev",
+				status: "Not started",
 			});
 		await request(app)
 			.post("/api/jobs")
 			.set("Cookie", AUTH_COOKIE)
 			.send({
 				company: "Beta",
-				role: "PM",
-				link: "https://beta.com",
-				status: "Interviewing",
 				favorite: false,
+				link: "https://beta.com",
+				role: "PM",
+				status: "Interviewing",
 			});
 
 		const res = await req("/api/stats");

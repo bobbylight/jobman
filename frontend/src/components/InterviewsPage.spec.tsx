@@ -1,18 +1,22 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import InterviewsPage, { getDefaultDateRange } from "./InterviewsPage";
 import { api } from "../api";
 import type { EnrichedInterview } from "../types";
 
-vi.mock("../api", () => ({
-	api: { searchInterviews: vi.fn(), loadMoreInterviews: vi.fn() },
-}));
+vi.mock(
+	import("../api"),
+	() =>
+		({
+			api: { loadMoreInterviews: vi.fn(), searchInterviews: vi.fn() },
+		}) as any,
+);
 
 const mockNavigate = vi.fn();
 
-vi.mock("react-router-dom", async (importOriginal) => {
+vi.mock(import("react-router-dom"), async (importOriginal) => {
+	// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 	const actual = await importOriginal<typeof import("react-router-dom")>();
 	return { ...actual, useNavigate: () => mockNavigate };
 });
@@ -31,19 +35,19 @@ function makeInterview(
 ): EnrichedInterview {
 	return {
 		id: 1,
-		job_id: 10,
-		interview_stage: "phone_screen",
 		interview_dttm: "2026-03-15T14:00:00Z",
 		interview_interviewers: null,
+		interview_notes: null,
+		interview_stage: "phone_screen",
 		interview_type: null,
 		interview_vibe: null,
-		interview_notes: null,
 		job: {
-			id: 10,
 			company: "Acme Corp",
-			role: "Software Engineer",
+			id: 10,
 			link: "https://example.com/job",
+			role: "Software Engineer",
 		},
+		job_id: 10,
 		...overrides,
 	};
 }
@@ -56,7 +60,7 @@ function renderPage() {
 	);
 }
 
-describe("getDefaultDateRange", () => {
+describe(getDefaultDateRange, () => {
 	beforeEach(() => vi.useFakeTimers({ toFake: ["Date"] }));
 	afterEach(() => vi.useRealTimers());
 
@@ -69,7 +73,7 @@ describe("getDefaultDateRange", () => {
 	it("returns the Sunday after next Sunday as 'to' on a Wednesday", () => {
 		vi.setSystemTime(FIXED_NOW);
 		const { to } = getDefaultDateRange();
-		expect(to).toBe(DEFAULT_TO); // next Sun Apr 12, then +7 = Apr 19
+		expect(to).toBe(DEFAULT_TO); // Next Sun Apr 12, then +7 = Apr 19
 	});
 
 	it("adds a full 14 days when today is Sunday", () => {
@@ -85,11 +89,11 @@ describe("getDefaultDateRange", () => {
 		vi.setSystemTime(new Date("2026-04-11T12:00:00Z").getTime());
 		const { from, to } = getDefaultDateRange();
 		expect(from).toBe("2026-04-11");
-		expect(to).toBe("2026-04-19"); // next Sun Apr 12, +7 = Apr 19
+		expect(to).toBe("2026-04-19"); // Next Sun Apr 12, +7 = Apr 19
 	});
 });
 
-describe("InterviewsPage", () => {
+describe(InterviewsPage, () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ toFake: ["Date"] });
 		vi.setSystemTime(FIXED_NOW);
@@ -179,7 +183,7 @@ describe("InterviewsPage", () => {
 	it("re-fetches with new from param when From date is changed", async () => {
 		mockSearchInterviews.mockResolvedValue([]);
 		renderPage();
-		await waitFor(() => expect(mockSearchInterviews).toHaveBeenCalledTimes(1));
+		await waitFor(() => expect(mockSearchInterviews).toHaveBeenCalledOnce());
 
 		fireEvent.change(screen.getByLabelText("From"), {
 			target: { value: "2026-01-01" },
@@ -196,7 +200,7 @@ describe("InterviewsPage", () => {
 	it("re-fetches with new to param when To date is changed", async () => {
 		mockSearchInterviews.mockResolvedValue([]);
 		renderPage();
-		await waitFor(() => expect(mockSearchInterviews).toHaveBeenCalledTimes(1));
+		await waitFor(() => expect(mockSearchInterviews).toHaveBeenCalledOnce());
 
 		fireEvent.change(screen.getByLabelText("To"), {
 			target: { value: "2026-12-31" },
@@ -317,10 +321,10 @@ describe("InterviewsPage", () => {
 
 	it("shows multiple week buckets with correct counts", async () => {
 		mockSearchInterviews.mockResolvedValue([
-			makeInterview({ id: 1, interview_dttm: "2026-04-05T10:00:00Z" }), // past
-			makeInterview({ id: 2, interview_dttm: "2026-04-09T10:00:00Z" }), // this week
-			makeInterview({ id: 3, interview_dttm: "2026-04-15T10:00:00Z" }), // next week
-			makeInterview({ id: 4, interview_dttm: "2026-04-22T10:00:00Z" }), // future
+			makeInterview({ id: 1, interview_dttm: "2026-04-05T10:00:00Z" }), // Past
+			makeInterview({ id: 2, interview_dttm: "2026-04-09T10:00:00Z" }), // This week
+			makeInterview({ id: 3, interview_dttm: "2026-04-15T10:00:00Z" }), // Next week
+			makeInterview({ id: 4, interview_dttm: "2026-04-22T10:00:00Z" }), // Future
 		]);
 		renderPage();
 		await waitFor(() =>
@@ -362,8 +366,8 @@ describe("InterviewsPage", () => {
 
 	it("applies dimmed style to past interview cards and not to upcoming ones", async () => {
 		mockSearchInterviews.mockResolvedValue([
-			makeInterview({ id: 1, interview_dttm: "2026-04-05T10:00:00Z" }), // past
-			makeInterview({ id: 2, interview_dttm: "2026-04-09T10:00:00Z" }), // this week
+			makeInterview({ id: 1, interview_dttm: "2026-04-05T10:00:00Z" }), // Past
+			makeInterview({ id: 2, interview_dttm: "2026-04-09T10:00:00Z" }), // This week
 		]);
 		renderPage();
 		await waitFor(() =>
@@ -504,10 +508,10 @@ describe("InterviewsPage", () => {
 			id: 2,
 			interview_dttm: "2026-04-20T10:00:00Z",
 			job: {
-				id: 11,
 				company: "Beta Inc",
-				role: "Staff SWE",
+				id: 11,
 				link: "https://beta.example.com",
+				role: "Staff SWE",
 			},
 		});
 		mockSearchInterviews.mockResolvedValue([first]);
@@ -565,7 +569,7 @@ describe("InterviewsPage", () => {
 				"2026-04-28",
 			),
 		);
-		// searchInterviews must not have been called again
+		// SearchInterviews must not have been called again
 		expect(mockSearchInterviews.mock.calls.length).toBe(callsBefore);
 	});
 

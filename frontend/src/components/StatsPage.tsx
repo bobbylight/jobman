@@ -38,12 +38,12 @@ export default function StatsPage() {
 			{/* Header row */}
 			<Box
 				sx={{
-					display: "flex",
 					alignItems: "center",
-					justifyContent: "space-between",
-					mb: 3,
+					display: "flex",
 					flexWrap: "wrap",
 					gap: 2,
+					justifyContent: "space-between",
+					mb: 3,
 				}}
 			>
 				<Typography variant="h5" fontWeight={700}>
@@ -62,7 +62,8 @@ export default function StatsPage() {
 				<Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
 					<CircularProgress />
 				</Box>
-			) : data ? (
+			) : null}
+			{!loading && data && (
 				<>
 					{/* Metric cards */}
 					<Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 4 }}>
@@ -203,7 +204,7 @@ export default function StatsPage() {
 						</Card>
 					</Box>
 				</>
-			) : null}
+			)}
 		</Box>
 	);
 }

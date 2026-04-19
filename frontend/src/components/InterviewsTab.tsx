@@ -30,17 +30,17 @@ import QuestionSubView from "./QuestionSubView";
 import { formatTime } from "../jobUtils";
 
 const INTERVIEW_STAGE_LABELS: Record<InterviewStage, string> = {
-	phone_screen: "Phone Screen",
 	onsite: "Onsite",
+	phone_screen: "Phone Screen",
 };
 
 const INTERVIEW_TYPE_LABELS: Record<InterviewType, string> = {
 	behavioral: "Behavioral",
-	leadership: "Leadership",
 	coding: "Coding",
-	system_design: "System Design",
-	past_experience: "Past Experience",
 	culture_fit: "Culture Fit",
+	leadership: "Leadership",
+	past_experience: "Past Experience",
+	system_design: "System Design",
 };
 
 const INTERVIEW_VIBE_LABELS: Record<InterviewVibe, string> = {
@@ -54,12 +54,12 @@ const VIBE_CHIP_SX: Record<InterviewVibe, object> = {
 };
 
 const EMPTY_FORM: InterviewFormData = {
-	interview_stage: "phone_screen",
 	interview_dttm: "",
 	interview_interviewers: null,
+	interview_notes: null,
+	interview_stage: "phone_screen",
 	interview_type: null,
 	interview_vibe: null,
-	interview_notes: null,
 };
 
 type Mode = "list" | "add" | { editId: number } | { confirmDeleteId: number };
@@ -152,7 +152,9 @@ export default function InterviewsTab({
 		value: InterviewFormData[K],
 	) {
 		setForm((f) => ({ ...f, [field]: value }));
-		if (formError) setFormError(null);
+		if (formError) {
+			setFormError(null);
+		}
 	}
 
 	function handleAddClick() {
@@ -163,12 +165,12 @@ export default function InterviewsTab({
 
 	function handleEditClick(interview: Interview) {
 		setForm({
-			interview_stage: interview.interview_stage,
 			interview_dttm: interview.interview_dttm.slice(0, 16),
 			interview_interviewers: interview.interview_interviewers,
+			interview_notes: interview.interview_notes,
+			interview_stage: interview.interview_stage,
 			interview_type: interview.interview_type,
 			interview_vibe: interview.interview_vibe,
-			interview_notes: interview.interview_notes,
 		});
 		setFormError(null);
 		setMode({ editId: interview.id });
@@ -243,7 +245,7 @@ export default function InterviewsTab({
 	const upcomingInterviews = interviews
 		.filter((iv) => new Date(iv.interview_dttm) >= now)
 		.toSorted((a, b) => a.interview_dttm.localeCompare(b.interview_dttm));
-	// interviews is already sorted descending from load()
+	// Interviews is already sorted descending from load()
 	const priorInterviews = interviews.filter(
 		(iv) => new Date(iv.interview_dttm) < now,
 	);
@@ -266,14 +268,14 @@ export default function InterviewsTab({
 				<Box
 					key={interview.id}
 					sx={{
+						alignItems: "center",
 						border: "1px solid",
 						borderColor: "error.light",
 						borderRadius: 1,
-						p: 1.5,
-						mb: 1,
 						display: "flex",
-						alignItems: "center",
 						gap: 2,
+						mb: 1,
+						p: 1.5,
 					}}
 				>
 					<Typography variant="body2" sx={{ flex: 1 }}>
@@ -328,13 +330,17 @@ export default function InterviewsTab({
 		sectionInterviews: Interview[],
 		questionsDisabled = false,
 	) => {
-		if (sectionInterviews.length === 0) return null;
+		if (sectionInterviews.length === 0) {
+			return null;
+		}
 
 		// Group by calendar day
 		const dayMap = new Map<string, Interview[]>();
 		for (const iv of sectionInterviews) {
 			const key = new Date(iv.interview_dttm).toDateString();
-			if (!dayMap.has(key)) dayMap.set(key, []);
+			if (!dayMap.has(key)) {
+				dayMap.set(key, []);
+			}
 			dayMap.get(key)!.push(iv);
 		}
 
@@ -343,32 +349,32 @@ export default function InterviewsTab({
 				<Typography
 					variant="overline"
 					color="text.secondary"
-					sx={{ display: "block", mb: 0.75, lineHeight: 2 }}
+					sx={{ display: "block", lineHeight: 2, mb: 0.75 }}
 				>
 					{title}
 				</Typography>
-				{Array.from(dayMap.entries()).map(([dateStr, dayInterviews]) => {
+				{[...dayMap.entries()].map(([dateStr, dayInterviews]) => {
 					const d = new Date(dateStr);
 					const isToday = d.toDateString() === new Date().toDateString();
 					const weekday = d.toLocaleDateString("en-US", { weekday: "short" });
 					const dateLabel = d.toLocaleDateString("en-US", {
-						month: "short",
 						day: "numeric",
+						month: "short",
 					});
 
 					return (
 						<Box
 							key={dateStr}
-							sx={{ display: "flex", alignItems: "stretch", mb: 1.5 }}
+							sx={{ alignItems: "stretch", display: "flex", mb: 1.5 }}
 						>
 							{/* Left rail: day label */}
 							<Box
 								sx={{
-									width: 48,
 									flexShrink: 0,
-									textAlign: "right",
 									pr: 1.5,
 									pt: 0.5,
+									textAlign: "right",
+									width: 48,
 								}}
 							>
 								<Typography
@@ -384,8 +390,8 @@ export default function InterviewsTab({
 									color={isToday ? "primary.main" : "text.disabled"}
 									sx={{
 										display: "block",
-										lineHeight: 1.3,
 										fontSize: "0.65rem",
+										lineHeight: 1.3,
 									}}
 								>
 									{dateLabel}
@@ -394,11 +400,11 @@ export default function InterviewsTab({
 							{/* Vertical line */}
 							<Box
 								sx={{
-									width: "2px",
+									bgcolor: isToday ? "primary.light" : "divider",
+									borderRadius: "2px",
 									flexShrink: 0,
 									mr: 1.5,
-									borderRadius: "2px",
-									bgcolor: isToday ? "primary.light" : "divider",
+									width: "2px",
 								}}
 							/>
 							{/* Cards */}
@@ -417,20 +423,20 @@ export default function InterviewsTab({
 			<Box
 				sx={{
 					display: "flex",
-					width: "200%",
 					transform: viewingQuestionsFor
 						? "translateX(-50%)"
 						: "translateX(0%)",
 					transition: "transform 0.3s ease-in-out",
+					width: "200%",
 				}}
 			>
 				{/* Panel 1: Interview list */}
-				<Box sx={{ width: "50%", minWidth: "50%", overflow: "hidden" }}>
+				<Box sx={{ minWidth: "50%", overflow: "hidden", width: "50%" }}>
 					<Box
 						sx={{
+							alignItems: "center",
 							display: "flex",
 							justifyContent: "flex-end",
-							alignItems: "center",
 							mb: 1.5,
 						}}
 					>
@@ -450,7 +456,7 @@ export default function InterviewsTab({
 						<Typography
 							variant="body2"
 							color="text.disabled"
-							sx={{ textAlign: "center", py: 3 }}
+							sx={{ py: 3, textAlign: "center" }}
 						>
 							No interviews yet. Click &ldquo;Add Interview&rdquo; to get
 							started.
@@ -458,7 +464,7 @@ export default function InterviewsTab({
 					)}
 
 					{mode === "add" && (
-						<Box sx={{ ml: "62px", mb: 2 }}>
+						<Box sx={{ mb: 2, ml: "62px" }}>
 							<InterviewForm
 								data={form}
 								onChange={setField}
@@ -475,7 +481,7 @@ export default function InterviewsTab({
 				</Box>
 
 				{/* Panel 2: Questions sub-view */}
-				<Box sx={{ width: "50%", minWidth: "50%" }}>
+				<Box sx={{ minWidth: "50%", width: "50%" }}>
 					{displayedInterview && (
 						<QuestionSubView jobId={jobId} interview={displayedInterview} />
 					)}
@@ -510,27 +516,27 @@ function InterviewCard({
 				border: "1px solid",
 				borderColor: "divider",
 				borderRadius: 1,
-				p: 1.5,
 				mb: 1,
 				overflow: "hidden",
+				p: 1.5,
 			}}
 		>
-			<Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+			<Box sx={{ alignItems: "flex-start", display: "flex", gap: 1 }}>
 				<TypeIcon
 					sx={{
-						fontSize: 16,
 						color: "text.secondary",
-						mt: 0.25,
 						flexShrink: 0,
+						fontSize: 16,
+						mt: 0.25,
 					}}
 				/>
 				<Box sx={{ flex: 1, minWidth: 0 }}>
 					<Box
 						sx={{
-							display: "flex",
 							alignItems: "center",
-							gap: 1,
+							display: "flex",
 							flexWrap: "wrap",
+							gap: 1,
 						}}
 					>
 						<Typography variant="body2" fontWeight={600}>
@@ -583,7 +589,7 @@ function InterviewCard({
 						startIcon={<QuizOutlinedIcon sx={{ fontSize: 14 }} />}
 						onClick={onViewQuestions}
 						disabled={questionsDisabled}
-						sx={{ mt: 0.5, p: 0, minWidth: 0, textTransform: "none" }}
+						sx={{ minWidth: 0, mt: 0.5, p: 0, textTransform: "none" }}
 					>
 						{questionCount > 0 ? `Questions (${questionCount})` : "Questions"}
 					</Button>
@@ -639,11 +645,11 @@ function InterviewForm({
 				border: "1px solid",
 				borderColor: "primary.light",
 				borderRadius: 1,
-				p: 1.5,
 				mb: 1,
+				p: 1.5,
 			}}
 		>
-			<Box sx={{ display: "flex", gap: 1.5, mb: 1.5, flexWrap: "wrap" }}>
+			<Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 1.5 }}>
 				<TextField
 					select
 					label="Stage"
@@ -689,7 +695,7 @@ function InterviewForm({
 					},
 				}}
 			/>
-			<Box sx={{ display: "flex", gap: 1.5, mb: 1.5, flexWrap: "wrap" }}>
+			<Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 1.5 }}>
 				<TextField
 					select
 					label="Type"
@@ -755,7 +761,7 @@ function InterviewForm({
 					{error}
 				</Typography>
 			)}
-			<Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+			<Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
 				<Button size="small" onClick={onCancel} disabled={saving}>
 					Cancel
 				</Button>

@@ -1,14 +1,14 @@
 import React from "react";
 import {
-	PieChart,
-	Pie,
 	Cell,
-	Tooltip,
 	Legend,
+	Pie,
+	PieChart,
 	ResponsiveContainer,
+	Tooltip,
 } from "recharts";
-import { Typography, Box } from "@mui/material";
-import { STATUS_COLORS, STATUSES } from "../../constants";
+import { Box, Typography } from "@mui/material";
+import { STATUSES, STATUS_COLORS } from "../../constants";
 import type { JobStatus } from "../../types";
 
 interface Props {
@@ -19,9 +19,9 @@ interface Props {
 function toChartData(byStatus: { status: string; count: number }[]) {
 	const map = Object.fromEntries(byStatus.map((s) => [s.status, s.count]));
 	return STATUSES.filter((s) => (map[s] ?? 0) > 0).map((s) => ({
+		color: STATUS_COLORS[s as JobStatus],
 		name: s,
 		value: map[s],
-		color: STATUS_COLORS[s as JobStatus],
 	}));
 }
 
@@ -32,10 +32,10 @@ export default function StatusDonutChart({ byStatus }: Props) {
 		return (
 			<Box
 				sx={{
-					display: "flex",
 					alignItems: "center",
-					justifyContent: "center",
+					display: "flex",
 					height: 260,
+					justifyContent: "center",
 				}}
 			>
 				<Typography color="text.secondary" variant="body2">

@@ -1,14 +1,14 @@
 import type {
-	Job,
-	JobFormData,
-	User,
-	Interview,
 	EnrichedInterview,
+	Interview,
 	InterviewFormData,
 	InterviewQuestion,
 	InterviewQuestionFormData,
+	Job,
+	JobFormData,
 	StatsResponse,
 	StatsWindow,
+	User,
 } from "./types";
 
 const BASE = "/api";
@@ -22,14 +22,16 @@ export function setUnauthorizedHandler(handler: () => void): void {
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 	const res = await fetch(`${BASE}${path}`, {
-		headers: { "Content-Type": "application/json" },
 		credentials: "include",
+		headers: { "Content-Type": "application/json" },
 		...options,
 	});
 	if (res.status === 401) {
 		unauthorizedHandler?.();
 	}
-	if (!res.ok) throw new Error(`API error ${res.status}`);
+	if (!res.ok) {
+		throw new Error(`API error ${res.status}`);
+	}
 	return res.json() as Promise<T>;
 }
 
@@ -37,8 +39,12 @@ export const api = {
 	// Auth
 	getMe: async (): Promise<User | null> => {
 		const res = await fetch(`${BASE}/auth/me`, { credentials: "include" });
-		if (res.status === 401) return null;
-		if (!res.ok) throw new Error(`API error ${res.status}`);
+		if (res.status === 401) {
+			return null;
+		}
+		if (!res.ok) {
+			throw new Error(`API error ${res.status}`);
+		}
 		return res.json() as Promise<User>;
 	},
 	logout: () =>
@@ -48,9 +54,9 @@ export const api = {
 	getJobs: () => request<Job[]>("/jobs?view=summary"),
 	getJob: (id: number) => request<Job>(`/jobs/${id}`),
 	createJob: (data: JobFormData) =>
-		request<Job>("/jobs", { method: "POST", body: JSON.stringify(data) }),
+		request<Job>("/jobs", { body: JSON.stringify(data), method: "POST" }),
 	updateJob: (id: number, data: Partial<JobFormData>) =>
-		request<Job>(`/jobs/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+		request<Job>(`/jobs/${id}`, { body: JSON.stringify(data), method: "PUT" }),
 	deleteJob: (id: number) =>
 		request<{ success: boolean }>(`/jobs/${id}`, { method: "DELETE" }),
 
@@ -65,8 +71,12 @@ export const api = {
 	},
 	searchInterviews: (from?: string, to?: string) => {
 		const params = new URLSearchParams();
-		if (from) params.set("from", from);
-		if (to) params.set("to", to);
+		if (from) {
+			params.set("from", from);
+		}
+		if (to) {
+			params.set("to", to);
+		}
 		const qs = params.toString();
 		return request<EnrichedInterview[]>(`/interviews${qs ? `?${qs}` : ""}`);
 	},
@@ -76,8 +86,8 @@ export const api = {
 		request<Interview[]>(`/jobs/${jobId}/interviews`),
 	createInterview: (jobId: number, data: InterviewFormData) =>
 		request<Interview>(`/jobs/${jobId}/interviews`, {
-			method: "POST",
 			body: JSON.stringify(data),
+			method: "POST",
 		}),
 	updateInterview: (
 		jobId: number,
@@ -85,8 +95,8 @@ export const api = {
 		data: InterviewFormData,
 	) =>
 		request<Interview>(`/jobs/${jobId}/interviews/${interviewId}`, {
-			method: "PUT",
 			body: JSON.stringify(data),
+			method: "PUT",
 		}),
 	deleteInterview: (jobId: number, interviewId: number) =>
 		request<{ success: boolean }>(`/jobs/${jobId}/interviews/${interviewId}`, {
@@ -105,7 +115,7 @@ export const api = {
 	) =>
 		request<InterviewQuestion>(
 			`/jobs/${jobId}/interviews/${interviewId}/questions`,
-			{ method: "POST", body: JSON.stringify(data) },
+			{ body: JSON.stringify(data), method: "POST" },
 		),
 	updateQuestion: (
 		jobId: number,
@@ -115,7 +125,7 @@ export const api = {
 	) =>
 		request<InterviewQuestion>(
 			`/jobs/${jobId}/interviews/${interviewId}/questions/${questionId}`,
-			{ method: "PUT", body: JSON.stringify(data) },
+			{ body: JSON.stringify(data), method: "PUT" },
 		),
 	deleteQuestion: (jobId: number, interviewId: number, questionId: number) =>
 		request<{ success: boolean }>(

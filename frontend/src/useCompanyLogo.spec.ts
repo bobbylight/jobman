@@ -1,14 +1,13 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useCompanyLogo } from "./useCompanyLogo";
 import * as logoCache from "./logoCache";
 
-vi.mock("./logoCache", () => ({
-	getCachedLogo: vi.fn(),
+vi.mock(import("./logoCache"), () => ({
 	fetchLogo: vi.fn(),
+	getCachedLogo: vi.fn(),
 }));
 
-describe("useCompanyLogo", () => {
+describe(useCompanyLogo, () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -23,8 +22,8 @@ describe("useCompanyLogo", () => {
 
 	it("returns the cached src immediately without fetching when the cache is warm", () => {
 		vi.mocked(logoCache.getCachedLogo).mockReturnValue({
-			status: "resolved",
 			src: "blob:cached-url",
+			status: "resolved",
 		});
 
 		const { result } = renderHook(() => useCompanyLogo("Acme"));
@@ -45,8 +44,8 @@ describe("useCompanyLogo", () => {
 	it("updates to the blob src after fetchLogo resolves with a logo", async () => {
 		vi.mocked(logoCache.getCachedLogo).mockReturnValue(undefined);
 		vi.mocked(logoCache.fetchLogo).mockResolvedValue({
-			status: "resolved",
 			src: "blob:fetched-url",
+			status: "resolved",
 		});
 
 		const { result } = renderHook(() => useCompanyLogo("Acme"));
@@ -78,7 +77,7 @@ describe("useCompanyLogo", () => {
 
 		const { result, unmount } = renderHook(() => useCompanyLogo("Acme"));
 		unmount();
-		resolveEntry({ status: "resolved", src: "blob:late-url" });
+		resolveEntry({ src: "blob:late-url", status: "resolved" });
 
 		// Give any pending microtasks a chance to run
 		await Promise.resolve();

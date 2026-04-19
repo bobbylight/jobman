@@ -2,14 +2,14 @@ import React from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import {
-	Card,
-	CardContent,
-	CardActionArea,
-	Typography,
-	Chip,
 	Box,
+	Card,
+	CardActionArea,
+	CardContent,
+	Chip,
 	IconButton,
 	Tooltip,
+	Typography,
 } from "@mui/material";
 import CompanyLogo from "./CompanyLogo";
 import StarIcon from "@mui/icons-material/Star";
@@ -21,12 +21,16 @@ import type { FitScore, Job, JobStatus } from "../types";
 import { STATUS_COLORS, TAG_LABELS, tagChipProps } from "../constants";
 
 function formatDate(dateStr: string | null): string | null {
-	if (!dateStr) return null;
+	if (!dateStr) {
+		return null;
+	}
 	const d = new Date(dateStr);
-	if (isNaN(d.getTime())) return null;
+	if (isNaN(d.getTime())) {
+		return null;
+	}
 	return d.toLocaleDateString("en-US", {
-		month: "short",
 		day: "numeric",
+		month: "short",
 		year: "numeric",
 	});
 }
@@ -35,47 +39,47 @@ const STATUS_DATE_LABEL: Record<
 	JobStatus,
 	{ label: string; getDate: (job: Job) => string | null }
 > = {
+	Interviewing: {
+		getDate: (job) => formatDate(job.date_last_onsite),
+		label: "Last onsite",
+	},
 	"Not started": {
-		label: "Last updated",
 		getDate: (job) => formatDate(job.created_at),
+		label: "Last updated",
+	},
+	"Offer!": { getDate: () => null, label: "Last updated" },
+	"Phone screen": {
+		getDate: (job) => formatDate(job.date_phone_screen),
+		label: "Phone screen",
+	},
+	"Rejected/Withdrawn": {
+		getDate: (job) => formatDate(job.updated_at),
+		label: "Last updated",
 	},
 	"Resume submitted": {
-		label: "Applied",
 		getDate: (job) => formatDate(job.date_applied),
-	},
-	"Phone screen": {
-		label: "Phone screen",
-		getDate: (job) => formatDate(job.date_phone_screen),
-	},
-	Interviewing: {
-		label: "Last onsite",
-		getDate: (job) => formatDate(job.date_last_onsite),
-	},
-	"Offer!": { label: "Last updated", getDate: () => null },
-	"Rejected/Withdrawn": {
-		label: "Last updated",
-		getDate: (job) => formatDate(job.updated_at),
+		label: "Applied",
 	},
 };
 
 // Maps each fit score to a number of filled bars (out of 5)
 const FIT_SCORE_BARS: Record<FitScore, number> = {
-	"Not sure": 0,
-	"Very Low": 1,
+	High: 4,
 	Low: 2,
 	Medium: 3,
-	High: 4,
+	"Not sure": 0,
 	"Very High": 5,
+	"Very Low": 1,
 };
 
 // Maps MUI color names to actual hex values for the bar fill
 const FIT_SCORE_HEX: Record<FitScore, string> = {
-	"Not sure": "#9e9e9e",
-	"Very Low": "#ef5350",
+	High: "#66bb6a",
 	Low: "#ff7043",
 	Medium: "#ffa726",
-	High: "#66bb6a",
+	"Not sure": "#9e9e9e",
 	"Very High": "#43a047",
+	"Very Low": "#ef5350",
 };
 
 function FitScoreBars({ score }: { score: FitScore }) {
@@ -85,21 +89,21 @@ function FitScoreBars({ score }: { score: FitScore }) {
 	return (
 		<Box
 			sx={{
-				display: "flex",
 				alignItems: "flex-end",
+				display: "flex",
+				flexShrink: 0,
 				gap: "2px",
 				height: 14,
-				flexShrink: 0,
 			}}
 		>
 			{[1, 2, 3, 4, 5].map((bar) => (
 				<Box
 					key={bar}
 					sx={{
-						width: 3,
-						height: `${(bar / 5) * 100}%`,
-						borderRadius: "1px",
 						bgcolor: bar <= filled ? color : "rgba(0,0,0,0.15)",
+						borderRadius: "1px",
+						height: `${(bar / 5) * 100}%`,
+						width: 3,
 					}}
 				/>
 			))}
@@ -120,13 +124,13 @@ const JobCard = React.memo(function JobCard({
 }: Props) {
 	const { attributes, listeners, setNodeRef, transform, isDragging } =
 		useDraggable({
-			id: String(job.id),
 			data: { job },
+			id: String(job.id),
 		});
 
 	const style = {
-		transform: CSS.Translate.toString(transform),
 		opacity: isDragging ? 0.4 : 1,
+		transform: CSS.Translate.toString(transform),
 	};
 
 	return (
@@ -135,10 +139,10 @@ const JobCard = React.memo(function JobCard({
 			style={style}
 			elevation={0}
 			sx={{
-				mb: 1.5,
 				"&:hover": {
 					boxShadow: `0 0 0 1px rgba(99,102,241,0.3), 0 4px 12px rgba(0,0,0,0.1)`,
 				},
+				mb: 1.5,
 				transition: "box-shadow 0.15s",
 			}}
 			{...attributes}
@@ -147,11 +151,7 @@ const JobCard = React.memo(function JobCard({
 			<Box
 				{...listeners}
 				sx={{
-					display: "flex",
 					alignItems: "center",
-					gap: 0.5,
-					px: 1,
-					py: 0.5,
 					bgcolor: isDragging
 						? "rgba(0,0,0,0.035)"
 						: `${STATUS_COLORS[job.status]}26`,
@@ -159,11 +159,15 @@ const JobCard = React.memo(function JobCard({
 						? "1px solid rgba(0,0,0,0.07)"
 						: `1px solid ${STATUS_COLORS[job.status]}40`,
 					cursor: isDragging ? "grabbing" : "grab",
+					display: "flex",
+					gap: 0.5,
+					px: 1,
+					py: 0.5,
 					touchAction: "none",
 				}}
 			>
 				<DragIndicatorIcon
-					sx={{ fontSize: 16, color: "text.disabled", flexShrink: 0 }}
+					sx={{ color: "text.disabled", flexShrink: 0, fontSize: 16 }}
 				/>
 				<CompanyLogo company={job.company} />
 				<Typography
@@ -179,7 +183,7 @@ const JobCard = React.memo(function JobCard({
 					<Tooltip title={`Fit: ${job.fit_score}`} placement="top">
 						<Box
 							onPointerDown={(e) => e.stopPropagation()}
-							sx={{ display: "flex", alignItems: "center", cursor: "default" }}
+							sx={{ alignItems: "center", cursor: "default", display: "flex" }}
 						>
 							<FitScoreBars score={job.fit_score} />
 						</Box>
@@ -228,7 +232,7 @@ const JobCard = React.memo(function JobCard({
 				onClick={() => onCardClick(job)}
 				sx={{ p: 0 }}
 			>
-				<CardContent sx={{ pt: 1, pb: "10px !important", px: 1.5 }}>
+				<CardContent sx={{ pb: "10px !important", pt: 1, px: 1.5 }}>
 					<Typography
 						variant="body2"
 						color="text.secondary"
@@ -240,10 +244,10 @@ const JobCard = React.memo(function JobCard({
 
 					<Box
 						sx={{
+							alignItems: "center",
 							display: "flex",
 							flexWrap: "wrap",
 							gap: 0.5,
-							alignItems: "center",
 							mb: 0.5,
 						}}
 					>
@@ -278,8 +282,8 @@ const JobCard = React.memo(function JobCard({
 									{...tagChipProps(tag)}
 									variant="outlined"
 									sx={{
-										height: 18,
 										fontSize: "0.65rem",
+										height: 18,
 										...tagChipProps(tag).sx,
 									}}
 								/>
