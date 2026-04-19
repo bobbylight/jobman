@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
 	Box,
 	Button,
@@ -101,11 +101,7 @@ export default function QuestionSubView({ jobId, interview }: Props) {
 	const [formError, setFormError] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
 
-	useEffect(() => {
-		void load();
-	}, [interview.id]);
-
-	async function load() {
+	const load = useCallback(async () => {
 		setLoading(true);
 		try {
 			const data = await api.getQuestions(jobId, interview.id);
@@ -113,7 +109,11 @@ export default function QuestionSubView({ jobId, interview }: Props) {
 		} finally {
 			setLoading(false);
 		}
-	}
+	}, [jobId, interview.id]);
+
+	useEffect(() => {
+		void load();
+	}, [load]);
 
 	function setField<K extends keyof InterviewQuestionFormData>(
 		field: K,
