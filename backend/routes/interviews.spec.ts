@@ -5,6 +5,8 @@ import { createApp } from "../server.js";
 import {
 	INTERVIEW_MAX_LENGTHS,
 	QUESTION_MAX_LENGTHS,
+	VALID_INTERVIEW_FEELINGS,
+	VALID_INTERVIEW_RESULTS,
 	VALID_INTERVIEW_STAGES,
 	VALID_INTERVIEW_VIBES,
 	VALID_QUESTION_TYPES,
@@ -54,7 +56,9 @@ const SCHEMA = `
     interview_interviewers TEXT,
     interview_type TEXT,
     interview_vibe TEXT,
-    interview_notes TEXT
+    interview_notes TEXT,
+    interview_result TEXT,
+    interview_feeling TEXT
   );
   CREATE TABLE IF NOT EXISTS interview_questions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -187,6 +191,8 @@ describe("POST /api/jobs/:jobId/interviews", () => {
 		expect(res.body.interview_interviewers).toBeNull();
 		expect(res.body.interview_vibe).toBeNull();
 		expect(res.body.interview_notes).toBeNull();
+		expect(res.body.interview_result).toBeNull();
+		expect(res.body.interview_feeling).toBeNull();
 	});
 
 	it("returns 422 when interview_stage is missing", async () => {
@@ -245,6 +251,46 @@ describe("POST /api/jobs/:jobId/interviews", () => {
 		expect(res.body.interview_vibe).toBe(interview_vibe);
 	});
 
+	it("returns 422 when interview_result is invalid", async () => {
+		const jobId = await createJob();
+		const res = await req("post", `/api/jobs/${jobId}/interviews`).send({
+			...BASE_INTERVIEW,
+			interview_result: "pending",
+		});
+		expect(res.status).toBe(422);
+		expect(res.body.error).toMatch(/interview_result/);
+	});
+
+	it.each([...VALID_INTERVIEW_RESULTS])('accepts interview_result "%s"', async (interview_result) => {
+		const jobId = await createJob();
+		const res = await req("post", `/api/jobs/${jobId}/interviews`).send({
+			...BASE_INTERVIEW,
+			interview_result,
+		});
+		expect(res.status).toBe(201);
+		expect(res.body.interview_result).toBe(interview_result);
+	});
+
+	it("returns 422 when interview_feeling is invalid", async () => {
+		const jobId = await createJob();
+		const res = await req("post", `/api/jobs/${jobId}/interviews`).send({
+			...BASE_INTERVIEW,
+			interview_feeling: "neutral",
+		});
+		expect(res.status).toBe(422);
+		expect(res.body.error).toMatch(/interview_feeling/);
+	});
+
+	it.each([...VALID_INTERVIEW_FEELINGS])('accepts interview_feeling "%s"', async (interview_feeling) => {
+		const jobId = await createJob();
+		const res = await req("post", `/api/jobs/${jobId}/interviews`).send({
+			...BASE_INTERVIEW,
+			interview_feeling,
+		});
+		expect(res.status).toBe(201);
+		expect(res.body.interview_feeling).toBe(interview_feeling);
+	});
+
 	it("returns 404 when the job does not exist", async () => {
 		const res = await req("post", "/api/jobs/99999/interviews").send(BASE_INTERVIEW);
 		expect(res.status).toBe(404);
@@ -296,6 +342,38 @@ describe("PUT /api/jobs/:jobId/interviews/:interviewId", () => {
 			interview_stage: "video_call",
 		});
 		expect(res.status).toBe(422);
+	});
+
+	it("returns 422 when interview_result is invalid", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const res = await req("put", `/api/jobs/${jobId}/interviews/${interviewId}`).send({
+			...BASE_INTERVIEW,
+			interview_result: "pending",
+		});
+		expect(res.status).toBe(422);
+		expect(res.body.error).toMatch(/interview_result/);
+	});
+
+	it("returns 422 when interview_feeling is invalid", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const res = await req("put", `/api/jobs/${jobId}/interviews/${interviewId}`).send({
+			...BASE_INTERVIEW,
+			interview_feeling: "neutral",
+		});
+		expect(res.status).toBe(422);
+		expect(res.body.error).toMatch(/interview_feeling/);
+	});
+
+	it("updates interview_result and interview_feeling", async () => {
+		const { jobId, interviewId } = await createJobAndInterview();
+		const res = await req("put", `/api/jobs/${jobId}/interviews/${interviewId}`).send({
+			...BASE_INTERVIEW,
+			interview_feeling: "pretty_good",
+			interview_result: "passed",
+		});
+		expect(res.status).toBe(200);
+		expect(res.body.interview_result).toBe("passed");
+		expect(res.body.interview_feeling).toBe("pretty_good");
 	});
 });
 
