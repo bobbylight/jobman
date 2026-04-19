@@ -52,6 +52,8 @@ const VIBE_LABELS: Record<InterviewVibe, string> = {
 	intense: "Intense",
 };
 
+const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
 /**
  * Returns {from, to} strings (YYYY-MM-DD) covering today through the Sunday
  * after next Sunday — i.e. "this week and next week".
@@ -68,7 +70,6 @@ export function getDefaultDateRange(): { from: string; to: string } {
 	const sundayAfterNext = new Date(nextSunday);
 	sundayAfterNext.setDate(nextSunday.getDate() + 7);
 
-	const fmt = (d: Date) => d.toISOString().slice(0, 10);
 	return { from: fmt(today), to: fmt(sundayAfterNext) };
 }
 

@@ -95,7 +95,7 @@ export default function InterviewsTab({
 		setLoading(true);
 		try {
 			const data = await api.getInterviews(jobId);
-			const sorted = [...data].sort((a, b) =>
+			const sorted = data.toSorted((a, b) =>
 				b.interview_dttm.localeCompare(a.interview_dttm),
 			);
 			setInterviews(sorted);
@@ -240,9 +240,9 @@ export default function InterviewsTab({
 
 	// ---- Date bucketing ----
 	const now = new Date();
-	const upcomingInterviews = [...interviews]
+	const upcomingInterviews = interviews
 		.filter((iv) => new Date(iv.interview_dttm) >= now)
-		.sort((a, b) => a.interview_dttm.localeCompare(b.interview_dttm));
+		.toSorted((a, b) => a.interview_dttm.localeCompare(b.interview_dttm));
 	// interviews is already sorted descending from load()
 	const priorInterviews = interviews.filter(
 		(iv) => new Date(iv.interview_dttm) < now,

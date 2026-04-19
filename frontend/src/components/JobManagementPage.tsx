@@ -578,6 +578,7 @@ export default function JobManagementPage() {
 					{snack.message.includes("\n")
 						? snack.message
 								.split("\n")
+								// eslint-disable-next-line react/no-array-index-key
 								.map((line, i) => <div key={i}>{line}</div>)
 						: snack.message}
 				</Alert>

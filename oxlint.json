@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "vitest"],
+  "plugins": ["react", "typescript", "vitest", "import", "jsx-a11y", "unicorn"],
   "options": {
     "maxWarnings": 0
   },
@@ -11,7 +11,14 @@
   "rules": {
     "react/react-in-jsx-scope": "off",
     "no-console": "warn",
-    "vitest/require-mock-type-parameters": "off"
+    "vitest/require-mock-type-parameters": "off",
+    "import/no-unassigned-import": ["error", { "allow": ["@testing-library/jest-dom"] }]
+  },
+  "categories": {
+    "correctness": "error",
+    "perf": "error",
+    //"restriction": "error", -- todo: Enable me
+    "suspicious": "error"
   },
   "overrides": [
     {
