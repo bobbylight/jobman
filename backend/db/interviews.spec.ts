@@ -21,12 +21,14 @@ const SCHEMA = `
   CREATE TABLE interviews (
     id                     INTEGER PRIMARY KEY AUTOINCREMENT,
     job_id                 INTEGER NOT NULL,
-    interview_stage         TEXT NOT NULL,
+    interview_stage        TEXT NOT NULL,
     interview_dttm         TEXT NOT NULL,
     interview_interviewers TEXT,
     interview_type         TEXT,
     interview_vibe         TEXT,
-    interview_notes        TEXT
+    interview_notes        TEXT,
+    interview_result       TEXT,
+    interview_feeling      TEXT
   );
   CREATE TABLE interview_questions (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,8 +48,10 @@ function makeDb() {
 
 const BASE_INTERVIEW: Omit<InterviewCreateData, "job_id"> = {
 	interview_dttm: "2025-06-01T10:00:00Z",
+	interview_feeling: null,
 	interview_interviewers: "Alice",
 	interview_notes: "Went well",
+	interview_result: null,
 	interview_stage: "Technical",
 	interview_type: null,
 	interview_vibe: "Good",
@@ -144,14 +148,29 @@ describe("interviews db", () => {
 		it("stores nullable fields as null", () => {
 			const interview = createInterview(db, {
 				...BASE_INTERVIEW,
+				interview_feeling: null,
 				interview_interviewers: null,
 				interview_notes: null,
+				interview_result: null,
 				interview_vibe: null,
 				job_id: jobId,
 			});
 			expect(interview.interview_interviewers).toBeNull();
 			expect(interview.interview_vibe).toBeNull();
 			expect(interview.interview_notes).toBeNull();
+			expect(interview.interview_result).toBeNull();
+			expect(interview.interview_feeling).toBeNull();
+		});
+
+		it("stores non-null interview_result and interview_feeling", () => {
+			const interview = createInterview(db, {
+				...BASE_INTERVIEW,
+				interview_feeling: "aced",
+				interview_result: "passed",
+				job_id: jobId,
+			});
+			expect(interview.interview_result).toBe("passed");
+			expect(interview.interview_feeling).toBe("aced");
 		});
 	});
 

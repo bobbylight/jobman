@@ -118,8 +118,10 @@ export function createInterviewsRouter(db: Database.Database) {
 
 		const interview = InterviewsDb.createInterview(db, {
 			interview_dttm: f.interview_dttm as string,
+			interview_feeling: (f.interview_feeling as string | null) ?? null,
 			interview_interviewers: (f.interview_interviewers as string | null) ?? null,
 			interview_notes: (f.interview_notes as string | null) ?? null,
+			interview_result: (f.interview_result as string | null) ?? null,
 			interview_stage: f.interview_stage as string,
 			interview_type: (f.interview_type as string | null) ?? null,
 			interview_vibe: (f.interview_vibe as string | null) ?? null,
@@ -150,8 +152,10 @@ export function createInterviewsRouter(db: Database.Database) {
 			Number(jobId),
 			{
 				interview_dttm: f.interview_dttm as string,
+				interview_feeling: (f.interview_feeling as string | null) ?? null,
 				interview_interviewers: (f.interview_interviewers as string | null) ?? null,
 				interview_notes: (f.interview_notes as string | null) ?? null,
+				interview_result: (f.interview_result as string | null) ?? null,
 				interview_stage: f.interview_stage as string,
 				interview_type: (f.interview_type as string | null) ?? null,
 				interview_vibe: (f.interview_vibe as string | null) ?? null,

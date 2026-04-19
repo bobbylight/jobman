@@ -65,7 +65,9 @@ db.exec(`
     interview_interviewers TEXT     CHECK(length(interview_interviewers) <= 128),
     interview_type         TEXT     CHECK(length(interview_type) <= 128),
     interview_vibe         TEXT     CHECK(length(interview_vibe) <= 64),
-    interview_notes        TEXT     CHECK(length(interview_notes) <= 4096)
+    interview_notes        TEXT     CHECK(length(interview_notes) <= 4096),
+    interview_result       TEXT     CHECK(interview_result IN ('passed', 'failed')),
+    interview_feeling      TEXT     CHECK(interview_feeling IN ('aced', 'pretty_good', 'meh', 'struggled', 'flunked'))
   );
 
   CREATE TABLE IF NOT EXISTS interview_questions (

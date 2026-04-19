@@ -55,6 +55,14 @@ export const VALID_INTERVIEW_TYPES = new Set([
 	"culture_fit",
 ]);
 export const VALID_INTERVIEW_VIBES = new Set(["casual", "intense"]);
+export const VALID_INTERVIEW_RESULTS = new Set(["passed", "failed"]);
+export const VALID_INTERVIEW_FEELINGS = new Set([
+	"aced",
+	"pretty_good",
+	"meh",
+	"struggled",
+	"flunked",
+]);
 export const VALID_QUESTION_TYPES = new Set([
 	"behavioral",
 	"technical",
@@ -113,6 +121,20 @@ export function validateInterview(
 			!VALID_INTERVIEW_TYPES.has(body.interview_type))
 	) {
 		return `interview_type must be one of: ${[...VALID_INTERVIEW_TYPES].join(", ")}`;
+	}
+	if (
+		body.interview_result != null &&
+		(typeof body.interview_result !== "string" ||
+			!VALID_INTERVIEW_RESULTS.has(body.interview_result))
+	) {
+		return `interview_result must be one of: ${[...VALID_INTERVIEW_RESULTS].join(", ")}`;
+	}
+	if (
+		body.interview_feeling != null &&
+		(typeof body.interview_feeling !== "string" ||
+			!VALID_INTERVIEW_FEELINGS.has(body.interview_feeling))
+	) {
+		return `interview_feeling must be one of: ${[...VALID_INTERVIEW_FEELINGS].join(", ")}`;
 	}
 	for (const [field, max] of Object.entries(INTERVIEW_MAX_LENGTHS)) {
 		const err = checkLength(body[field], field, max);

@@ -9,6 +9,8 @@ export interface InterviewRow {
 	interview_type: string | null;
 	interview_vibe: string | null;
 	interview_notes: string | null;
+	interview_result: string | null;
+	interview_feeling: string | null;
 }
 
 export interface InterviewQuestionRow {
@@ -28,6 +30,8 @@ export interface InterviewCreateData {
 	interview_type: string | null;
 	interview_vibe: string | null;
 	interview_notes: string | null;
+	interview_result: string | null;
+	interview_feeling: string | null;
 }
 
 export type InterviewUpdateData = Omit<InterviewCreateData, "job_id">;
@@ -69,6 +73,7 @@ export function listEnrichedInterviews(
 	const sql = `
 		SELECT i.id, i.job_id, i.interview_stage, i.interview_dttm,
 		       i.interview_interviewers, i.interview_type, i.interview_vibe, i.interview_notes,
+		       i.interview_result, i.interview_feeling,
 		       j.company, j.role, j.link
 		FROM interviews i
 		JOIN jobs j ON j.id = i.job_id
@@ -87,6 +92,7 @@ export function listEnrichedInterviewsAfter(
 	const sql = `
 		SELECT i.id, i.job_id, i.interview_stage, i.interview_dttm,
 		       i.interview_interviewers, i.interview_type, i.interview_vibe, i.interview_notes,
+		       i.interview_result, i.interview_feeling,
 		       j.company, j.role, j.link
 		FROM interviews i
 		JOIN jobs j ON j.id = i.job_id
@@ -133,8 +139,9 @@ export function createInterview(
 	const result = db
 		.prepare(
 			`INSERT INTO interviews (job_id, interview_stage, interview_dttm,
-        interview_interviewers, interview_type, interview_vibe, interview_notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        interview_interviewers, interview_type, interview_vibe, interview_notes,
+        interview_result, interview_feeling)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		)
 		.run(
 			data.job_id,
@@ -144,6 +151,8 @@ export function createInterview(
 			data.interview_type,
 			data.interview_vibe,
 			data.interview_notes,
+			data.interview_result,
+			data.interview_feeling,
 		);
 	return db
 		.prepare("SELECT * FROM interviews WHERE id = ?")
@@ -160,7 +169,8 @@ export function updateInterview(
 		.prepare(
 			`UPDATE interviews SET
         interview_stage = ?, interview_dttm = ?, interview_interviewers = ?,
-        interview_type = ?, interview_vibe = ?, interview_notes = ?
+        interview_type = ?, interview_vibe = ?, interview_notes = ?,
+        interview_result = ?, interview_feeling = ?
       WHERE id = ? AND job_id = ?`,
 		)
 		.run(
@@ -170,6 +180,8 @@ export function updateInterview(
 			data.interview_type,
 			data.interview_vibe,
 			data.interview_notes,
+			data.interview_result,
+			data.interview_feeling,
 			interviewId,
 			jobId,
 		);
