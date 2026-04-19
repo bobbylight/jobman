@@ -1,56 +1,55 @@
 import React from "react";
 import {
+	fireEvent,
 	render,
 	screen,
-	fireEvent,
 	waitFor,
 	within,
 } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
 import InterviewsTab from "./InterviewsTab";
 import { api } from "../api";
 import type { Interview } from "../types";
 
-vi.mock("../api");
+vi.mock(import("../api"));
 
 const makeInterview = (overrides: Partial<Interview> = {}): Interview => ({
 	id: 1,
-	job_id: 42,
-	interview_stage: "phone_screen",
 	interview_dttm: "2024-03-12T14:00",
 	interview_interviewers: "Jane Smith",
+	interview_notes: "Great conversation",
+	interview_stage: "phone_screen",
 	interview_type: null,
 	interview_vibe: "casual",
-	interview_notes: "Great conversation",
+	job_id: 42,
 	...overrides,
 });
 
 const INTERVIEW_A = makeInterview({
 	id: 1,
-	interview_stage: "phone_screen",
 	interview_dttm: "2024-03-12T14:00",
 	interview_interviewers: "Jane Smith",
-	interview_vibe: "casual",
 	interview_notes: "Great conversation",
+	interview_stage: "phone_screen",
+	interview_vibe: "casual",
 });
 
 const INTERVIEW_B = makeInterview({
 	id: 2,
-	interview_stage: "onsite",
 	interview_dttm: "2024-03-19T10:00",
 	interview_interviewers: null,
-	interview_vibe: "intense",
 	interview_notes: null,
+	interview_stage: "onsite",
+	interview_vibe: "intense",
 });
 
 const DEFAULT_PROPS = {
 	jobId: 42,
 	onCountChange: vi.fn(),
-	viewingQuestionsFor: null,
 	onViewingQuestionsChange: vi.fn(),
+	viewingQuestionsFor: null,
 };
 
-describe("InterviewsTab", () => {
+describe(InterviewsTab, () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.mocked(api.getInterviews).mockResolvedValue([]);
@@ -230,8 +229,8 @@ describe("InterviewsTab", () => {
 			const newInterview = makeInterview({ id: 99 });
 			vi.mocked(api.createInterview).mockResolvedValue(newInterview);
 			vi.mocked(api.getInterviews)
-				.mockResolvedValueOnce([]) // initial load
-				.mockResolvedValueOnce([newInterview]); // after save
+				.mockResolvedValueOnce([]) // Initial load
+				.mockResolvedValueOnce([newInterview]); // After save
 
 			render(<InterviewsTab {...DEFAULT_PROPS} />);
 			await waitFor(() =>

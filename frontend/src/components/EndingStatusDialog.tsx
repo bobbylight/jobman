@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
-	Dialog,
-	DialogTitle,
-	DialogContent,
-	DialogActions,
 	Button,
-	TextField,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogTitle,
 	MenuItem,
+	TextField,
 	Typography,
 } from "@mui/material";
 import { ENDING_SUBSTATUSES } from "../constants";
-import type { Job, JobStatus, EndingSubstatus } from "../types";
+import type { EndingSubstatus, Job, JobStatus } from "../types";
 
 interface Props {
 	open: boolean;
@@ -66,10 +66,12 @@ export default function EndingStatusDialog({
 					value={substatus}
 					onChange={(e) => {
 						setSubstatus(e.target.value as EndingSubstatus);
-						if (error) setError("");
+						if (error) {
+							setError("");
+						}
 					}}
 					disabled={isOffer}
-					error={!!error}
+					error={Boolean(error)}
 					helperText={error}
 					fullWidth
 					size="small"

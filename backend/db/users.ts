@@ -78,10 +78,10 @@ export function createUserWithGoogleIdentity(
 			params.refreshToken,
 		);
 		return {
-			id: row.id,
-			email: params.email,
-			display_name: params.displayName,
 			avatar_url: params.avatarUrl,
+			display_name: params.displayName,
+			email: params.email,
+			id: row.id,
 		};
 	})();
 }

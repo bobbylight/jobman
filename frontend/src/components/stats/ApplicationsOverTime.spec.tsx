@@ -1,29 +1,32 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import ApplicationsOverTime from "./ApplicationsOverTime";
 
-vi.mock("recharts", () => ({
-	ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
-		<div data-testid="recharts-container">{children}</div>
-	),
-	LineChart: ({ children }: { children: React.ReactNode }) => (
-		<div data-testid="line-chart">{children}</div>
-	),
-	Line: () => <div data-testid="line" />,
-	XAxis: () => null,
-	YAxis: () => null,
-	Tooltip: () => null,
-	CartesianGrid: () => null,
-}));
+vi.mock(
+	import("recharts"),
+	() =>
+		({
+			CartesianGrid: () => null,
+			Line: () => <div data-testid="line" />,
+			LineChart: ({ children }: { children: React.ReactNode }) => (
+				<div data-testid="line-chart">{children}</div>
+			),
+			ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
+				<div data-testid="recharts-container">{children}</div>
+			),
+			Tooltip: () => null,
+			XAxis: () => null,
+			YAxis: () => null,
+		}) as any,
+);
 
 const WEEKLY_DATA = [
-	{ week: "2025-W10", count: 3 },
-	{ week: "2025-W11", count: 5 },
-	{ week: "2025-W12", count: 2 },
+	{ count: 3, week: "2025-W10" },
+	{ count: 5, week: "2025-W11" },
+	{ count: 2, week: "2025-W12" },
 ];
 
-describe("ApplicationsOverTime", () => {
+describe(ApplicationsOverTime, () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -51,7 +54,7 @@ describe("ApplicationsOverTime", () => {
 	it("renders with a single data point", () => {
 		render(
 			<ApplicationsOverTime
-				applicationsByWeek={[{ week: "2025-W01", count: 1 }]}
+				applicationsByWeek={[{ count: 1, week: "2025-W01" }]}
 			/>,
 		);
 		expect(screen.getByTestId("recharts-container")).toBeInTheDocument();

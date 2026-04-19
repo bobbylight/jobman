@@ -30,10 +30,10 @@ import DifficultySelector from "./DifficultySelector";
 
 const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
 	behavioral: "Behavioral",
-	technical: "Technical",
-	system_design: "System Design",
 	coding: "Coding",
 	culture_fit: "Culture Fit",
+	system_design: "System Design",
+	technical: "Technical",
 };
 
 const QUESTION_TYPE_CHIP_SX: Record<
@@ -41,15 +41,15 @@ const QUESTION_TYPE_CHIP_SX: Record<
 	{ bgcolor: string; color: string }
 > = {
 	behavioral: { bgcolor: "#e8f5e9", color: "#2e7d32" },
-	technical: { bgcolor: "#e3f2fd", color: "#1565c0" },
-	system_design: { bgcolor: "#f3e5f5", color: "#7b1fa2" },
 	coding: { bgcolor: "#fff8e1", color: "#f57f17" },
 	culture_fit: { bgcolor: "#fce4ec", color: "#c62828" },
+	system_design: { bgcolor: "#f3e5f5", color: "#7b1fa2" },
+	technical: { bgcolor: "#e3f2fd", color: "#1565c0" },
 };
 
 const INTERVIEW_STAGE_LABELS: Record<string, string> = {
-	phone_screen: "Phone Screen",
 	onsite: "Onsite",
+	phone_screen: "Phone Screen",
 };
 
 const VIBE_LABELS: Record<string, string> = {
@@ -63,10 +63,10 @@ const VIBE_CHIP_SX: Record<string, object> = {
 };
 
 const EMPTY_QUESTION_FORM: InterviewQuestionFormData = {
-	question_type: "behavioral",
-	question_text: "",
-	question_notes: null,
 	difficulty: 3,
+	question_notes: null,
+	question_text: "",
+	question_type: "behavioral",
 };
 
 type QuestionMode =
@@ -77,13 +77,15 @@ type QuestionMode =
 
 function formatDttm(dttm: string): string {
 	const d = new Date(dttm);
-	if (isNaN(d.getTime())) return dttm;
+	if (isNaN(d.getTime())) {
+		return dttm;
+	}
 	return d.toLocaleString("en-US", {
-		month: "short",
 		day: "numeric",
-		year: "numeric",
 		hour: "numeric",
 		minute: "2-digit",
+		month: "short",
+		year: "numeric",
 	});
 }
 
@@ -120,7 +122,9 @@ export default function QuestionSubView({ jobId, interview }: Props) {
 		value: InterviewQuestionFormData[K],
 	) {
 		setForm((f) => ({ ...f, [field]: value }));
-		if (formError) setFormError(null);
+		if (formError) {
+			setFormError(null);
+		}
 	}
 
 	function handleAddClick() {
@@ -131,10 +135,10 @@ export default function QuestionSubView({ jobId, interview }: Props) {
 
 	function handleEditClick(q: InterviewQuestion) {
 		setForm({
-			question_type: q.question_type,
-			question_text: q.question_text,
-			question_notes: q.question_notes,
 			difficulty: q.difficulty,
+			question_notes: q.question_notes,
+			question_text: q.question_text,
+			question_type: q.question_type,
 		});
 		setFormError(null);
 		setMode({ editId: q.id });
@@ -204,19 +208,19 @@ export default function QuestionSubView({ jobId, interview }: Props) {
 			{/* Interview summary header */}
 			<Box
 				sx={{
+					alignItems: "center",
 					bgcolor: "action.hover",
 					borderRadius: 1,
+					display: "flex",
+					flexWrap: "wrap",
+					gap: 1,
+					mb: 1.5,
 					px: 1.5,
 					py: 1,
-					mb: 1.5,
-					display: "flex",
-					alignItems: "center",
-					gap: 1,
-					flexWrap: "wrap",
 				}}
 			>
 				<TypeIcon
-					sx={{ fontSize: 16, color: "text.secondary", flexShrink: 0 }}
+					sx={{ color: "text.secondary", flexShrink: 0, fontSize: 16 }}
 				/>
 				<Typography variant="body2" fontWeight={600}>
 					{typeLabel}
@@ -275,14 +279,14 @@ export default function QuestionSubView({ jobId, interview }: Props) {
 								<Box
 									key={q.id}
 									sx={{
+										alignItems: "center",
 										border: "1px solid",
 										borderColor: "error.light",
 										borderRadius: 1,
-										p: 1.5,
-										mb: 1,
 										display: "flex",
-										alignItems: "center",
 										gap: 2,
+										mb: 1,
+										p: 1.5,
 									}}
 								>
 									<Typography variant="body2" sx={{ flex: 1 }}>
@@ -334,16 +338,16 @@ export default function QuestionSubView({ jobId, interview }: Props) {
 						<Typography
 							variant="body2"
 							color="text.disabled"
-							sx={{ textAlign: "center", py: 3 }}
+							sx={{ py: 3, textAlign: "center" }}
 						>
 							No questions recorded yet.{" "}
 							<Box
 								component="span"
 								onClick={handleAddClick}
 								sx={{
+									"&:hover": { textDecoration: "underline" },
 									color: "primary.main",
 									cursor: "pointer",
-									"&:hover": { textDecoration: "underline" },
 								}}
 							>
 								Add one.
@@ -386,25 +390,25 @@ function QuestionCard({
 				border: "1px solid",
 				borderColor: "divider",
 				borderRadius: 1,
-				p: 1.5,
 				mb: 1,
+				p: 1.5,
 			}}
 		>
 			<Box
 				sx={{
-					display: "flex",
 					alignItems: "flex-start",
-					justifyContent: "space-between",
+					display: "flex",
 					gap: 1,
+					justifyContent: "space-between",
 					mb: 0.75,
 				}}
 			>
 				<Box
 					sx={{
-						display: "flex",
 						alignItems: "center",
-						gap: 1,
+						display: "flex",
 						flexWrap: "wrap",
+						gap: 1,
 					}}
 				>
 					<Chip label={typeLabel} size="small" sx={chipSx} />
@@ -435,23 +439,23 @@ function QuestionCard({
 			{question.question_notes && (
 				<Box
 					sx={{
-						mt: 0.5,
+						"& code": {
+							bgcolor: "action.hover",
+							borderRadius: 0.5,
+							fontFamily: "monospace",
+							fontSize: "0.85em",
+							px: 0.5,
+						},
+						"& em": { fontStyle: "italic" },
+						"& li": { mb: 0 },
+						"& p": { mb: 0.5, mt: 0 },
+						"& p:last-child": { mb: 0 },
+						"& strong": { fontWeight: 700 },
+						"& ul, & ol": { mb: 0.5, mt: 0, pl: 2 },
 						color: "text.secondary",
 						fontSize: "0.75rem",
 						lineHeight: 1.6,
-						"& p": { mt: 0, mb: 0.5 },
-						"& p:last-child": { mb: 0 },
-						"& ul, & ol": { mt: 0, mb: 0.5, pl: 2 },
-						"& li": { mb: 0 },
-						"& strong": { fontWeight: 700 },
-						"& em": { fontStyle: "italic" },
-						"& code": {
-							fontFamily: "monospace",
-							fontSize: "0.85em",
-							bgcolor: "action.hover",
-							px: 0.5,
-							borderRadius: 0.5,
-						},
+						mt: 0.5,
 					}}
 				>
 					<ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -489,17 +493,17 @@ function QuestionForm({
 				border: "1px solid",
 				borderColor: "primary.light",
 				borderRadius: 1,
-				p: 1.5,
 				mb: 1,
+				p: 1.5,
 			}}
 		>
 			<Box
 				sx={{
+					alignItems: "center",
 					display: "flex",
+					flexWrap: "wrap",
 					gap: 1.5,
 					mb: 1.5,
-					flexWrap: "wrap",
-					alignItems: "center",
 				}}
 			>
 				<TextField
@@ -555,7 +559,7 @@ function QuestionForm({
 					{error}
 				</Typography>
 			)}
-			<Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+			<Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
 				<Button size="small" onClick={onCancel} disabled={saving}>
 					Cancel
 				</Button>

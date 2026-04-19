@@ -1,26 +1,29 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import PipelineFunnelChart from "./PipelineFunnelChart";
 
-vi.mock("recharts", () => ({
-	Sankey: ({ children }: { children: React.ReactNode }) => (
-		<div data-testid="sankey-chart">{children}</div>
-	),
-	Tooltip: () => null,
-}));
+vi.mock(
+	import("recharts"),
+	() =>
+		({
+			Sankey: ({ children }: { children: React.ReactNode }) => (
+				<div data-testid="sankey-chart">{children}</div>
+			),
+			Tooltip: () => null,
+		}) as any,
+);
 
 const TRANSITIONS = [
-	{ from: "Not started", to: "Resume submitted", count: 8 },
-	{ from: "Resume submitted", to: "Phone screen", count: 5 },
-	{ from: "Resume submitted", to: "Rejected/Withdrawn", count: 3 },
-	{ from: "Phone screen", to: "Interviewing", count: 3 },
-	{ from: "Phone screen", to: "Rejected/Withdrawn", count: 2 },
-	{ from: "Interviewing", to: "Offer!", count: 1 },
-	{ from: "Interviewing", to: "Rejected/Withdrawn", count: 2 },
+	{ count: 8, from: "Not started", to: "Resume submitted" },
+	{ count: 5, from: "Resume submitted", to: "Phone screen" },
+	{ count: 3, from: "Resume submitted", to: "Rejected/Withdrawn" },
+	{ count: 3, from: "Phone screen", to: "Interviewing" },
+	{ count: 2, from: "Phone screen", to: "Rejected/Withdrawn" },
+	{ count: 1, from: "Interviewing", to: "Offer!" },
+	{ count: 2, from: "Interviewing", to: "Rejected/Withdrawn" },
 ];
 
-describe("PipelineFunnelChart", () => {
+describe(PipelineFunnelChart, () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});

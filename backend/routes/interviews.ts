@@ -1,5 +1,4 @@
 import type Database from "better-sqlite3";
-import type express from "express";
 import expressLib from "express";
 import * as InterviewsDb from "../db/interviews.js";
 import { validateInterview, validateInterviewQuestion } from "../validators.js";
@@ -9,7 +8,7 @@ const PAGE_SIZE = 10;
 function toEnrichedResponse(rows: InterviewsDb.EnrichedInterviewRow[]) {
 	return rows.map(({ company, role, link, ...interview }) => ({
 		...interview,
-		job: { id: interview.job_id, company, role, link },
+		job: { company, id: interview.job_id, link, role },
 	}));
 }
 
@@ -71,7 +70,7 @@ function resolveInterview(
 	jobId: string,
 	interviewId: string,
 	userId: number,
-	res: express.Response,
+	res: expressLib.Response,
 ): InterviewsDb.InterviewRow | null {
 	if (!InterviewsDb.jobBelongsToUser(db, Number(jobId), userId)) {
 		res.status(404).json({ error: "Job not found" });
@@ -115,16 +114,16 @@ export function createInterviewsRouter(db: Database.Database) {
 				.json({ error: "job_id in body must match :jobId in route" });
 		}
 		const validationError = validateInterview(f);
-		if (validationError) return res.status(422).json({ error: validationError });
+		if (validationError) {return res.status(422).json({ error: validationError });}
 
 		const interview = InterviewsDb.createInterview(db, {
-			job_id: Number(jobId),
-			interview_stage: f.interview_stage as string,
 			interview_dttm: f.interview_dttm as string,
 			interview_interviewers: (f.interview_interviewers as string | null) ?? null,
+			interview_notes: (f.interview_notes as string | null) ?? null,
+			interview_stage: f.interview_stage as string,
 			interview_type: (f.interview_type as string | null) ?? null,
 			interview_vibe: (f.interview_vibe as string | null) ?? null,
-			interview_notes: (f.interview_notes as string | null) ?? null,
+			job_id: Number(jobId),
 		});
 		return res.status(201).json(interview);
 	});
@@ -143,22 +142,22 @@ export function createInterviewsRouter(db: Database.Database) {
 				.json({ error: "job_id in body must match :jobId in route" });
 		}
 		const validationError = validateInterview(f);
-		if (validationError) return res.status(422).json({ error: validationError });
+		if (validationError) {return res.status(422).json({ error: validationError });}
 
 		const interview = InterviewsDb.updateInterview(
 			db,
 			Number(interviewId),
 			Number(jobId),
 			{
-				interview_stage: f.interview_stage as string,
 				interview_dttm: f.interview_dttm as string,
 				interview_interviewers: (f.interview_interviewers as string | null) ?? null,
+				interview_notes: (f.interview_notes as string | null) ?? null,
+				interview_stage: f.interview_stage as string,
 				interview_type: (f.interview_type as string | null) ?? null,
 				interview_vibe: (f.interview_vibe as string | null) ?? null,
-				interview_notes: (f.interview_notes as string | null) ?? null,
 			},
 		);
-		if (!interview) return res.status(404).json({ error: "Interview not found" });
+		if (!interview) {return res.status(404).json({ error: "Interview not found" });}
 		return res.json(interview);
 	});
 
@@ -173,7 +172,7 @@ export function createInterviewsRouter(db: Database.Database) {
 			Number(interviewId),
 			Number(jobId),
 		);
-		if (!deleted) return res.status(404).json({ error: "Interview not found" });
+		if (!deleted) {return res.status(404).json({ error: "Interview not found" });}
 		return res.json({ success: true });
 	});
 
@@ -182,37 +181,37 @@ export function createInterviewsRouter(db: Database.Database) {
 	router.get("/:interviewId/questions", (req, res) => {
 		const { jobId, interviewId } = req.params as { jobId: string; interviewId: string };
 		if (!resolveInterview(db, jobId, interviewId, req.session.userId!, res))
-			return;
+			{return;}
 		return res.json(InterviewsDb.listQuestions(db, Number(interviewId)));
 	});
 
 	router.get("/:interviewId/questions/:questionId", (req, res) => {
 		const { jobId, interviewId, questionId } = req.params as { jobId: string; interviewId: string; questionId: string };
 		if (!resolveInterview(db, jobId, interviewId, req.session.userId!, res))
-			return;
+			{return;}
 		const question = InterviewsDb.findQuestion(
 			db,
 			Number(questionId),
 			Number(interviewId),
 		);
-		if (!question) return res.status(404).json({ error: "Question not found" });
+		if (!question) {return res.status(404).json({ error: "Question not found" });}
 		return res.json(question);
 	});
 
 	router.post("/:interviewId/questions", (req, res) => {
 		const { jobId, interviewId } = req.params as { jobId: string; interviewId: string };
 		if (!resolveInterview(db, jobId, interviewId, req.session.userId!, res))
-			return;
+			{return;}
 		const f = req.body as Record<string, unknown>;
 		const validationError = validateInterviewQuestion(f);
-		if (validationError) return res.status(422).json({ error: validationError });
+		if (validationError) {return res.status(422).json({ error: validationError });}
 
 		const question = InterviewsDb.createQuestion(db, {
-			interview_id: Number(interviewId),
-			question_type: f.question_type as string,
-			question_text: f.question_text as string,
-			question_notes: (f.question_notes as string | null) ?? null,
 			difficulty: Number(f.difficulty),
+			interview_id: Number(interviewId),
+			question_notes: (f.question_notes as string | null) ?? null,
+			question_text: f.question_text as string,
+			question_type: f.question_type as string,
 		});
 		return res.status(201).json(question);
 	});
@@ -220,36 +219,36 @@ export function createInterviewsRouter(db: Database.Database) {
 	router.put("/:interviewId/questions/:questionId", (req, res) => {
 		const { jobId, interviewId, questionId } = req.params as { jobId: string; interviewId: string; questionId: string };
 		if (!resolveInterview(db, jobId, interviewId, req.session.userId!, res))
-			return;
+			{return;}
 		const f = req.body as Record<string, unknown>;
 		const validationError = validateInterviewQuestion(f);
-		if (validationError) return res.status(422).json({ error: validationError });
+		if (validationError) {return res.status(422).json({ error: validationError });}
 
 		const question = InterviewsDb.updateQuestion(
 			db,
 			Number(questionId),
 			Number(interviewId),
 			{
-				question_type: f.question_type as string,
-				question_text: f.question_text as string,
-				question_notes: (f.question_notes as string | null) ?? null,
 				difficulty: Number(f.difficulty),
+				question_notes: (f.question_notes as string | null) ?? null,
+				question_text: f.question_text as string,
+				question_type: f.question_type as string,
 			},
 		);
-		if (!question) return res.status(404).json({ error: "Question not found" });
+		if (!question) {return res.status(404).json({ error: "Question not found" });}
 		return res.json(question);
 	});
 
 	router.delete("/:interviewId/questions/:questionId", (req, res) => {
 		const { jobId, interviewId, questionId } = req.params as { jobId: string; interviewId: string; questionId: string };
 		if (!resolveInterview(db, jobId, interviewId, req.session.userId!, res))
-			return;
+			{return;}
 		const deleted = InterviewsDb.deleteQuestion(
 			db,
 			Number(questionId),
 			Number(interviewId),
 		);
-		if (!deleted) return res.status(404).json({ error: "Question not found" });
+		if (!deleted) {return res.status(404).json({ error: "Question not found" });}
 		return res.json({ success: true });
 	});
 

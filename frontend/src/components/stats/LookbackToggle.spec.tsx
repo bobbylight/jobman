@@ -1,9 +1,8 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import LookbackToggle from "./LookbackToggle";
 
-describe("LookbackToggle", () => {
+describe(LookbackToggle, () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -46,7 +45,7 @@ describe("LookbackToggle", () => {
 		const onChange = vi.fn();
 		render(<LookbackToggle value="all" onChange={onChange} />);
 		// Clicking the already-selected button deselects it (MUI passes null);
-		// the component guards against this and should not call onChange.
+		// The component guards against this and should not call onChange.
 		fireEvent.click(screen.getByRole("button", { name: "All time" }));
 		expect(onChange).not.toHaveBeenCalled();
 	});

@@ -1,5 +1,4 @@
 import { createHmac } from "node:crypto";
-import { describe, expect, it } from "vitest";
 import Database from "better-sqlite3";
 import request from "supertest";
 import { createApp } from "./server.js";
@@ -63,8 +62,8 @@ testDb
 	.run(
 		TEST_SESSION_ID,
 		JSON.stringify({
+			cookie: { originalMaxAge: 604_800_000 },
 			userId: TEST_USER_ID,
-			cookie: { originalMaxAge: 604800000 },
 		}),
 	);
 

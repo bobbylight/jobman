@@ -8,9 +8,9 @@ import remarkGfm from "remark-gfm";
 import TurndownService from "turndown";
 
 const turndown = new TurndownService({
-	headingStyle: "atx",
 	bulletListMarker: "-",
 	codeBlockStyle: "fenced",
+	headingStyle: "atx",
 });
 // Strip images and tables — not needed for job postings
 turndown.remove(["img", "table"]);
@@ -39,11 +39,15 @@ export default function MarkdownField({
 
 	function handlePaste(e: React.ClipboardEvent<HTMLDivElement>) {
 		const html = e.clipboardData.getData("text/html");
-		if (!html) return;
+		if (!html) {
+			return;
+		}
 		e.preventDefault();
 		const md = turndown.turndown(html);
 		const target = e.currentTarget.querySelector("textarea");
-		if (!target) return;
+		if (!target) {
+			return;
+		}
 		const start = target.selectionStart ?? 0;
 		const end = target.selectionEnd ?? 0;
 		const current = value ?? "";
@@ -81,7 +85,7 @@ export default function MarkdownField({
 
 	return (
 		<Box>
-			<Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
+			<Box sx={{ alignItems: "center", display: "flex", gap: 0.5, mb: 0.5 }}>
 				<Typography variant="caption" color="text.secondary">
 					{label}
 				</Typography>
@@ -97,53 +101,53 @@ export default function MarkdownField({
 			</Box>
 			<Box
 				sx={{
-					position: "relative",
+					"& a": { color: "primary.main" },
+					"& blockquote": {
+						borderColor: "divider",
+						borderLeft: "3px solid",
+						color: "text.secondary",
+						ml: 0,
+						pl: 1.5,
+					},
+					"& code": {
+						bgcolor: "action.hover",
+						borderRadius: 0.5,
+						fontFamily: "monospace",
+						fontSize: "0.85em",
+						px: 0.5,
+					},
+					"& em": { fontStyle: "italic" },
+					"& h1": { fontSize: "1.25em" },
+					"& h1, & h2, & h3, & h4, & h5, & h6": {
+						fontWeight: 600,
+						lineHeight: 1.3,
+						mb: 0.5,
+						mt: 1,
+					},
+					"& h2": { fontSize: "1.1em" },
+					"& h3, & h4, & h5, & h6": { fontSize: "1em" },
+					"& li": { mb: 0.25 },
+					"& p": { mb: 1, mt: 0 },
+					"& pre": {
+						bgcolor: "action.hover",
+						borderRadius: 1,
+						mb: 1,
+						overflowX: "auto",
+						p: 1,
+					},
+					"& strong": { fontWeight: 700 },
+					"& ul, & ol": { mb: 1, mt: 0, pl: 2.5 },
 					border: "1px solid",
 					borderColor: "divider",
 					borderRadius: 1,
-					px: 1.5,
-					py: 1,
 					fontSize: "0.875rem",
 					lineHeight: 1.6,
-					minHeight: "9rem",
 					maxHeight: "12rem",
+					minHeight: "9rem",
 					overflowY: "auto",
-					"& h1, & h2, & h3, & h4, & h5, & h6": {
-						mt: 1,
-						mb: 0.5,
-						fontWeight: 600,
-						lineHeight: 1.3,
-					},
-					"& h1": { fontSize: "1.25em" },
-					"& h2": { fontSize: "1.1em" },
-					"& h3, & h4, & h5, & h6": { fontSize: "1em" },
-					"& p": { mt: 0, mb: 1 },
-					"& ul, & ol": { mt: 0, mb: 1, pl: 2.5 },
-					"& li": { mb: 0.25 },
-					"& strong": { fontWeight: 700 },
-					"& em": { fontStyle: "italic" },
-					"& code": {
-						fontFamily: "monospace",
-						fontSize: "0.85em",
-						bgcolor: "action.hover",
-						px: 0.5,
-						borderRadius: 0.5,
-					},
-					"& pre": {
-						bgcolor: "action.hover",
-						p: 1,
-						borderRadius: 1,
-						overflowX: "auto",
-						mb: 1,
-					},
-					"& blockquote": {
-						borderLeft: "3px solid",
-						borderColor: "divider",
-						pl: 1.5,
-						ml: 0,
-						color: "text.secondary",
-					},
-					"& a": { color: "primary.main" },
+					position: "relative",
+					px: 1.5,
+					py: 1,
 				}}
 			>
 				<Tooltip title={copied ? "Copied!" : "Copy"} placement="left">
@@ -152,19 +156,19 @@ export default function MarkdownField({
 						onClick={handleCopy}
 						aria-label={`Copy ${label.toLowerCase()}`}
 						sx={{
-							position: "sticky",
-							top: 4,
-							float: "right",
-							ml: 1,
-							p: 0.5,
+							"&:hover": { bgcolor: "action.hover" },
 							bgcolor: "background.paper",
 							border: "1px solid",
 							borderColor: "divider",
-							"&:hover": { bgcolor: "action.hover" },
+							float: "right",
+							ml: 1,
+							p: 0.5,
+							position: "sticky",
+							top: 4,
 						}}
 					>
 						{copied ? (
-							<CheckIcon sx={{ fontSize: 14, color: "success.main" }} />
+							<CheckIcon sx={{ color: "success.main", fontSize: 14 }} />
 						) : (
 							<ContentCopyIcon sx={{ fontSize: 14 }} />
 						)}

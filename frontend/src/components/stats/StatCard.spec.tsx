@@ -1,9 +1,8 @@
 import React from "react";
-import { render, screen, act } from "@testing-library/react";
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { act, render, screen } from "@testing-library/react";
 import StatCard from "./StatCard";
 
-describe("StatCard", () => {
+describe(StatCard, () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.useFakeTimers();

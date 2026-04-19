@@ -1,7 +1,6 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import AppShell from "./AppShell";
 import JobManagementPage from "./JobManagementPage";
 import StatsPage from "./StatsPage";
@@ -9,82 +8,104 @@ import KanbanBoard from "./KanbanBoard";
 import { api } from "../api";
 import type { Job, User } from "../types";
 
-vi.mock("../api", () => ({
-	api: {
-		getJobs: vi.fn(),
-		getJob: vi.fn(),
-		createJob: vi.fn(),
-		updateJob: vi.fn(),
-		deleteJob: vi.fn(),
-		getStats: vi.fn(),
-		getInterviews: vi.fn(),
-		getQuestions: vi.fn(),
-	},
-}));
+vi.mock(
+	import("../api"),
+	() =>
+		({
+			api: {
+				createJob: vi.fn(),
+				deleteJob: vi.fn(),
+				getInterviews: vi.fn(),
+				getJob: vi.fn(),
+				getJobs: vi.fn(),
+				getQuestions: vi.fn(),
+				getStats: vi.fn(),
+				updateJob: vi.fn(),
+			},
+		}) as any,
+);
 
-vi.mock("./KanbanBoard", () => ({ default: vi.fn() }));
-vi.mock("./CompanyLogo", () => ({
-	default: ({ company }: { company: string }) => (
-		<span
-			data-testid="company-logo"
-			data-company={company}
-			aria-hidden="true"
-		/>
-	),
-}));
-vi.mock("./StatsPage", () => ({
-	default: vi.fn(() => <div data-testid="stats-page" />),
-}));
+vi.mock(import("./KanbanBoard"), () => ({ default: vi.fn() }) as any);
+vi.mock(
+	import("./CompanyLogo"),
+	() =>
+		({
+			default: ({ company }: { company: string }) => (
+				<span
+					data-testid="company-logo"
+					data-company={company}
+					aria-hidden="true"
+				/>
+			),
+		}) as any,
+);
+vi.mock(
+	import("./StatsPage"),
+	() =>
+		({
+			default: vi.fn(() => <div data-testid="stats-page" />),
+		}) as any,
+);
 
-vi.mock("@dnd-kit/core", () => ({
-	DndContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-	DragOverlay: () => null,
-	useDraggable: () => ({
-		attributes: {},
-		listeners: {},
-		setNodeRef: () => {},
-		transform: null,
-		isDragging: false,
-	}),
-	useDroppable: () => ({ setNodeRef: () => {}, isOver: false }),
-	pointerWithin: () => [],
-}));
+vi.mock(
+	import("@dnd-kit/core"),
+	() =>
+		({
+			DndContext: ({ children }: { children: React.ReactNode }) => (
+				<>{children}</>
+			),
+			DragOverlay: () => null,
+			pointerWithin: () => [],
+			useDraggable: () => ({
+				attributes: {},
+				listeners: {},
+				setNodeRef: () => {},
+				transform: null,
+				isDragging: false,
+			}),
+			useDroppable: () => ({ setNodeRef: () => {}, isOver: false }),
+		}) as any,
+);
 
-vi.mock("@dnd-kit/utilities", () => ({
-	CSS: { Translate: { toString: () => "" } },
-}));
+vi.mock(
+	import("@dnd-kit/utilities"),
+	() =>
+		({
+			CSS: { Translate: { toString: () => "" } },
+		}) as any,
+);
 
 const mockGetJobs = vi.mocked(api.getJobs);
 const mockGetJob = vi.mocked(api.getJob);
 const MockKanbanBoard = vi.mocked(KanbanBoard);
 
 const MOCK_USER: User = {
-	id: 1,
-	email: "test@example.com",
-	displayName: "Test User",
 	avatarUrl: "https://example.com/avatar.jpg",
+	displayName: "Test User",
+	email: "test@example.com",
+	id: 1,
 };
 
 const MOCK_ON_LOGOUT = vi.fn();
 
 const makeJob = (overrides: Partial<Job> & Pick<Job, "id">): Job => ({
 	company: "Acme",
-	role: "Engineer",
-	link: "https://acme.com",
-	status: "Not started",
-	fit_score: null,
-	salary: null,
-	date_applied: null,
-	recruiter: null,
-	notes: null,
-	job_description: null,
-	referred_by: null,
-	ending_substatus: null,
-	date_phone_screen: null,
-	date_last_onsite: null,
-	favorite: false,
-	tags: [],
 	created_at: "2024-01-01T00:00:00.000Z",
+	date_applied: null,
+	date_last_onsite: null,
+	date_phone_screen: null,
+	ending_substatus: null,
+	favorite: false,
+	fit_score: null,
+	job_description: null,
+	link: "https://acme.com",
+	notes: null,
+	recruiter: null,
+	referred_by: null,
+	role: "Engineer",
+	salary: null,
+	status: "Not started",
+	tags: [],
 	updated_at: "2024-01-01T00:00:00.000Z",
 	...overrides,
 });
@@ -106,7 +127,7 @@ function renderPage(initialPath = "/jobs", onLogout = MOCK_ON_LOGOUT) {
 	);
 }
 
-describe("JobManagementPage", () => {
+describe(JobManagementPage, () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.mocked(api.getInterviews).mockResolvedValue([]);
@@ -145,7 +166,7 @@ describe("JobManagementPage", () => {
 
 	it("renders job cards returned from the API", async () => {
 		mockGetJobs.mockResolvedValue([
-			makeJob({ id: 1, company: "TechCorp", role: "Dev" }),
+			makeJob({ company: "TechCorp", id: 1, role: "Dev" }),
 		]);
 		renderPage();
 		await waitFor(() => {
@@ -155,8 +176,8 @@ describe("JobManagementPage", () => {
 
 	it("filters jobs by company name when searching", async () => {
 		mockGetJobs.mockResolvedValue([
-			makeJob({ id: 1, company: "TechCorp", role: "Dev" }),
-			makeJob({ id: 2, company: "HealthCo", role: "PM" }),
+			makeJob({ company: "TechCorp", id: 1, role: "Dev" }),
+			makeJob({ company: "HealthCo", id: 2, role: "PM" }),
 		]);
 		renderPage();
 		await waitFor(() => {
@@ -173,8 +194,8 @@ describe("JobManagementPage", () => {
 
 	it("filters jobs by role name when searching", async () => {
 		mockGetJobs.mockResolvedValue([
-			makeJob({ id: 1, company: "Acme", role: "Frontend Engineer" }),
-			makeJob({ id: 2, company: "Beta", role: "Product Manager" }),
+			makeJob({ company: "Acme", id: 1, role: "Frontend Engineer" }),
+			makeJob({ company: "Beta", id: 2, role: "Product Manager" }),
 		]);
 		renderPage();
 		await waitFor(() => {
@@ -191,8 +212,8 @@ describe("JobManagementPage", () => {
 
 	it("filters jobs to favorites only when the Favorites button is toggled", async () => {
 		mockGetJobs.mockResolvedValue([
-			makeJob({ id: 1, company: "Starred Co", favorite: true }),
-			makeJob({ id: 2, company: "Plain Co", favorite: false }),
+			makeJob({ company: "Starred Co", favorite: true, id: 1 }),
+			makeJob({ company: "Plain Co", favorite: false, id: 2 }),
 		]);
 		renderPage();
 		await waitFor(() => {
@@ -208,16 +229,16 @@ describe("JobManagementPage", () => {
 	it("hides withdrawn jobs by default but keeps rejections visible", async () => {
 		mockGetJobs.mockResolvedValue([
 			makeJob({
-				id: 1,
 				company: "Withdrawn Co",
-				status: "Rejected/Withdrawn",
 				ending_substatus: "Withdrawn",
+				id: 1,
+				status: "Rejected/Withdrawn",
 			}),
 			makeJob({
-				id: 2,
 				company: "Rejected Co",
-				status: "Rejected/Withdrawn",
 				ending_substatus: "Rejected",
+				id: 2,
+				status: "Rejected/Withdrawn",
 			}),
 		]);
 		renderPage();
@@ -239,9 +260,9 @@ describe("JobManagementPage", () => {
 
 	it("filters jobs by minimum fit score", async () => {
 		mockGetJobs.mockResolvedValue([
-			makeJob({ id: 1, company: "High Co", fit_score: "High" }),
-			makeJob({ id: 2, company: "Low Co", fit_score: "Low" }),
-			makeJob({ id: 3, company: "Unsure Co", fit_score: null }),
+			makeJob({ company: "High Co", fit_score: "High", id: 1 }),
+			makeJob({ company: "Low Co", fit_score: "Low", id: 2 }),
+			makeJob({ company: "Unsure Co", fit_score: null, id: 3 }),
 		]);
 		renderPage();
 		await waitFor(() => {
@@ -262,12 +283,12 @@ describe("JobManagementPage", () => {
 	it("shows a Clear filters button in the Filters popover and resets filters on click", async () => {
 		mockGetJobs.mockResolvedValue([
 			makeJob({
-				id: 1,
 				company: "Withdrawn Co",
-				status: "Rejected/Withdrawn",
 				ending_substatus: "Withdrawn",
+				id: 1,
+				status: "Rejected/Withdrawn",
 			}),
-			makeJob({ id: 2, company: "Normal Co" }),
+			makeJob({ company: "Normal Co", id: 2 }),
 		]);
 		renderPage();
 		await waitFor(() =>
@@ -295,9 +316,9 @@ describe("JobManagementPage", () => {
 
 	it("filters jobs by tag — shows only jobs with at least one selected tag", async () => {
 		mockGetJobs.mockResolvedValue([
-			makeJob({ id: 1, company: "Remote Co", tags: ["remote"] }),
-			makeJob({ id: 2, company: "FAANG Co", tags: ["faang"] }),
-			makeJob({ id: 3, company: "No Tag Co", tags: [] }),
+			makeJob({ company: "Remote Co", id: 1, tags: ["remote"] }),
+			makeJob({ company: "FAANG Co", id: 2, tags: ["faang"] }),
+			makeJob({ company: "No Tag Co", id: 3, tags: [] }),
 		]);
 		renderPage();
 		await waitFor(() =>
@@ -314,9 +335,9 @@ describe("JobManagementPage", () => {
 
 	it("tag filter uses OR logic — shows jobs matching any selected tag", async () => {
 		mockGetJobs.mockResolvedValue([
-			makeJob({ id: 1, company: "Remote Co", tags: ["remote"] }),
-			makeJob({ id: 2, company: "FAANG Co", tags: ["faang"] }),
-			makeJob({ id: 3, company: "No Tag Co", tags: [] }),
+			makeJob({ company: "Remote Co", id: 1, tags: ["remote"] }),
+			makeJob({ company: "FAANG Co", id: 2, tags: ["faang"] }),
+			makeJob({ company: "No Tag Co", id: 3, tags: [] }),
 		]);
 		renderPage();
 		await waitFor(() =>
@@ -381,7 +402,7 @@ describe("JobManagementPage", () => {
 
 	describe("URL-based edit dialog", () => {
 		it("opens the edit dialog when navigated to /jobs/:jobId", async () => {
-			const job = makeJob({ id: 42, company: "DeepLink Co" });
+			const job = makeJob({ company: "DeepLink Co", id: 42 });
 			mockGetJobs.mockResolvedValue([job]);
 			mockGetJob.mockResolvedValue(job);
 
@@ -395,7 +416,7 @@ describe("JobManagementPage", () => {
 		});
 
 		it("redirects to /jobs when the jobId in the URL does not exist", async () => {
-			mockGetJobs.mockResolvedValue([makeJob({ id: 1, company: "Acme" })]);
+			mockGetJobs.mockResolvedValue([makeJob({ company: "Acme", id: 1 })]);
 
 			renderPage("/jobs/999");
 
@@ -413,29 +434,29 @@ describe("JobManagementPage", () => {
 	describe("status change", () => {
 		it("clears ending_substatus when dragging a job to a non-terminal status", async () => {
 			const job = makeJob({
+				ending_substatus: "Rejected",
 				id: 1,
 				status: "Rejected/Withdrawn",
-				ending_substatus: "Rejected",
 			});
 			mockGetJobs.mockResolvedValue([job]);
 			vi.mocked(api.updateJob).mockResolvedValue({
 				...job,
-				status: "Resume submitted",
 				ending_substatus: null,
+				status: "Resume submitted",
 			});
 
 			renderPage();
 			await waitFor(() => expect(MockKanbanBoard).toHaveBeenCalled());
 
-			const { onStatusChange } = MockKanbanBoard.mock.lastCall![0];
+			const [{ onStatusChange }] = MockKanbanBoard.mock.lastCall!;
 			onStatusChange(job, "Resume submitted");
 
 			await waitFor(() => {
 				expect(vi.mocked(api.updateJob)).toHaveBeenCalledWith(
 					1,
 					expect.objectContaining({
-						status: "Resume submitted",
 						ending_substatus: null,
+						status: "Resume submitted",
 					}),
 				);
 			});
@@ -444,7 +465,7 @@ describe("JobManagementPage", () => {
 
 	describe("stats view", () => {
 		it("shows the stats page and hides the board when the Insights button is clicked", async () => {
-			mockGetJobs.mockResolvedValue([makeJob({ id: 1, company: "Acme" })]);
+			mockGetJobs.mockResolvedValue([makeJob({ company: "Acme", id: 1 })]);
 			renderPage();
 			await waitFor(() => expect(screen.getByText("Acme")).toBeInTheDocument());
 
@@ -558,15 +579,15 @@ describe("JobManagementPage", () => {
 		});
 
 		it("strips notes and job_description from state after a status change", async () => {
-			const job = makeJob({ id: 1, company: "Acme" });
+			const job = makeJob({ company: "Acme", id: 1 });
 			mockGetJobs.mockResolvedValue([job]);
 			// API returns a full job (with notes) after the status change PUT
 			vi.mocked(api.updateJob).mockResolvedValue(
 				makeJob({
-					id: 1,
 					company: "Acme",
-					notes: "secret",
+					id: 1,
 					job_description: "secret jd",
+					notes: "secret",
 				}),
 			);
 

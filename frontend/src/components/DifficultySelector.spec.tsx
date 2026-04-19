@@ -1,18 +1,17 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import DifficultySelector from "./DifficultySelector";
 
 // The dots have no accessible roles or labels; query via DOM structure:
-// screen.getByText("Difficulty") → <span> Typography
+// Screen.getByText("Difficulty") → <span> Typography
 // .nextElementSibling → <div> Box containing 5 dot divs
 function getDots(): Element[] {
 	const label = screen.getByText("Difficulty");
 	const dotsContainer = label.nextElementSibling as HTMLElement;
-	return Array.from(dotsContainer.children);
+	return [...dotsContainer.children];
 }
 
-describe("DifficultySelector", () => {
+describe(DifficultySelector, () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});

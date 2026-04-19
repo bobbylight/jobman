@@ -14,7 +14,7 @@ export default function CompanyLogo({ company, size = 20 }: Props) {
 			src={src ?? undefined}
 			alt={company}
 			data-testid="company-logo"
-			sx={{ width: size, height: size, fontSize: size * 0.5, flexShrink: 0 }}
+			sx={{ flexShrink: 0, fontSize: size * 0.5, height: size, width: size }}
 		>
 			{company.charAt(0).toUpperCase()}
 		</Avatar>

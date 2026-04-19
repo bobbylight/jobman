@@ -1,22 +1,22 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-	Dialog,
-	DialogTitle,
-	DialogContent,
-	DialogActions,
-	Autocomplete,
 	Alert,
+	Autocomplete,
+	Box,
 	Button,
 	Chip,
 	CircularProgress,
-	TextField,
-	MenuItem,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogTitle,
 	Grid,
 	IconButton,
+	Link,
+	MenuItem,
+	TextField,
 	Tooltip,
 	Typography,
-	Box,
-	Link,
 } from "@mui/material";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
@@ -28,45 +28,45 @@ import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
-	JOB_MAX_LENGTHS,
-	STATUSES,
-	FIT_SCORES,
 	ENDING_SUBSTATUSES,
-	TERMINAL_STATUSES,
+	FIT_SCORES,
+	JOB_MAX_LENGTHS,
 	JOB_TAGS,
+	STATUSES,
 	TAG_LABELS,
+	TERMINAL_STATUSES,
 	tagChipProps,
 } from "../constants";
 import CompanyLogo from "./CompanyLogo";
 import MarkdownField from "./MarkdownField";
 import { api } from "../api";
 import type {
-	JobFormData,
+	EndingSubstatus,
 	FitScore,
+	Interview,
+	JobFormData,
 	JobStatus,
 	JobTag,
-	EndingSubstatus,
-	Interview,
 } from "../types";
 
 const EMPTY: JobFormData = {
-	date_applied: null,
 	company: "",
-	role: "",
-	link: "",
-	salary: null,
-	fit_score: null,
-	referred_by: null,
-	status: "Not started",
-	recruiter: null,
-	notes: null,
-	job_description: null,
-	ending_substatus: null,
-	date_phone_screen: null,
+	date_applied: null,
 	date_last_onsite: null,
-	updated_at: "",
+	date_phone_screen: null,
+	ending_substatus: null,
 	favorite: false,
+	fit_score: null,
+	job_description: null,
+	link: "",
+	notes: null,
+	recruiter: null,
+	referred_by: null,
+	role: "",
+	salary: null,
+	status: "Not started",
 	tags: [],
+	updated_at: "",
 };
 
 interface Props {
@@ -74,7 +74,7 @@ interface Props {
 	onClose: () => void;
 	onSave: (data: JobFormData) => void;
 	onDelete: (id: number) => void;
-	/** null = "add new job" mode; a number = edit the job with that ID */
+	/** Null = "add new job" mode; a number = edit the job with that ID */
 	jobId: number | null;
 }
 
@@ -101,7 +101,9 @@ export default function JobDialog({
 	const abortRef = useRef<AbortController | null>(null);
 
 	useEffect(() => {
-		if (!open) return;
+		if (!open) {
+			return;
+		}
 
 		// Reset all state on open
 		setForm(EMPTY);
@@ -126,12 +128,16 @@ export default function JobDialog({
 		api
 			.getJob(jobId)
 			.then((job) => {
-				if (controller.signal.aborted) return;
+				if (controller.signal.aborted) {
+					return;
+				}
 				setForm({ ...EMPTY, ...job });
 				setLoadingJob(false);
 			})
 			.catch(() => {
-				if (controller.signal.aborted) return;
+				if (controller.signal.aborted) {
+					return;
+				}
 				setLoadError("Failed to load job. Please close and try again.");
 				setLoadingJob(false);
 			});
@@ -142,57 +148,75 @@ export default function JobDialog({
 	}, [open, jobId]);
 
 	function handleClose(_: unknown, reason?: string) {
-		if (reason === "backdropClick") return;
+		if (reason === "backdropClick") {
+			return;
+		}
 		abortRef.current?.abort();
 		onClose();
 	}
 
 	function set<K extends keyof JobFormData>(field: K, value: JobFormData[K]) {
 		setForm((f) => ({ ...f, [field]: value }));
-		// exactOptionalPropertyTypes: can't assign undefined to an optional property —
-		// delete the key instead to properly clear the error.
-		if (errors[field]) setErrors(({ [field]: _, ...rest }) => rest);
+		// ExactOptionalPropertyTypes: can't assign undefined to an optional property —
+		// Delete the key instead to properly clear the error.
+		if (errors[field]) {
+			setErrors(({ [field]: _, ...rest }) => rest);
+		}
 	}
 
 	function validate() {
 		const e: typeof errors = {};
-		if (!form.company?.trim()) e.company = "Required";
-		else if (form.company.length > JOB_MAX_LENGTHS.company)
+		if (!form.company?.trim()) {
+			e.company = "Required";
+		} else if (form.company.length > JOB_MAX_LENGTHS.company) {
 			e.company = `Must be ${JOB_MAX_LENGTHS.company.toLocaleString()} characters or fewer`;
+		}
 
-		if (!form.role?.trim()) e.role = "Required";
-		else if (form.role.length > JOB_MAX_LENGTHS.role)
+		if (!form.role?.trim()) {
+			e.role = "Required";
+		} else if (form.role.length > JOB_MAX_LENGTHS.role) {
 			e.role = `Must be ${JOB_MAX_LENGTHS.role.toLocaleString()} characters or fewer`;
+		}
 
-		if (!form.link?.trim()) e.link = "Required";
-		else if (form.link.length > JOB_MAX_LENGTHS.link)
+		if (!form.link?.trim()) {
+			e.link = "Required";
+		} else if (form.link.length > JOB_MAX_LENGTHS.link) {
 			e.link = `Must be ${JOB_MAX_LENGTHS.link.toLocaleString()} characters or fewer`;
+		}
 
-		if (form.salary && form.salary.length > JOB_MAX_LENGTHS.salary)
+		if (form.salary && form.salary.length > JOB_MAX_LENGTHS.salary) {
 			e.salary = `Must be ${JOB_MAX_LENGTHS.salary.toLocaleString()} characters or fewer`;
-		if (form.recruiter && form.recruiter.length > JOB_MAX_LENGTHS.recruiter)
+		}
+		if (form.recruiter && form.recruiter.length > JOB_MAX_LENGTHS.recruiter) {
 			e.recruiter = `Must be ${JOB_MAX_LENGTHS.recruiter.toLocaleString()} characters or fewer`;
+		}
 		if (
 			form.referred_by &&
 			form.referred_by.length > JOB_MAX_LENGTHS.referred_by
-		)
+		) {
 			e.referred_by = `Must be ${JOB_MAX_LENGTHS.referred_by.toLocaleString()} characters or fewer`;
-		if (form.notes && form.notes.length > JOB_MAX_LENGTHS.notes)
+		}
+		if (form.notes && form.notes.length > JOB_MAX_LENGTHS.notes) {
 			e.notes = `Must be ${JOB_MAX_LENGTHS.notes.toLocaleString()} characters or fewer`;
+		}
 		if (
 			form.job_description &&
 			form.job_description.length > JOB_MAX_LENGTHS.job_description
-		)
+		) {
 			e.job_description = `Must be ${JOB_MAX_LENGTHS.job_description.toLocaleString()} characters or fewer`;
+		}
 
-		if (TERMINAL_STATUSES.has(form.status) && !form.ending_substatus)
+		if (TERMINAL_STATUSES.has(form.status) && !form.ending_substatus) {
 			e.ending_substatus = "Required for this status";
+		}
 		setErrors(e);
 		return Object.keys(e).length === 0;
 	}
 
 	function handleSave() {
-		if (!validate()) return;
+		if (!validate()) {
+			return;
+		}
 		onSave(form);
 	}
 
@@ -203,7 +227,7 @@ export default function JobDialog({
 			onClose={() => setConfirmDelete(false)}
 			maxWidth="xs"
 		>
-			<DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+			<DialogTitle sx={{ alignItems: "center", display: "flex", gap: 1 }}>
 				<WarningAmberIcon color="warning" />
 				Delete job?
 			</DialogTitle>
@@ -233,7 +257,7 @@ export default function JobDialog({
 		</Dialog>
 	);
 
-	const formDisabled = loadingJob || !!loadError;
+	const formDisabled = loadingJob || Boolean(loadError);
 
 	// ── Main dialog ────────────────────────────────────────────────────────────
 	return (
@@ -241,19 +265,19 @@ export default function JobDialog({
 			<Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
 				<DialogTitle
 					sx={{
-						display: "flex",
 						alignItems: "center",
+						display: "flex",
 						justifyContent: "space-between",
 					}}
 				>
 					{isEdit ? (
 						<Box
 							sx={{
-								display: "flex",
 								alignItems: "center",
+								display: "flex",
+								flex: 1,
 								gap: 1,
 								minWidth: 0,
-								flex: 1,
 								mr: 1,
 							}}
 						>
@@ -274,7 +298,7 @@ export default function JobDialog({
 					) : (
 						"Add Job"
 					)}
-					<Box sx={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+					<Box sx={{ alignItems: "center", display: "flex", flexShrink: 0 }}>
 						{!formDisabled && (
 							<Tooltip title={form.favorite ? "Unfavorite" : "Favorite"}>
 								<IconButton
@@ -302,7 +326,7 @@ export default function JobDialog({
 					<Tabs
 						value={activeTab}
 						onChange={(_: React.SyntheticEvent, v: number) => setActiveTab(v)}
-						sx={{ px: 3, borderBottom: 1, borderColor: "divider" }}
+						sx={{ borderBottom: 1, borderColor: "divider", px: 3 }}
 					>
 						<Tab label="Details" />
 						<Tab
@@ -333,16 +357,16 @@ export default function JobDialog({
 					<Box
 						component="fieldset"
 						disabled={formDisabled}
-						sx={{ border: "none", p: 0, m: 0, minWidth: 0 }}
+						sx={{ border: "none", m: 0, minWidth: 0, p: 0 }}
 					>
 						<Box sx={{ display: activeTab === 0 ? "block" : "none" }}>
 							<Grid container spacing={2} sx={{ pt: 0.5 }}>
-								<Grid size={{ xs: 12, sm: 6 }}>
+								<Grid size={{ sm: 6, xs: 12 }}>
 									<TextField
 										label="Company *"
 										value={form.company}
 										onChange={(e) => set("company", e.target.value)}
-										error={!!errors.company}
+										error={Boolean(errors.company)}
 										helperText={errors.company}
 										fullWidth
 										size="small"
@@ -351,12 +375,12 @@ export default function JobDialog({
 										}}
 									/>
 								</Grid>
-								<Grid size={{ xs: 12, sm: 6 }}>
+								<Grid size={{ sm: 6, xs: 12 }}>
 									<TextField
 										label="Role *"
 										value={form.role}
 										onChange={(e) => set("role", e.target.value)}
-										error={!!errors.role}
+										error={Boolean(errors.role)}
 										helperText={errors.role}
 										fullWidth
 										size="small"
@@ -367,7 +391,7 @@ export default function JobDialog({
 								</Grid>
 								<Grid size={12}>
 									{isEdit && !linkEditing ? (
-										<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+										<Box sx={{ alignItems: "center", display: "flex", gap: 1 }}>
 											<Link
 												href={form.link}
 												target="_blank"
@@ -390,7 +414,7 @@ export default function JobDialog({
 											label="Link *"
 											value={form.link}
 											onChange={(e) => set("link", e.target.value)}
-											error={!!errors.link}
+											error={Boolean(errors.link)}
 											helperText={errors.link}
 											fullWidth
 											size="small"
@@ -402,7 +426,7 @@ export default function JobDialog({
 									)}
 								</Grid>
 
-								<Grid size={{ xs: 12, sm: 6 }}>
+								<Grid size={{ sm: 6, xs: 12 }}>
 									<TextField
 										select
 										label="Status"
@@ -412,15 +436,17 @@ export default function JobDialog({
 											const isTerminal = TERMINAL_STATUSES.has(newStatus);
 											setForm((f) => ({
 												...f,
-												status: newStatus,
 												ending_substatus: isTerminal
 													? f.ending_substatus
 													: null,
+												status: newStatus,
 											}));
-											if (errors.status)
+											if (errors.status) {
 												setErrors(({ status: _, ...rest }) => rest);
-											if (!isTerminal)
+											}
+											if (!isTerminal) {
 												setErrors(({ ending_substatus: _, ...rest }) => rest);
+											}
 										}}
 										fullWidth
 										size="small"
@@ -433,7 +459,7 @@ export default function JobDialog({
 									</TextField>
 								</Grid>
 
-								<Grid size={{ xs: 12, sm: 6 }}>
+								<Grid size={{ sm: 6, xs: 12 }}>
 									<TextField
 										select
 										label="Final Resolution"
@@ -445,7 +471,7 @@ export default function JobDialog({
 											)
 										}
 										disabled={!TERMINAL_STATUSES.has(form.status)}
-										error={!!errors.ending_substatus}
+										error={Boolean(errors.ending_substatus)}
 										helperText={errors.ending_substatus}
 										fullWidth
 										size="small"
@@ -461,7 +487,7 @@ export default function JobDialog({
 									</TextField>
 								</Grid>
 
-								<Grid size={{ xs: 12, sm: 6 }}>
+								<Grid size={{ sm: 6, xs: 12 }}>
 									<TextField
 										select
 										label="Fit Score"
@@ -486,7 +512,7 @@ export default function JobDialog({
 									</TextField>
 								</Grid>
 
-								<Grid size={{ xs: 12, sm: 6 }}>
+								<Grid size={{ sm: 6, xs: 12 }}>
 									<TextField
 										label="Date Applied"
 										type="date"
@@ -500,7 +526,7 @@ export default function JobDialog({
 									/>
 								</Grid>
 
-								<Grid size={{ xs: 12, sm: 6 }}>
+								<Grid size={{ sm: 6, xs: 12 }}>
 									<TextField
 										label="Phone Screen Date"
 										type="datetime-local"
@@ -513,7 +539,7 @@ export default function JobDialog({
 										slotProps={{ inputLabel: { shrink: true } }}
 									/>
 								</Grid>
-								<Grid size={{ xs: 12, sm: 6 }}>
+								<Grid size={{ sm: 6, xs: 12 }}>
 									<TextField
 										label="Last Onsite Date"
 										type="datetime-local"
@@ -527,12 +553,12 @@ export default function JobDialog({
 									/>
 								</Grid>
 
-								<Grid size={{ xs: 12, sm: 6 }}>
+								<Grid size={{ sm: 6, xs: 12 }}>
 									<TextField
 										label="Salary"
 										value={form.salary ?? ""}
 										onChange={(e) => set("salary", e.target.value || null)}
-										error={!!errors.salary}
+										error={Boolean(errors.salary)}
 										helperText={errors.salary}
 										fullWidth
 										size="small"
@@ -543,12 +569,12 @@ export default function JobDialog({
 									/>
 								</Grid>
 
-								<Grid size={{ xs: 12, sm: 6 }}>
+								<Grid size={{ sm: 6, xs: 12 }}>
 									<TextField
 										label="Recruiter"
 										value={form.recruiter ?? ""}
 										onChange={(e) => set("recruiter", e.target.value || null)}
-										error={!!errors.recruiter}
+										error={Boolean(errors.recruiter)}
 										helperText={errors.recruiter}
 										fullWidth
 										size="small"
@@ -617,12 +643,12 @@ export default function JobDialog({
 									)}
 								</Grid>
 
-								<Grid size={{ xs: 12, sm: 6 }}>
+								<Grid size={{ sm: 6, xs: 12 }}>
 									<TextField
 										label="Referred By"
 										value={form.referred_by ?? ""}
 										onChange={(e) => set("referred_by", e.target.value || null)}
-										error={!!errors.referred_by}
+										error={Boolean(errors.referred_by)}
 										helperText={errors.referred_by}
 										fullWidth
 										size="small"
@@ -647,16 +673,11 @@ export default function JobDialog({
 
 				<DialogActions
 					sx={{
+						justifyContent: (activeTab === 1 ? viewingQuestionsFor : isEdit)
+							? "space-between"
+							: "flex-end",
 						px: 3,
 						py: 2,
-						justifyContent:
-							activeTab === 1
-								? viewingQuestionsFor
-									? "space-between"
-									: "flex-end"
-								: isEdit
-									? "space-between"
-									: "flex-end",
 					}}
 				>
 					{activeTab === 0 && (

@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-	ThemeProvider,
-	CssBaseline,
 	Box,
 	CircularProgress,
+	CssBaseline,
+	ThemeProvider,
 } from "@mui/material";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import theme from "./theme";
 import { api, setUnauthorizedHandler } from "./api";
 import type { User } from "./types";
@@ -16,7 +16,7 @@ import InterviewsPage from "./components/InterviewsPage";
 import StatsPage from "./components/StatsPage";
 
 export default function App() {
-	// undefined = auth check in progress, null = unauthenticated, User = authenticated
+	// Undefined = auth check in progress, null = unauthenticated, User = authenticated
 	const [currentUser, setCurrentUser] = useState<User | null | undefined>(
 		undefined,
 	);

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, Typography, Box } from "@mui/material";
+import { Box, Card, CardContent, Typography } from "@mui/material";
 
 const DURATION = 600;
 const INTERVAL = 20;
@@ -43,11 +43,11 @@ export default function StatCard({ label, value, suffix, subtitle }: Props) {
 				<Typography
 					variant="overline"
 					color="text.secondary"
-					sx={{ lineHeight: 1.2, display: "block", mb: 0.5 }}
+					sx={{ display: "block", lineHeight: 1.2, mb: 0.5 }}
 				>
 					{label}
 				</Typography>
-				<Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+				<Box sx={{ alignItems: "baseline", display: "flex", gap: 1 }}>
 					<Typography variant="h4" fontWeight={700} lineHeight={1}>
 						{value === null ? "—" : `${displayed}${suffix ?? ""}`}
 					</Typography>
@@ -56,7 +56,7 @@ export default function StatCard({ label, value, suffix, subtitle }: Props) {
 					<Typography
 						variant="caption"
 						color="text.secondary"
-						sx={{ mt: 0.5, display: "block" }}
+						sx={{ display: "block", mt: 0.5 }}
 					>
 						{subtitle}
 					</Typography>

@@ -1,6 +1,11 @@
-import React, { useState, useMemo, memo } from "react";
-import { DndContext, DragOverlay, pointerWithin } from "@dnd-kit/core";
-import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
+import React, { memo, useMemo, useState } from "react";
+import {
+	DndContext,
+	DragOverlay,
+	pointerWithin,
+	type DragEndEvent,
+	type DragStartEvent,
+} from "@dnd-kit/core";
 import { Box } from "@mui/material";
 import { STATUSES } from "../constants";
 import type { Job, JobStatus } from "../types";
@@ -42,11 +47,17 @@ export default memo(function KanbanBoard({
 
 	function handleDragEnd({ active, over }: DragEndEvent) {
 		setActiveJob(null);
-		if (!over) return;
+		if (!over) {
+			return;
+		}
 		const job = (active.data.current as { job: Job } | undefined)?.job;
-		if (!job) return;
+		if (!job) {
+			return;
+		}
 		const newStatus = over.id as JobStatus;
-		if (newStatus === job.status) return;
+		if (newStatus === job.status) {
+			return;
+		}
 		onStatusChange(job, newStatus);
 	}
 
@@ -58,13 +69,13 @@ export default memo(function KanbanBoard({
 		>
 			<Box
 				sx={{
+					alignItems: "stretch",
 					display: "flex",
 					gap: 0,
+					minHeight: "calc(100vh - 80px)",
 					overflowX: "auto",
 					pb: 2,
 					px: 3,
-					alignItems: "stretch",
-					minHeight: "calc(100vh - 80px)",
 				}}
 			>
 				{STATUSES.map((status) => (

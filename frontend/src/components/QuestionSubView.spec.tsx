@@ -1,61 +1,60 @@
 import React from "react";
 import {
+	fireEvent,
 	render,
 	screen,
-	fireEvent,
 	waitFor,
 	within,
 } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
 import QuestionSubView from "./QuestionSubView";
 import { api } from "../api";
 import type { Interview, InterviewQuestion } from "../types";
 
-vi.mock("../api");
+vi.mock(import("../api"));
 
 const BASE_INTERVIEW: Interview = {
 	id: 10,
-	job_id: 42,
-	interview_stage: "phone_screen",
 	interview_dttm: "2024-03-12T14:00",
 	interview_interviewers: "Jane Smith",
+	interview_notes: null,
+	interview_stage: "phone_screen",
 	interview_type: null,
 	interview_vibe: "casual",
-	interview_notes: null,
+	job_id: 42,
 };
 
 const makeQuestion = (
 	overrides: Partial<InterviewQuestion> = {},
 ): InterviewQuestion => ({
+	difficulty: 3,
 	id: 1,
 	interview_id: 10,
-	question_type: "behavioral",
-	question_text: "Tell me about yourself",
 	question_notes: null,
-	difficulty: 3,
+	question_text: "Tell me about yourself",
+	question_type: "behavioral",
 	...overrides,
 });
 
 const QUESTION_A = makeQuestion({
-	id: 1,
-	question_type: "behavioral",
-	question_text: "Tell me about yourself",
 	difficulty: 3,
+	id: 1,
+	question_text: "Tell me about yourself",
+	question_type: "behavioral",
 });
 
 const QUESTION_B = makeQuestion({
-	id: 2,
-	question_type: "technical",
-	question_text: "Explain closures in JavaScript",
 	difficulty: 4,
+	id: 2,
+	question_text: "Explain closures in JavaScript",
+	question_type: "technical",
 });
 
 const DEFAULT_PROPS = {
-	jobId: 42,
 	interview: BASE_INTERVIEW,
+	jobId: 42,
 };
 
-describe("QuestionSubView", () => {
+describe(QuestionSubView, () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.mocked(api.getQuestions).mockResolvedValue([]);

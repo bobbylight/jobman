@@ -1,33 +1,36 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import PipelineOverTimeChart from "./PipelineOverTimeChart";
 
-vi.mock("recharts", () => ({
-	ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
-		<div data-testid="recharts-container">{children}</div>
-	),
-	AreaChart: ({ children }: { children: React.ReactNode }) => (
-		<div data-testid="area-chart">{children}</div>
-	),
-	Area: ({ dataKey }: { dataKey: string }) => (
-		<div data-testid={`area-${dataKey}`} />
-	),
-	XAxis: () => null,
-	YAxis: () => null,
-	Tooltip: () => null,
-	Legend: () => null,
-}));
+vi.mock(
+	import("recharts"),
+	() =>
+		({
+			Area: ({ dataKey }: { dataKey: string }) => (
+				<div data-testid={`area-${dataKey}`} />
+			),
+			AreaChart: ({ children }: { children: React.ReactNode }) => (
+				<div data-testid="area-chart">{children}</div>
+			),
+			Legend: () => null,
+			ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
+				<div data-testid="recharts-container">{children}</div>
+			),
+			Tooltip: () => null,
+			XAxis: () => null,
+			YAxis: () => null,
+		}) as any,
+);
 
 const STATUS_OVER_TIME = [
-	{ week: "2026-03-01", status: "Not started", count: 5 },
-	{ week: "2026-03-01", status: "Resume submitted", count: 3 },
-	{ week: "2026-03-08", status: "Not started", count: 4 },
-	{ week: "2026-03-08", status: "Resume submitted", count: 4 },
-	{ week: "2026-03-08", status: "Interviewing", count: 1 },
+	{ count: 5, status: "Not started", week: "2026-03-01" },
+	{ count: 3, status: "Resume submitted", week: "2026-03-01" },
+	{ count: 4, status: "Not started", week: "2026-03-08" },
+	{ count: 4, status: "Resume submitted", week: "2026-03-08" },
+	{ count: 1, status: "Interviewing", week: "2026-03-08" },
 ];
 
-describe("PipelineOverTimeChart", () => {
+describe(PipelineOverTimeChart, () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("shows empty state when statusOverTime is empty", () => {

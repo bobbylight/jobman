@@ -13,7 +13,9 @@ export default function LookbackToggle({ value, onChange }: Props) {
 			value={value}
 			exclusive
 			onChange={(_e, v: StatsWindow | null) => {
-				if (v !== null) onChange(v);
+				if (v !== null) {
+					onChange(v);
+				}
 			}}
 			size="small"
 		>

@@ -1,5 +1,4 @@
 import { createHmac } from "node:crypto";
-import { afterEach, describe, expect, it } from "vitest";
 import Database from "better-sqlite3";
 import request from "supertest";
 import { createApp } from "../server.js";
@@ -81,7 +80,7 @@ testDb.exec(SCHEMA);
 testDb.prepare("INSERT INTO users (id, email) VALUES (?, ?)").run(TEST_USER_ID, "test@test.com");
 testDb
 	.prepare("INSERT INTO sessions (sid, sess, expire) VALUES (?, ?, datetime('now', '+7 days'))")
-	.run(TEST_SESSION_ID, JSON.stringify({ userId: TEST_USER_ID, cookie: { originalMaxAge: 604800000 } }));
+	.run(TEST_SESSION_ID, JSON.stringify({ cookie: { originalMaxAge: 604_800_000 }, userId: TEST_USER_ID }));
 
 const sig = createHmac("sha256", SESSION_SECRET)
 	.update(TEST_SESSION_ID)
@@ -101,16 +100,16 @@ afterEach(() => {
 
 const BASE_JOB = {
 	company: "Acme Corp",
-	role: "Engineer",
-	link: "https://acme.example.com/jobs/1",
-	status: "Not started",
-	referred_by: null,
-	favorite: false,
-	salary: null,
-	fit_score: null,
 	date_applied: null,
-	recruiter: null,
+	favorite: false,
+	fit_score: null,
+	link: "https://acme.example.com/jobs/1",
 	notes: null,
+	recruiter: null,
+	referred_by: null,
+	role: "Engineer",
+	salary: null,
+	status: "Not started",
 };
 
 describe("GET /api/jobs", () => {
@@ -126,8 +125,8 @@ describe("GET /api/jobs", () => {
 		it("omits notes and job_description when view=summary", async () => {
 			await req("post", "/api/jobs").send({
 				...BASE_JOB,
-				notes: "some notes",
 				job_description: "job description text",
+				notes: "some notes",
 			});
 			const res = await req("get", "/api/jobs?view=summary");
 			expect(res.status).toBe(200);
@@ -138,8 +137,8 @@ describe("GET /api/jobs", () => {
 		it("defaults to summary when view param is omitted", async () => {
 			await req("post", "/api/jobs").send({
 				...BASE_JOB,
-				notes: "some notes",
 				job_description: "job description text",
+				notes: "some notes",
 			});
 			const res = await req("get", "/api/jobs");
 			expect(res.status).toBe(200);
@@ -150,8 +149,8 @@ describe("GET /api/jobs", () => {
 		it("includes notes and job_description when view=full", async () => {
 			await req("post", "/api/jobs").send({
 				...BASE_JOB,
-				notes: "some notes",
 				job_description: "job description text",
+				notes: "some notes",
 			});
 			const res = await req("get", "/api/jobs?view=full");
 			expect(res.status).toBe(200);
@@ -174,7 +173,7 @@ describe("GET /api/jobs", () => {
 describe("GET /api/jobs/:jobId", () => {
 	it("returns a single job by id", async () => {
 		const createRes = await req("post", "/api/jobs").send(BASE_JOB);
-		const id: number = createRes.body.id;
+		const {id} = createRes.body;
 
 		const res = await req("get", `/api/jobs/${id}`);
 		expect(res.status).toBe(200);
@@ -249,13 +248,13 @@ describe("POST /api/jobs", () => {
 describe("PUT /api/jobs/:id", () => {
 	it("updates an existing job and returns 200 with the updated record", async () => {
 		const createRes = await req("post", "/api/jobs").send(BASE_JOB);
-		const id: number = createRes.body.id;
+		const {id} = createRes.body;
 
 		const res = await req("put", `/api/jobs/${id}`).send({
 			...BASE_JOB,
 			company: "Updated Corp",
-			status: "Resume submitted",
 			referred_by: "Jane Doe",
+			status: "Resume submitted",
 		});
 		expect(res.status).toBe(200);
 		expect(res.body.company).toBe("Updated Corp");
@@ -266,10 +265,10 @@ describe("PUT /api/jobs/:id", () => {
 	it("preserves notes and job_description when they are absent from the request body", async () => {
 		const createRes = await req("post", "/api/jobs").send({
 			...BASE_JOB,
-			notes: "keep me",
 			job_description: "keep me too",
+			notes: "keep me",
 		});
-		const id: number = createRes.body.id;
+		const {id} = createRes.body;
 
 		// Update only status — notes/job_description intentionally omitted from body
 		// (mirrors a summary-state client that never loaded those fields)
@@ -288,7 +287,7 @@ describe("PUT /api/jobs/:id", () => {
 			...BASE_JOB,
 			notes: "clear me",
 		});
-		const id: number = createRes.body.id;
+		const {id} = createRes.body;
 
 		const res = await req("put", `/api/jobs/${id}`).send({
 			...BASE_JOB,
@@ -308,11 +307,11 @@ describe("PUT /api/jobs/:id", () => {
 describe("DELETE /api/jobs/:id", () => {
 	it("deletes a job and returns success", async () => {
 		const createRes = await req("post", "/api/jobs").send(BASE_JOB);
-		const id: number = createRes.body.id;
+		const {id} = createRes.body;
 
 		const res = await req("delete", `/api/jobs/${id}`);
 		expect(res.status).toBe(200);
-		expect(res.body.success).toBe(true);
+		expect(res.body.success).toBeTruthy();
 	});
 
 	it("returns 404 when job does not exist", async () => {
@@ -346,8 +345,8 @@ describe("ending_substatus validation", () => {
 			async (status) => {
 				const res = await req("post", "/api/jobs").send({
 					...BASE_JOB,
-					status,
 					ending_substatus: "Vanished",
+					status,
 				});
 				expect(res.status).toBe(422);
 			},
@@ -358,8 +357,8 @@ describe("ending_substatus validation", () => {
 			async (ending_substatus) => {
 				const res = await req("post", "/api/jobs").send({
 					...BASE_JOB,
-					status: "Offer!",
 					ending_substatus,
+					status: "Offer!",
 				});
 				expect(res.status).toBe(201);
 				expect(res.body.ending_substatus).toBe(ending_substatus);
@@ -371,8 +370,8 @@ describe("ending_substatus validation", () => {
 			async (status) => {
 				const res = await req("post", "/api/jobs").send({
 					...BASE_JOB,
-					status,
 					ending_substatus: "Ghosted",
+					status,
 				});
 				expect(res.status).toBe(422);
 				expect(res.body.error).toMatch(/must be null/);
@@ -389,7 +388,7 @@ describe("ending_substatus validation", () => {
 	describe("PUT /api/jobs/:id", () => {
 		it("returns 422 when updating to terminal status without ending_substatus", async () => {
 			const createRes = await req("post", "/api/jobs").send(BASE_JOB);
-			const id: number = createRes.body.id;
+			const {id} = createRes.body;
 
 			const res = await req("put", `/api/jobs/${id}`).send({
 				...BASE_JOB,
@@ -401,12 +400,12 @@ describe("ending_substatus validation", () => {
 
 		it("accepts a valid ending_substatus when updating to a terminal status", async () => {
 			const createRes = await req("post", "/api/jobs").send(BASE_JOB);
-			const id: number = createRes.body.id;
+			const {id} = createRes.body;
 
 			const res = await req("put", `/api/jobs/${id}`).send({
 				...BASE_JOB,
-				status: "Rejected/Withdrawn",
 				ending_substatus: "Ghosted",
+				status: "Rejected/Withdrawn",
 			});
 			expect(res.status).toBe(200);
 			expect(res.body.ending_substatus).toBe("Ghosted");
@@ -414,12 +413,12 @@ describe("ending_substatus validation", () => {
 
 		it("returns 422 when updating a non-terminal job with a non-null ending_substatus", async () => {
 			const createRes = await req("post", "/api/jobs").send(BASE_JOB);
-			const id: number = createRes.body.id;
+			const {id} = createRes.body;
 
 			const res = await req("put", `/api/jobs/${id}`).send({
 				...BASE_JOB,
-				status: "Resume submitted",
 				ending_substatus: "Ghosted",
+				status: "Resume submitted",
 			});
 			expect(res.status).toBe(422);
 		});
@@ -427,10 +426,10 @@ describe("ending_substatus validation", () => {
 		it("clears ending_substatus when moving from terminal back to non-terminal", async () => {
 			const createRes = await req("post", "/api/jobs").send({
 				...BASE_JOB,
-				status: "Offer!",
 				ending_substatus: "Offer accepted",
+				status: "Offer!",
 			});
-			const id: number = createRes.body.id;
+			const {id} = createRes.body;
 
 			const res = await req("put", `/api/jobs/${id}`).send({
 				...BASE_JOB,
@@ -446,8 +445,8 @@ describe("date_phone_screen and date_last_onsite fields", () => {
 	it("stores provided date fields on create", async () => {
 		const res = await req("post", "/api/jobs").send({
 			...BASE_JOB,
-			date_phone_screen: "2026-03-20T10:00",
 			date_last_onsite: "2026-03-23T09:00",
+			date_phone_screen: "2026-03-20T10:00",
 		});
 		expect(res.status).toBe(201);
 		expect(res.body.date_phone_screen).toBe("2026-03-20T10:00");
@@ -456,12 +455,12 @@ describe("date_phone_screen and date_last_onsite fields", () => {
 
 	it("updates date fields via PUT", async () => {
 		const createRes = await req("post", "/api/jobs").send(BASE_JOB);
-		const id: number = createRes.body.id;
+		const {id} = createRes.body;
 
 		const res = await req("put", `/api/jobs/${id}`).send({
 			...BASE_JOB,
-			date_phone_screen: "2026-03-20T10:00",
 			date_last_onsite: "2026-03-23T09:00",
+			date_phone_screen: "2026-03-20T10:00",
 		});
 		expect(res.status).toBe(200);
 		expect(res.body.date_phone_screen).toBe("2026-03-20T10:00");
@@ -471,15 +470,15 @@ describe("date_phone_screen and date_last_onsite fields", () => {
 	it("clears date fields when PUT sends null values", async () => {
 		const createRes = await req("post", "/api/jobs").send({
 			...BASE_JOB,
-			date_phone_screen: "2026-03-20T10:00",
 			date_last_onsite: "2026-03-23T09:00",
+			date_phone_screen: "2026-03-20T10:00",
 		});
-		const id: number = createRes.body.id;
+		const {id} = createRes.body;
 
 		const res = await req("put", `/api/jobs/${id}`).send({
 			...BASE_JOB,
-			date_phone_screen: null,
 			date_last_onsite: null,
+			date_phone_screen: null,
 		});
 		expect(res.status).toBe(200);
 		expect(res.body.date_phone_screen).toBeNull();
@@ -523,7 +522,7 @@ describe("field length validation", () => {
 			"returns 422 when %s exceeds %d characters",
 			async (field, max) => {
 				const createRes = await req("post", "/api/jobs").send(BASE_JOB);
-				const id: number = createRes.body.id;
+				const {id} = createRes.body;
 
 				const res = await req("put", `/api/jobs/${id}`).send({
 					...BASE_JOB,

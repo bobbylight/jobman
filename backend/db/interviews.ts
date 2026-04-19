@@ -102,9 +102,9 @@ export function jobBelongsToUser(
 	jobId: number,
 	userId: number,
 ): boolean {
-	return !!db
+	return Boolean(db
 		.prepare("SELECT id FROM jobs WHERE id = ? AND user_id = ?")
-		.get(jobId, userId);
+		.get(jobId, userId));
 }
 
 export function listInterviews(
@@ -173,7 +173,7 @@ export function updateInterview(
 			interviewId,
 			jobId,
 		);
-	if (info.changes === 0) return null;
+	if (info.changes === 0) {return null;}
 	return db
 		.prepare("SELECT * FROM interviews WHERE id = ?")
 		.get(interviewId) as InterviewRow;
@@ -252,7 +252,7 @@ export function updateQuestion(
 			questionId,
 			interviewId,
 		);
-	if (info.changes === 0) return null;
+	if (info.changes === 0) {return null;}
 	return db
 		.prepare("SELECT * FROM interview_questions WHERE id = ?")
 		.get(questionId) as InterviewQuestionRow;

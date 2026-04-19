@@ -1,14 +1,13 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
 import CompanyLogo from "./CompanyLogo";
 import { useCompanyLogo } from "../useCompanyLogo";
 
-vi.mock("../useCompanyLogo", () => ({
+vi.mock(import("../useCompanyLogo"), () => ({
 	useCompanyLogo: vi.fn(() => null),
 }));
 
-describe("CompanyLogo", () => {
+describe(CompanyLogo, () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -29,12 +28,12 @@ describe("CompanyLogo", () => {
 	it("defaults to 20px dimensions", () => {
 		render(<CompanyLogo company="Acme Corp" />);
 		const avatar = screen.getByTestId("company-logo");
-		expect(avatar).toHaveStyle({ width: "20px", height: "20px" });
+		expect(avatar).toHaveStyle({ height: "20px", width: "20px" });
 	});
 
 	it("applies custom size when provided", () => {
 		render(<CompanyLogo company="Acme Corp" size={32} />);
 		const avatar = screen.getByTestId("company-logo");
-		expect(avatar).toHaveStyle({ width: "32px", height: "32px" });
+		expect(avatar).toHaveStyle({ height: "32px", width: "32px" });
 	});
 });

@@ -12,12 +12,41 @@
     "react/react-in-jsx-scope": "off",
     "no-console": "warn",
     "vitest/require-mock-type-parameters": "off",
-    "import/no-unassigned-import": ["error", { "allow": ["@testing-library/jest-dom"] }]
+    "import/no-unassigned-import": ["error", { "allow": ["@testing-library/jest-dom"] }],
+
+    // style: disabled — wrong fit for this codebase
+    // TODO: Review these individually later
+    "no-magic-numbers": "off",
+    "no-ternary": "off",
+    "func-style": "off",
+    "id-length": "off",
+    "sort-imports": "off",
+    "sort-keys": "off",
+    "init-declarations": "off",
+    "max-statements": "off",
+    "max-params": "off",
+    "react/jsx-max-depth": "off",
+    "react/jsx-props-no-spreading": "off",
+    "import/no-named-export": "off",
+    "import/group-exports": "off",
+    "import/exports-last": "off",
+    "import/prefer-default-export": "off",
+    "import/no-namespace": "off",
+    "import/no-nodejs-modules": "off",
+    "unicorn/no-null": "off",
+    "unicorn/filename-case": "off",
+    "vitest/prefer-importing-vitest-globals": "off",
+    "vitest/consistent-test-filename": "off",
+    "import/consistent-type-specifier-style": "off",
+    "vitest/prefer-strict-boolean-matchers": "off",
+    "vitest/prefer-called-times": "off",
+    "new-cap": "off"
   },
   "categories": {
     "correctness": "error",
     "perf": "error",
     //"restriction": "error", -- todo: Enable me
+    "style": "error",
     "suspicious": "error"
   },
   "overrides": [

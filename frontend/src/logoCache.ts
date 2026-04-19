@@ -13,16 +13,20 @@ export function getCachedLogo(company: string): CacheEntry | undefined {
 export async function fetchLogo(company: string): Promise<CacheEntry> {
 	const key = normalize(company);
 	const existing = cache.get(key);
-	if (existing) return existing;
+	if (existing) {
+		return existing;
+	}
 
 	const url = `https://img.logo.dev/name/${encodeURIComponent(company)}?token=pk_BE48kXYQS7GkDayksxF6YA&size=32&format=png`;
 	try {
 		const res = await fetch(url);
-		if (!res.ok) throw new Error("not found");
+		if (!res.ok) {
+			throw new Error("not found");
+		}
 		const blob = await res.blob();
 		const entry: CacheEntry = {
-			status: "resolved",
 			src: URL.createObjectURL(blob),
+			status: "resolved",
 		};
 		cache.set(key, entry);
 		return entry;

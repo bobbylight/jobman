@@ -100,7 +100,7 @@ db.exec(`
 `);
 
 // One-time backfill: synthesise history rows from existing date columns for
-// jobs that don't yet have any history entries for a given status.
+// Jobs that don't yet have any history entries for a given status.
 db.exec(`
   INSERT INTO job_status_history (job_id, status, entered_at)
   SELECT j.id, 'Not started',

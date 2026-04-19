@@ -1,5 +1,4 @@
 import { createHmac } from "node:crypto";
-import { afterEach, describe, expect, it } from "vitest";
 import Database from "better-sqlite3";
 import request from "supertest";
 import { createApp } from "../server.js";
@@ -83,7 +82,7 @@ testDb.exec(SCHEMA);
 testDb.prepare("INSERT INTO users (id, email) VALUES (?, ?)").run(TEST_USER_ID, "test@test.com");
 testDb
 	.prepare("INSERT INTO sessions (sid, sess, expire) VALUES (?, ?, datetime('now', '+7 days'))")
-	.run(TEST_SESSION_ID, JSON.stringify({ userId: TEST_USER_ID, cookie: { originalMaxAge: 604800000 } }));
+	.run(TEST_SESSION_ID, JSON.stringify({ cookie: { originalMaxAge: 604_800_000 }, userId: TEST_USER_ID }));
 
 const sig = createHmac("sha256", SESSION_SECRET)
 	.update(TEST_SESSION_ID)
@@ -105,21 +104,21 @@ afterEach(() => {
 
 const BASE_JOB = {
 	company: "Acme Corp",
-	role: "Engineer",
-	link: "https://acme.example.com/jobs/1",
-	status: "Not started",
 	favorite: false,
+	link: "https://acme.example.com/jobs/1",
+	role: "Engineer",
+	status: "Not started",
 };
 
 const BASE_INTERVIEW = {
-	interview_stage: "phone_screen",
 	interview_dttm: "2026-04-01T10:00",
+	interview_stage: "phone_screen",
 };
 
 const BASE_QUESTION = {
-	question_type: "behavioral",
-	question_text: "Tell me about a time you led a project.",
 	difficulty: 3,
+	question_text: "Tell me about a time you led a project.",
+	question_type: "behavioral",
 };
 
 async function createJob() {
@@ -130,7 +129,7 @@ async function createJob() {
 async function createJobAndInterview() {
 	const jobId = await createJob();
 	const interviewRes = await req("post", `/api/jobs/${jobId}/interviews`).send(BASE_INTERVIEW);
-	return { jobId, interviewId: interviewRes.body.id as number };
+	return { interviewId: interviewRes.body.id as number, jobId };
 }
 
 async function createJobInterviewAndQuestion() {
@@ -139,7 +138,7 @@ async function createJobInterviewAndQuestion() {
 		"post",
 		`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
 	).send(BASE_QUESTION);
-	return { jobId, interviewId, questionId: questionRes.body.id as number };
+	return { interviewId, jobId, questionId: questionRes.body.id as number };
 }
 
 // --- Interview routes ---
@@ -168,8 +167,8 @@ describe("POST /api/jobs/:jobId/interviews", () => {
 		const res = await req("post", `/api/jobs/${jobId}/interviews`).send({
 			...BASE_INTERVIEW,
 			interview_interviewers: "Alice, Bob",
-			interview_vibe: "casual",
 			interview_notes: "Went well",
+			interview_vibe: "casual",
 		});
 
 		expect(res.status).toBe(201);
@@ -267,9 +266,9 @@ describe("PUT /api/jobs/:jobId/interviews/:interviewId", () => {
 		const { jobId, interviewId } = await createJobAndInterview();
 		const res = await req("put", `/api/jobs/${jobId}/interviews/${interviewId}`).send({
 			...BASE_INTERVIEW,
+			interview_notes: "Updated notes",
 			interview_stage: "onsite",
 			interview_vibe: "intense",
-			interview_notes: "Updated notes",
 		});
 
 		expect(res.status).toBe(200);
@@ -305,7 +304,7 @@ describe("DELETE /api/jobs/:jobId/interviews/:interviewId", () => {
 		const { jobId, interviewId } = await createJobAndInterview();
 		const res = await req("delete", `/api/jobs/${jobId}/interviews/${interviewId}`);
 		expect(res.status).toBe(200);
-		expect(res.body.success).toBe(true);
+		expect(res.body.success).toBeTruthy();
 	});
 
 	it("returns 404 when interview does not exist", async () => {
@@ -519,10 +518,10 @@ describe("PUT /api/jobs/:jobId/interviews/:interviewId/questions/:questionId", (
 			`/api/jobs/${jobId}/interviews/${interviewId}/questions/${questionId}`,
 		).send({
 			...BASE_QUESTION,
-			question_type: "technical",
-			question_text: "Explain the CAP theorem.",
-			question_notes: "Studied this",
 			difficulty: 5,
+			question_notes: "Studied this",
+			question_text: "Explain the CAP theorem.",
+			question_type: "technical",
 		});
 
 		expect(res.status).toBe(200);
@@ -586,7 +585,7 @@ describe("DELETE /api/jobs/:jobId/interviews/:interviewId/questions/:questionId"
 			`/api/jobs/${jobId}/interviews/${interviewId}/questions/${questionId}`,
 		);
 		expect(res.status).toBe(200);
-		expect(res.body.success).toBe(true);
+		expect(res.body.success).toBeTruthy();
 	});
 
 	it("returns 404 when the question does not exist", async () => {
@@ -634,15 +633,15 @@ describe("GET /api/interviews", () => {
 		const res = await req("get", "/api/interviews");
 		expect(res.status).toBe(200);
 		expect(res.body).toHaveLength(1);
-		const interview = res.body[0];
+		const [interview] = res.body;
 		expect(interview.interview_stage).toBe("phone_screen");
 		expect(interview.interview_interviewers).toBe("Alice");
 		expect(interview.interview_vibe).toBe("casual");
 		expect(interview.job).toMatchObject({
-			id: jobId,
 			company: BASE_JOB.company,
-			role: BASE_JOB.role,
+			id: jobId,
 			link: BASE_JOB.link,
+			role: BASE_JOB.role,
 		});
 	});
 
@@ -870,7 +869,7 @@ describe("GET /api/interviews — cursor pagination (?after + ?limit)", () => {
 
 		const res = await req("get", "/api/interviews?after=2026-01-01T00:00:00");
 		expect(res.status).toBe(200);
-		expect(res.body[0].job).toMatchObject({ id: jobId, company: BASE_JOB.company });
+		expect(res.body[0].job).toMatchObject({ company: BASE_JOB.company, id: jobId });
 	});
 });
 

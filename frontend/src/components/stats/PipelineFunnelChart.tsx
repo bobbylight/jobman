@@ -1,15 +1,18 @@
 import React, { useMemo } from "react";
 import { Sankey, Tooltip } from "recharts";
 import type { SankeyNode } from "recharts/types/util/types";
-import { Typography, Box, useTheme } from "@mui/material";
-import { ENDING_SUBSTATUSES, STATUS_COLORS, STATUSES } from "../../constants";
+import { Box, Typography, useTheme } from "@mui/material";
+import { ENDING_SUBSTATUSES, STATUSES, STATUS_COLORS } from "../../constants";
 import type { EndingSubstatus, JobStatus } from "../../types";
 
 interface Props {
 	transitions: { from: string; to: string; count: number }[];
 }
 
-type ChartNode = { name: string; color: string };
+interface ChartNode {
+	name: string;
+	color: string;
+}
 
 interface SankeyNodeProps {
 	x: number;
@@ -34,17 +37,17 @@ interface SankeyLinkProps {
 }
 
 const SUBSTATUS_COLORS: Record<EndingSubstatus, string> = {
+	Ghosted: "#8d6e63",
+	"No response": "#bdbdbd",
 	"Offer accepted": "#2e7d32",
 	"Offer declined": "#f57c00",
 	Rejected: "#e53935",
 	Withdrawn: "#78909c",
-	Ghosted: "#8d6e63",
-	"No response": "#bdbdbd",
 };
 
 // Full node ordering: main pipeline statuses first, then granular terminal
-// outcomes. Substatuses must come after all main statuses so every link in
-// the Sankey is a forward link (source index < target index).
+// Outcomes. Substatuses must come after all main statuses so every link in
+// The Sankey is a forward link (source index < target index).
 const NODE_ORDER: string[] = [...STATUSES, ...ENDING_SUBSTATUSES];
 
 function nodeColor(name: string): string {
@@ -69,8 +72,8 @@ function toSankeyData(transitions: Props["transitions"]) {
 	const indexMap = new Map<string, number>(ordered.map((s, i) => [s, i]));
 
 	const nodes: ChartNode[] = ordered.map((s) => ({
-		name: s,
 		color: nodeColor(s),
+		name: s,
 	}));
 
 	const links = transitions
@@ -78,7 +81,7 @@ function toSankeyData(transitions: Props["transitions"]) {
 			const src = indexMap.get(t.from);
 			const tgt = indexMap.get(t.to);
 			// Only include forward links (source index < target index) to avoid
-			// cycles or self-loops which crash the Sankey layout.
+			// Cycles or self-loops which crash the Sankey layout.
 			return src !== undefined && tgt !== undefined && src < tgt;
 		})
 		.map((t) => ({
@@ -87,7 +90,7 @@ function toSankeyData(transitions: Props["transitions"]) {
 			value: t.count,
 		}));
 
-	return { nodes, links };
+	return { links, nodes };
 }
 
 function CustomNode(props: SankeyNodeProps) {
@@ -146,10 +149,10 @@ export default function PipelineFunnelChart({ transitions }: Props) {
 		return (
 			<Box
 				sx={{
-					display: "flex",
 					alignItems: "center",
-					justifyContent: "center",
+					display: "flex",
 					height: 260,
+					justifyContent: "center",
 				}}
 			>
 				<Typography color="text.secondary" variant="body2">
@@ -170,13 +173,13 @@ export default function PipelineFunnelChart({ transitions }: Props) {
 			nodePadding={14}
 			sort={false}
 			verticalAlign="justify"
-			margin={{ top: 4, right: 140, bottom: 4, left: 4 }}
+			margin={{ bottom: 4, left: 4, right: 140, top: 4 }}
 		>
 			<Tooltip
 				formatter={(value) => [`${value} jobs`]}
 				contentStyle={{
-					borderRadius: 8,
 					border: `1px solid ${theme.palette.divider}`,
+					borderRadius: 8,
 					fontSize: 12,
 				}}
 			/>

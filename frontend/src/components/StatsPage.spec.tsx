@@ -1,41 +1,56 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import StatsPage from "./StatsPage";
 import { api } from "../api";
 import type { StatsResponse } from "../types";
 
-vi.mock("../api", () => ({
-	api: { getStats: vi.fn() },
-}));
+vi.mock(
+	import("../api"),
+	() =>
+		({
+			api: { getStats: vi.fn() },
+		}) as any,
+);
 
 // Keep chart components out of these tests — recharts isn't layout-capable in jsdom.
-vi.mock("./stats/StatusDonutChart", () => ({
-	default: () => <div data-testid="status-donut-chart" />,
-}));
-vi.mock("./stats/PipelineFunnelChart", () => ({
-	default: () => <div data-testid="pipeline-funnel-chart" />,
-}));
-vi.mock("./stats/ApplicationsOverTime", () => ({
-	default: () => <div data-testid="applications-over-time" />,
-}));
+vi.mock(
+	import("./stats/StatusDonutChart"),
+	() =>
+		({
+			default: () => <div data-testid="status-donut-chart" />,
+		}) as any,
+);
+vi.mock(
+	import("./stats/PipelineFunnelChart"),
+	() =>
+		({
+			default: () => <div data-testid="pipeline-funnel-chart" />,
+		}) as any,
+);
+vi.mock(
+	import("./stats/ApplicationsOverTime"),
+	() =>
+		({
+			default: () => <div data-testid="applications-over-time" />,
+		}) as any,
+);
 
 const mockGetStats = vi.mocked(api.getStats);
 
 const BASE_STATS: StatsResponse = {
-	totalApplications: 10,
 	activePipeline: 4,
-	offersReceived: 1,
-	responseRate: 0.5,
-	byStatus: [{ status: "Not started", count: 4 }],
 	applicationsByWeek: [],
 	avgDaysPerStage: [],
-	transitions: [],
+	byStatus: [{ status: "Not started", count: 4 }],
+	offersReceived: 1,
+	responseRate: 0.5,
 	statusOverTime: [],
 	topCompanies: [],
+	totalApplications: 10,
+	transitions: [],
 };
 
-describe("StatsPage", () => {
+describe(StatsPage, () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});

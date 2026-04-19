@@ -4,7 +4,6 @@ import session from "express-session";
 import passport from "passport";
 import SqliteStoreFactory from "better-sqlite3-session-store";
 import type Database from "better-sqlite3";
-
 import { createAuthRouter } from "./routes/auth.js";
 import {
 	createInterviewSearchRouter,
@@ -38,8 +37,8 @@ export function createApp(db: Database.Database) {
 
 	app.use(
 		cors({
-			origin: process.env["FRONTEND_URL"] ?? "http://localhost:5173",
 			credentials: true,
+			origin: process.env["FRONTEND_URL"] ?? "http://localhost:5173",
 		}),
 	);
 	app.use(express.json());
@@ -47,16 +46,16 @@ export function createApp(db: Database.Database) {
 	const SqliteStore = SqliteStoreFactory(session);
 	app.use(
 		session({
-			secret: process.env["SESSION_SECRET"] ?? "dev-secret",
-			resave: false,
-			saveUninitialized: false,
-			store: new SqliteStore({ client: db }),
 			cookie: {
 				httpOnly: true,
-				secure: process.env["NODE_ENV"] === "production",
+				maxAge: 7 * 24 * 60 * 60 * 1000,
 				sameSite: "lax",
-				maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+				secure: process.env["NODE_ENV"] === "production", // 7 days
 			},
+			resave: false,
+			saveUninitialized: false,
+			secret: process.env["SESSION_SECRET"] ?? "dev-secret",
+			store: new SqliteStore({ client: db }),
 		}),
 	);
 
@@ -76,8 +75,8 @@ export function createApp(db: Database.Database) {
 }
 
 // Production startup — dynamic import keeps db.ts out of the module graph
-// when server.ts is imported by tests. dotenv is loaded first so env vars
-// are available before db.ts runs its seed migration.
+// When server.ts is imported by tests. dotenv is loaded first so env vars
+// Are available before db.ts runs its seed migration.
 if (process.env["NODE_ENV"] !== "test") {
 	const { config } = await import("dotenv");
 	config({ path: `.env.${process.env["NODE_ENV"] ?? "development"}` });

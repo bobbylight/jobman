@@ -1,49 +1,48 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api, setUnauthorizedHandler } from "./api";
 import type {
-	Job,
-	JobFormData,
 	InterviewQuestion,
 	InterviewQuestionFormData,
+	Job,
+	JobFormData,
 	StatsResponse,
 } from "./types";
 
 const makeResponse = (body: unknown, ok = true) => ({
+	json: () => Promise.resolve(body),
 	ok,
 	status: ok ? 200 : 400,
-	json: () => Promise.resolve(body),
 });
 
 const MOCK_JOB: Job = {
-	id: 1,
 	company: "Acme",
-	role: "Engineer",
-	link: "https://acme.com/job",
-	status: "Not started",
-	fit_score: null,
-	salary: null,
-	date_applied: null,
-	recruiter: null,
-	notes: null,
-	job_description: null,
-	ending_substatus: null,
-	referred_by: null,
-	date_phone_screen: null,
-	date_last_onsite: null,
-	favorite: false,
-	tags: [],
 	created_at: "2024-01-01T00:00:00.000Z",
+	date_applied: null,
+	date_last_onsite: null,
+	date_phone_screen: null,
+	ending_substatus: null,
+	favorite: false,
+	fit_score: null,
+	id: 1,
+	job_description: null,
+	link: "https://acme.com/job",
+	notes: null,
+	recruiter: null,
+	referred_by: null,
+	role: "Engineer",
+	salary: null,
+	status: "Not started",
+	tags: [],
 	updated_at: "2024-01-01T00:00:00.000Z",
 };
 
 const MOCK_USER = {
-	id: 1,
-	email: "test@example.com",
-	displayName: "Test User",
 	avatarUrl: null,
+	displayName: "Test User",
+	email: "test@example.com",
+	id: 1,
 };
 
-describe("api", () => {
+describe("API module", () => {
 	let mockFetch: ReturnType<typeof vi.fn>;
 
 	beforeEach(() => {
@@ -58,9 +57,9 @@ describe("api", () => {
 	describe("getMe", () => {
 		it("fetches GET /api/auth/me and returns the user when authenticated", async () => {
 			mockFetch.mockResolvedValue({
+				json: () => Promise.resolve(MOCK_USER),
 				ok: true,
 				status: 200,
-				json: () => Promise.resolve(MOCK_USER),
 			});
 			const result = await api.getMe();
 			expect(mockFetch).toHaveBeenCalledWith(
@@ -72,9 +71,9 @@ describe("api", () => {
 
 		it("returns null when the response is 401 (not authenticated)", async () => {
 			mockFetch.mockResolvedValue({
+				json: () => Promise.resolve(null),
 				ok: false,
 				status: 401,
-				json: () => Promise.resolve(null),
 			});
 			const result = await api.getMe();
 			expect(result).toBeNull();
@@ -82,9 +81,9 @@ describe("api", () => {
 
 		it("throws when the response is an unexpected error status", async () => {
 			mockFetch.mockResolvedValue({
+				json: () => Promise.resolve({}),
 				ok: false,
 				status: 500,
-				json: () => Promise.resolve({}),
 			});
 			await expect(api.getMe()).rejects.toThrow("API error 500");
 		});
@@ -98,11 +97,11 @@ describe("api", () => {
 				"/api/auth/logout",
 				expect.objectContaining({ method: "POST" }),
 			);
-			expect(result.success).toBe(true);
+			expect(result.success).toBeTruthy();
 		});
 	});
 
-	describe("setUnauthorizedHandler", () => {
+	describe(setUnauthorizedHandler, () => {
 		afterEach(() => {
 			// Reset so the handler doesn't leak into other tests
 			setUnauthorizedHandler(() => {});
@@ -112,9 +111,9 @@ describe("api", () => {
 			const handler = vi.fn();
 			setUnauthorizedHandler(handler);
 			mockFetch.mockResolvedValue({
+				json: () => Promise.resolve({}),
 				ok: false,
 				status: 401,
-				json: () => Promise.resolve({}),
 			});
 			await expect(api.getJobs()).rejects.toThrow("API error 401");
 			expect(handler).toHaveBeenCalledOnce();
@@ -157,29 +156,29 @@ describe("api", () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_JOB));
 			const formData: JobFormData = {
 				company: "Acme",
-				role: "Engineer",
-				link: "https://acme.com/job",
-				status: "Not started",
-				fit_score: null,
-				salary: null,
 				date_applied: null,
-				recruiter: null,
-				notes: null,
-				referred_by: null,
-				job_description: null,
-				ending_substatus: null,
-				date_phone_screen: null,
 				date_last_onsite: null,
-				updated_at: "",
+				date_phone_screen: null,
+				ending_substatus: null,
 				favorite: false,
+				fit_score: null,
+				job_description: null,
+				link: "https://acme.com/job",
+				notes: null,
+				recruiter: null,
+				referred_by: null,
+				role: "Engineer",
+				salary: null,
+				status: "Not started",
 				tags: [],
+				updated_at: "",
 			};
 			const result = await api.createJob(formData);
 			expect(mockFetch).toHaveBeenCalledWith(
 				"/api/jobs",
 				expect.objectContaining({
-					method: "POST",
 					body: JSON.stringify(formData),
+					method: "POST",
 				}),
 			);
 			expect(result).toEqual(MOCK_JOB);
@@ -194,8 +193,8 @@ describe("api", () => {
 			expect(mockFetch).toHaveBeenCalledWith(
 				"/api/jobs/1",
 				expect.objectContaining({
-					method: "PUT",
 					body: JSON.stringify({ company: "Updated" }),
+					method: "PUT",
 				}),
 			);
 			expect(result.company).toBe("Updated");
@@ -210,7 +209,7 @@ describe("api", () => {
 				"/api/jobs/1",
 				expect.objectContaining({ method: "DELETE" }),
 			);
-			expect(result.success).toBe(true);
+			expect(result.success).toBeTruthy();
 		});
 
 		it("throws when the response is not ok", async () => {
@@ -224,12 +223,12 @@ describe("api", () => {
 			const mockInterviews = [
 				{
 					id: 1,
-					job_id: 1,
-					interview_stage: "phone_screen",
 					interview_dttm: "2024-03-12T14:00",
 					interview_interviewers: "Jane",
-					interview_vibe: "casual",
 					interview_notes: null,
+					interview_stage: "phone_screen",
+					interview_vibe: "casual",
+					job_id: 1,
 				},
 			];
 			mockFetch.mockResolvedValue(makeResponse(mockInterviews));
@@ -252,12 +251,12 @@ describe("api", () => {
 	describe("createInterview", () => {
 		it("POSTs to /api/jobs/:jobId/interviews with JSON body and returns the created interview", async () => {
 			const formData = {
-				interview_stage: "onsite" as const,
 				interview_dttm: "2024-03-19T10:00",
 				interview_interviewers: "Alice",
+				interview_notes: null,
+				interview_stage: "onsite" as const,
 				interview_type: null,
 				interview_vibe: "intense" as const,
-				interview_notes: null,
 			};
 			const created = { id: 2, job_id: 1, ...formData };
 			mockFetch.mockResolvedValue(makeResponse(created));
@@ -265,8 +264,8 @@ describe("api", () => {
 			expect(mockFetch).toHaveBeenCalledWith(
 				"/api/jobs/1/interviews",
 				expect.objectContaining({
-					method: "POST",
 					body: JSON.stringify(formData),
+					method: "POST",
 				}),
 			);
 			expect(result).toEqual(created);
@@ -276,12 +275,12 @@ describe("api", () => {
 	describe("updateInterview", () => {
 		it("PUTs to /api/jobs/:jobId/interviews/:interviewId and returns the updated interview", async () => {
 			const formData = {
-				interview_stage: "onsite" as const,
 				interview_dttm: "2024-03-19T10:00",
 				interview_interviewers: "Bob",
+				interview_notes: "Updated notes",
+				interview_stage: "onsite" as const,
 				interview_type: null,
 				interview_vibe: null,
-				interview_notes: "Updated notes",
 			};
 			const updated = { id: 5, job_id: 1, ...formData };
 			mockFetch.mockResolvedValue(makeResponse(updated));
@@ -289,8 +288,8 @@ describe("api", () => {
 			expect(mockFetch).toHaveBeenCalledWith(
 				"/api/jobs/1/interviews/5",
 				expect.objectContaining({
-					method: "PUT",
 					body: JSON.stringify(formData),
+					method: "PUT",
 				}),
 			);
 			expect(result).toEqual(updated);
@@ -305,7 +304,7 @@ describe("api", () => {
 				"/api/jobs/1/interviews/5",
 				expect.objectContaining({ method: "DELETE" }),
 			);
-			expect(result.success).toBe(true);
+			expect(result.success).toBeTruthy();
 		});
 
 		it("throws when the response is not ok", async () => {
@@ -315,12 +314,12 @@ describe("api", () => {
 	});
 
 	const MOCK_QUESTION: InterviewQuestion = {
+		difficulty: 3,
 		id: 1,
 		interview_id: 10,
-		question_type: "behavioral",
-		question_text: "Tell me about yourself",
 		question_notes: null,
-		difficulty: 3,
+		question_text: "Tell me about yourself",
+		question_type: "behavioral",
 	};
 
 	describe("getQuestions", () => {
@@ -345,10 +344,10 @@ describe("api", () => {
 	describe("createQuestion", () => {
 		it("POSTs to /api/jobs/:jobId/interviews/:interviewId/questions with JSON body and returns the created question", async () => {
 			const formData: InterviewQuestionFormData = {
-				question_type: "technical",
-				question_text: "Explain closures in JavaScript",
-				question_notes: null,
 				difficulty: 4,
+				question_notes: null,
+				question_text: "Explain closures in JavaScript",
+				question_type: "technical",
 			};
 			const created = { id: 2, interview_id: 10, ...formData };
 			mockFetch.mockResolvedValue(makeResponse(created));
@@ -356,8 +355,8 @@ describe("api", () => {
 			expect(mockFetch).toHaveBeenCalledWith(
 				"/api/jobs/1/interviews/10/questions",
 				expect.objectContaining({
-					method: "POST",
 					body: JSON.stringify(formData),
+					method: "POST",
 				}),
 			);
 			expect(result).toEqual(created);
@@ -367,10 +366,10 @@ describe("api", () => {
 	describe("updateQuestion", () => {
 		it("PUTs to /api/jobs/:jobId/interviews/:interviewId/questions/:questionId and returns the updated question", async () => {
 			const formData: InterviewQuestionFormData = {
-				question_type: "behavioral",
-				question_text: "Updated question text",
-				question_notes: "Some notes",
 				difficulty: 2,
+				question_notes: "Some notes",
+				question_text: "Updated question text",
+				question_type: "behavioral",
 			};
 			const updated = { id: 1, interview_id: 10, ...formData };
 			mockFetch.mockResolvedValue(makeResponse(updated));
@@ -378,8 +377,8 @@ describe("api", () => {
 			expect(mockFetch).toHaveBeenCalledWith(
 				"/api/jobs/1/interviews/10/questions/1",
 				expect.objectContaining({
-					method: "PUT",
 					body: JSON.stringify(formData),
+					method: "PUT",
 				}),
 			);
 			expect(result).toEqual(updated);
@@ -394,7 +393,7 @@ describe("api", () => {
 				"/api/jobs/1/interviews/10/questions/1",
 				expect.objectContaining({ method: "DELETE" }),
 			);
-			expect(result.success).toBe(true);
+			expect(result.success).toBeTruthy();
 		});
 
 		it("throws when the response is not ok", async () => {
@@ -409,18 +408,18 @@ describe("api", () => {
 		const MOCK_ENRICHED = [
 			{
 				id: 1,
-				job_id: 10,
-				interview_stage: "phone_screen",
 				interview_dttm: "2026-04-20T10:00:00Z",
 				interview_interviewers: null,
-				interview_vibe: null,
 				interview_notes: null,
+				interview_stage: "phone_screen",
+				interview_vibe: null,
 				job: {
-					id: 10,
 					company: "Acme",
-					role: "Engineer",
+					id: 10,
 					link: "https://acme.com",
+					role: "Engineer",
 				},
+				job_id: 10,
 			},
 		];
 
@@ -457,18 +456,18 @@ describe("api", () => {
 		const MOCK_ENRICHED = [
 			{
 				id: 1,
-				job_id: 10,
-				interview_stage: "phone_screen",
 				interview_dttm: "2026-03-15T14:00:00Z",
 				interview_interviewers: null,
-				interview_vibe: null,
 				interview_notes: null,
+				interview_stage: "phone_screen",
+				interview_vibe: null,
 				job: {
-					id: 10,
 					company: "Acme",
-					role: "Engineer",
+					id: 10,
 					link: "https://acme.com",
+					role: "Engineer",
 				},
+				job_id: 10,
 			},
 		];
 
@@ -521,16 +520,16 @@ describe("api", () => {
 
 	describe("getStats", () => {
 		const MOCK_STATS: StatsResponse = {
-			totalApplications: 5,
 			activePipeline: 2,
-			offersReceived: 1,
-			responseRate: 0.6,
-			byStatus: [{ status: "Not started", count: 2 }],
 			applicationsByWeek: [],
 			avgDaysPerStage: [],
-			transitions: [],
+			byStatus: [{ status: "Not started", count: 2 }],
+			offersReceived: 1,
+			responseRate: 0.6,
 			statusOverTime: [],
 			topCompanies: [],
+			totalApplications: 5,
+			transitions: [],
 		};
 
 		it("GETs /api/stats?window=all and returns the stats", async () => {

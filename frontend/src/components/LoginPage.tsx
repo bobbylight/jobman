@@ -4,19 +4,19 @@ export default function LoginPage() {
 	return (
 		<Box
 			sx={{
-				display: "flex",
 				alignItems: "center",
+				bgcolor: "background.default",
+				display: "flex",
 				justifyContent: "center",
 				minHeight: "100vh",
-				bgcolor: "background.default",
 			}}
 		>
-			<Card sx={{ maxWidth: 400, width: "100%", mx: 2 }}>
+			<Card sx={{ maxWidth: 400, mx: 2, width: "100%" }}>
 				<CardContent
 					sx={{
+						alignItems: "center",
 						display: "flex",
 						flexDirection: "column",
-						alignItems: "center",
 						gap: 2,
 						p: 4,
 					}}
@@ -38,7 +38,7 @@ export default function LoginPage() {
 						fullWidth
 						size="large"
 						href="/api/auth/google"
-						sx={{ mt: 1, textTransform: "none", fontWeight: 500 }}
+						sx={{ fontWeight: 500, mt: 1, textTransform: "none" }}
 					>
 						Continue with Google
 					</Button>
