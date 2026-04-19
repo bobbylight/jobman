@@ -70,7 +70,8 @@ export default function MarkdownField({
 				multiline
 				minRows={6}
 				placeholder={placeholder}
-				autoFocus={editing}
+				// eslint-disable-next-line jsx-a11y/no-autofocus -- user-initiated focus, not a surprise steal
+				autoFocus
 				slotProps={{
 					htmlInput: { style: { resize: "vertical" } },
 				}}

@@ -790,6 +790,7 @@ describe("GET /api/interviews — cursor pagination (?after + ?limit)", () => {
 	it("returns at most ?limit interviews", async () => {
 		const jobId = await createJob();
 		for (let i = 1; i <= 5; i++) {
+			// eslint-disable-next-line no-await-in-loop
 			await req("post", `/api/jobs/${jobId}/interviews`).send({
 				...BASE_INTERVIEW,
 				interview_dttm: `2026-04-0${i}T10:00`,
@@ -805,6 +806,7 @@ describe("GET /api/interviews — cursor pagination (?after + ?limit)", () => {
 		const jobId = await createJob();
 		for (let i = 1; i <= 15; i++) {
 			const day = String(i).padStart(2, "0");
+			// eslint-disable-next-line no-await-in-loop
 			await req("post", `/api/jobs/${jobId}/interviews`).send({
 				...BASE_INTERVIEW,
 				interview_dttm: `2026-04-${day}T10:00`,
