@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Box,
 	Button,
@@ -91,30 +91,7 @@ export default function InterviewsTab({
 		useState<Interview | null>(null);
 	const prevViewingRef = useRef<Interview | null>(null);
 
-	useEffect(() => {
-		void load();
-	}, [jobId]);
-
-	// Refresh question counts when returning from the question sub-view
-	useEffect(() => {
-		const wasViewing = prevViewingRef.current;
-		prevViewingRef.current = viewingQuestionsFor;
-		if (wasViewing !== null && viewingQuestionsFor === null) {
-			refreshQuestionCounts(interviews);
-		}
-	}, [viewingQuestionsFor]);
-
-	// Keep the questions panel mounted during the slide-back animation, then unmount
-	useEffect(() => {
-		if (viewingQuestionsFor !== null) {
-			setDisplayedInterview(viewingQuestionsFor);
-		} else {
-			const timer = setTimeout(() => setDisplayedInterview(null), 350);
-			return () => clearTimeout(timer);
-		}
-	}, [viewingQuestionsFor]);
-
-	async function load() {
+	const load = useCallback(async () => {
 		setLoading(true);
 		try {
 			const data = await api.getInterviews(jobId);
@@ -133,16 +110,42 @@ export default function InterviewsTab({
 		} finally {
 			setLoading(false);
 		}
-	}
+	}, [jobId, onCountChange]);
 
-	function refreshQuestionCounts(ivList: Interview[]) {
-		void Promise.all(
-			ivList.map(async (iv) => {
-				const qs = await api.getQuestions(jobId, iv.id);
-				setQuestionCounts((prev) => ({ ...prev, [iv.id]: qs.length }));
-			}),
-		);
-	}
+	const refreshQuestionCounts = useCallback(
+		(ivList: Interview[]) => {
+			void Promise.all(
+				ivList.map(async (iv) => {
+					const qs = await api.getQuestions(jobId, iv.id);
+					setQuestionCounts((prev) => ({ ...prev, [iv.id]: qs.length }));
+				}),
+			);
+		},
+		[jobId],
+	);
+
+	useEffect(() => {
+		void load();
+	}, [load]);
+
+	// Refresh question counts when returning from the question sub-view
+	useEffect(() => {
+		const wasViewing = prevViewingRef.current;
+		prevViewingRef.current = viewingQuestionsFor;
+		if (wasViewing !== null && viewingQuestionsFor === null) {
+			refreshQuestionCounts(interviews);
+		}
+	}, [viewingQuestionsFor, interviews, refreshQuestionCounts]);
+
+	// Keep the questions panel mounted during the slide-back animation, then unmount
+	useEffect(() => {
+		if (viewingQuestionsFor !== null) {
+			setDisplayedInterview(viewingQuestionsFor);
+		} else {
+			const timer = setTimeout(() => setDisplayedInterview(null), 350);
+			return () => clearTimeout(timer);
+		}
+	}, [viewingQuestionsFor]);
 
 	function setField<K extends keyof InterviewFormData>(
 		field: K,
