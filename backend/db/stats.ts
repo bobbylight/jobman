@@ -35,6 +35,7 @@ function dateFilter(window: Window): string {
 const ACTIVE_STATUSES = `('Not started', 'Applied', 'Phone screen', 'Interviewing')`;
 const SUBMITTED_STATUSES = `('Applied', 'Phone screen', 'Interviewing', 'Offer!', 'Rejected/Withdrawn')`;
 const RESPONDED_STATUSES = `('Phone screen', 'Interviewing', 'Offer!')`;
+const EXCLUDED_SUBSTATUSES = `('Withdrawn', 'Not a good fit', 'Job closed')`;
 
 export function getStats(
 	db: Database.Database,
@@ -115,7 +116,7 @@ export function getStats(
 			`WITH job_filter AS (
         SELECT id, status AS current_status, updated_at FROM jobs
         WHERE user_id = ?
-          AND (ending_substatus IS NULL OR ending_substatus <> 'Withdrawn')
+          AND (ending_substatus IS NULL OR ending_substatus NOT IN ${EXCLUDED_SUBSTATUSES})
           ${df}
       ),
       consecutive AS (
@@ -168,7 +169,7 @@ export function getStats(
           END AS starting_status
         FROM jobs
         WHERE user_id = ?
-          AND (ending_substatus IS NULL OR ending_substatus <> 'Withdrawn')
+          AND (ending_substatus IS NULL OR ending_substatus NOT IN ${EXCLUDED_SUBSTATUSES})
           ${df}
       ),
       -- Pair each history row with the next history row for the same job
@@ -284,7 +285,7 @@ export function getStats(
       user_jobs AS (
         SELECT id FROM jobs
         WHERE user_id = ?
-          AND (ending_substatus IS NULL OR ending_substatus <> 'Withdrawn')
+          AND (ending_substatus IS NULL OR ending_substatus NOT IN ${EXCLUDED_SUBSTATUSES})
       ),
       job_status_at_snap AS (
         SELECT
