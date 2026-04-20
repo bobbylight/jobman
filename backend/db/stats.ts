@@ -42,7 +42,7 @@ export function getStats(
 	window: Window,
 ): StatsResponse {
 	const df = dateFilter(window);
-	const baseWhere = `user_id = ? AND (ending_substatus IS NULL OR ending_substatus <> 'Withdrawn') ${df}`;
+	const baseWhere = `user_id = ? AND (ending_substatus IS NULL OR ending_substatus NOT IN ('Withdrawn', 'Not a good fit', 'Job closed')) ${df}`;
 
 	const total = (
 		db
