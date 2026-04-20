@@ -73,6 +73,13 @@ export type InterviewType =
 	| "past_experience"
 	| "culture_fit";
 export type InterviewVibe = "casual" | "intense";
+export type InterviewResult = "passed" | "failed";
+export type InterviewFeeling =
+	| "aced"
+	| "pretty_good"
+	| "meh"
+	| "struggled"
+	| "flunked";
 
 export interface Interview {
 	id: number;
@@ -83,6 +90,8 @@ export interface Interview {
 	interview_type: InterviewType | null;
 	interview_vibe: InterviewVibe | null;
 	interview_notes: string | null;
+	interview_result: InterviewResult | null;
+	interview_feeling: InterviewFeeling | null;
 }
 
 export type InterviewFormData = Omit<Interview, "id" | "job_id">;

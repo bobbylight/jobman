@@ -7,6 +7,8 @@ import {
 	IconButton,
 	MenuItem,
 	TextField,
+	ToggleButton,
+	ToggleButtonGroup,
 	Tooltip,
 	Typography,
 } from "@mui/material";
@@ -20,7 +22,9 @@ import { api } from "../api";
 import { INTERVIEW_MAX_LENGTHS } from "../constants";
 import type {
 	Interview,
+	InterviewFeeling,
 	InterviewFormData,
+	InterviewResult,
 	InterviewStage,
 	InterviewType,
 	InterviewVibe,
@@ -43,15 +47,100 @@ const INTERVIEW_TYPE_LABELS: Record<InterviewType, string> = {
 	system_design: "System Design",
 };
 
-const INTERVIEW_VIBE_LABELS: Record<InterviewVibe, string> = {
-	casual: "Casual",
-	intense: "Intense",
+const VIBE_OPTIONS: {
+	value: InterviewVibe;
+	emoji: string;
+	label: string;
+	selectedBg: string;
+	selectedColor: string;
+	chipBg: string;
+	chipColor: string;
+}[] = [
+	{
+		value: "casual",
+		emoji: "☕",
+		label: "Casual",
+		selectedBg: "#e3f2fd",
+		selectedColor: "#1565c0",
+		chipBg: "#e3f2fd",
+		chipColor: "#1565c0",
+	},
+	{
+		value: "intense",
+		emoji: "⚡",
+		label: "Intense",
+		selectedBg: "#fff3e0",
+		selectedColor: "#e65100",
+		chipBg: "#fff3e0",
+		chipColor: "#e65100",
+	},
+];
+
+const RESULT_CHIP_SX: Record<InterviewResult, object> = {
+	passed: { bgcolor: "#e8f5e9", color: "#2e7d32" },
+	failed: { bgcolor: "#ffebee", color: "#c62828" },
 };
 
-const VIBE_CHIP_SX: Record<InterviewVibe, object> = {
-	casual: { bgcolor: "#e3f2fd", color: "#1565c0" },
-	intense: { bgcolor: "#fff3e0", color: "#e65100" },
+const RESULT_LABELS: Record<InterviewResult, string> = {
+	passed: "✓ Passed",
+	failed: "✗ Failed",
 };
+
+const FEELING_OPTIONS: {
+	value: InterviewFeeling;
+	emoji: string;
+	label: string;
+	selectedBg: string;
+	selectedColor: string;
+	chipBg: string;
+	chipColor: string;
+}[] = [
+	{
+		value: "aced",
+		emoji: "🌟",
+		label: "Aced",
+		selectedBg: "#e8f5e9",
+		selectedColor: "#1b5e20",
+		chipBg: "#e8f5e9",
+		chipColor: "#1b5e20",
+	},
+	{
+		value: "pretty_good",
+		emoji: "👍",
+		label: "Pretty good",
+		selectedBg: "#f1f8e9",
+		selectedColor: "#33691e",
+		chipBg: "#f1f8e9",
+		chipColor: "#33691e",
+	},
+	{
+		value: "meh",
+		emoji: "😐",
+		label: "Meh",
+		selectedBg: "#fff8e1",
+		selectedColor: "#f57f17",
+		chipBg: "#fff8e1",
+		chipColor: "#f57f17",
+	},
+	{
+		value: "struggled",
+		emoji: "😬",
+		label: "Struggled",
+		selectedBg: "#fff3e0",
+		selectedColor: "#e65100",
+		chipBg: "#fff3e0",
+		chipColor: "#e65100",
+	},
+	{
+		value: "flunked",
+		emoji: "💀",
+		label: "Flunked",
+		selectedBg: "#ffebee",
+		selectedColor: "#b71c1c",
+		chipBg: "#ffebee",
+		chipColor: "#b71c1c",
+	},
+];
 
 const EMPTY_FORM: InterviewFormData = {
 	interview_dttm: "",
@@ -60,6 +149,8 @@ const EMPTY_FORM: InterviewFormData = {
 	interview_stage: "phone_screen",
 	interview_type: null,
 	interview_vibe: null,
+	interview_result: null,
+	interview_feeling: null,
 };
 
 type Mode = "list" | "add" | { editId: number } | { confirmDeleteId: number };
@@ -171,6 +262,8 @@ export default function InterviewsTab({
 			interview_stage: interview.interview_stage,
 			interview_type: interview.interview_type,
 			interview_vibe: interview.interview_vibe,
+			interview_result: interview.interview_result,
+			interview_feeling: interview.interview_feeling,
 		});
 		setFormError(null);
 		setMode({ editId: interview.id });
@@ -509,6 +602,10 @@ function InterviewCard({
 	const TypeIcon =
 		interview.interview_stage === "phone_screen" ? PhoneIcon : BusinessIcon;
 	const typeLabel = INTERVIEW_STAGE_LABELS[interview.interview_stage];
+	const isPast = new Date(interview.interview_dttm) < new Date();
+	const feelingOption = interview.interview_feeling
+		? FEELING_OPTIONS.find((o) => o.value === interview.interview_feeling)
+		: null;
 
 	return (
 		<Box
@@ -552,11 +649,34 @@ function InterviewCard({
 								sx={{ bgcolor: "#f3e5f5", color: "#6a1b9a" }}
 							/>
 						)}
-						{interview.interview_vibe && (
+						{interview.interview_vibe &&
+							(() => {
+								const opt = VIBE_OPTIONS.find(
+									(o) => o.value === interview.interview_vibe,
+								)!;
+								return (
+									<Chip
+										label={`${opt.emoji} ${opt.label}`}
+										size="small"
+										sx={{ bgcolor: opt.chipBg, color: opt.chipColor }}
+									/>
+								);
+							})()}
+						{isPast && interview.interview_result && (
 							<Chip
-								label={INTERVIEW_VIBE_LABELS[interview.interview_vibe]}
+								label={RESULT_LABELS[interview.interview_result]}
 								size="small"
-								sx={VIBE_CHIP_SX[interview.interview_vibe]}
+								sx={RESULT_CHIP_SX[interview.interview_result]}
+							/>
+						)}
+						{isPast && feelingOption && (
+							<Chip
+								label={`${feelingOption.emoji} ${feelingOption.label}`}
+								size="small"
+								sx={{
+									bgcolor: feelingOption.chipBg,
+									color: feelingOption.chipColor,
+								}}
 							/>
 						)}
 					</Box>
@@ -639,6 +759,9 @@ function InterviewForm({
 	saving,
 	error,
 }: FormProps) {
+	const isPast =
+		Boolean(data.interview_dttm) && new Date(data.interview_dttm) < new Date();
+
 	return (
 		<Box
 			sx={{
@@ -695,7 +818,7 @@ function InterviewForm({
 					},
 				}}
 			/>
-			<Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 1.5 }}>
+			<Box sx={{ mb: 1.5 }}>
 				<TextField
 					select
 					label="Type"
@@ -720,30 +843,6 @@ function InterviewForm({
 						</MenuItem>
 					))}
 				</TextField>
-				<TextField
-					select
-					label="Vibe"
-					value={data.interview_vibe ?? ""}
-					onChange={(e) =>
-						onChange(
-							"interview_vibe",
-							(e.target.value || null) as InterviewVibe | null,
-						)
-					}
-					size="small"
-					sx={{ minWidth: 140 }}
-				>
-					<MenuItem value="">
-						<em>None</em>
-					</MenuItem>
-					{(
-						Object.entries(INTERVIEW_VIBE_LABELS) as [InterviewVibe, string][]
-					).map(([value, label]) => (
-						<MenuItem key={value} value={value}>
-							{label}
-						</MenuItem>
-					))}
-				</TextField>
 			</Box>
 			<Box sx={{ mb: 1.5 }}>
 				<MarkdownField
@@ -751,6 +850,178 @@ function InterviewForm({
 					value={data.interview_notes}
 					onChange={(v) => onChange("interview_notes", v)}
 				/>
+			</Box>
+			<Box sx={{ mb: 1.5 }}>
+				<Typography
+					variant="caption"
+					color="text.secondary"
+					sx={{ display: "block", fontWeight: 600, mb: 0.75 }}
+				>
+					After the interview
+				</Typography>
+				<Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+					<Box
+						sx={{
+							alignItems: "center",
+							display: "flex",
+							flexDirection: "column",
+							gap: 0.5,
+						}}
+					>
+						<ToggleButtonGroup
+							exclusive
+							size="small"
+							value={data.interview_vibe}
+							disabled={!isPast}
+							onChange={(_, v) =>
+								onChange("interview_vibe", v as InterviewVibe | null)
+							}
+						>
+							{VIBE_OPTIONS.map((opt) => (
+								<Tooltip key={opt.value} title={opt.label}>
+									<ToggleButton
+										value={opt.value}
+										aria-label={opt.label}
+										sx={{
+											fontSize: "1.3rem",
+											lineHeight: 1,
+											px: 1.25,
+											py: 0.75,
+											"&.Mui-selected": {
+												bgcolor: opt.selectedBg,
+												color: opt.selectedColor,
+												"&:hover": {
+													bgcolor: opt.selectedBg,
+													filter: "brightness(0.95)",
+												},
+											},
+										}}
+									>
+										{opt.emoji}
+									</ToggleButton>
+								</Tooltip>
+							))}
+						</ToggleButtonGroup>
+						<Typography variant="caption" color="text.secondary">
+							Vibe
+						</Typography>
+					</Box>
+					<Box
+						sx={{
+							alignItems: "center",
+							display: "flex",
+							flexDirection: "column",
+							gap: 0.5,
+						}}
+					>
+						<ToggleButtonGroup
+							exclusive
+							size="small"
+							value={data.interview_feeling}
+							disabled={!isPast}
+							onChange={(_, v) =>
+								onChange("interview_feeling", v as InterviewFeeling | null)
+							}
+						>
+							{FEELING_OPTIONS.map((opt) => (
+								<Tooltip key={opt.value} title={opt.label}>
+									<ToggleButton
+										value={opt.value}
+										aria-label={opt.label}
+										sx={{
+											fontSize: "1.3rem",
+											lineHeight: 1,
+											px: 1.25,
+											py: 0.75,
+											"&.Mui-selected": {
+												bgcolor: opt.selectedBg,
+												color: opt.selectedColor,
+												"&:hover": {
+													bgcolor: opt.selectedBg,
+													filter: "brightness(0.95)",
+												},
+											},
+										}}
+									>
+										{opt.emoji}
+									</ToggleButton>
+								</Tooltip>
+							))}
+						</ToggleButtonGroup>
+						<Typography variant="caption" color="text.secondary">
+							Feeling
+						</Typography>
+					</Box>
+					<Box
+						sx={{
+							alignItems: "center",
+							display: "flex",
+							flexDirection: "column",
+							gap: 0.5,
+						}}
+					>
+						<ToggleButtonGroup
+							exclusive
+							size="small"
+							value={data.interview_result}
+							disabled={!isPast}
+							onChange={(_, v) =>
+								onChange("interview_result", v as InterviewResult | null)
+							}
+						>
+							<Tooltip title="Passed">
+								<ToggleButton
+									value="passed"
+									aria-label="Passed"
+									sx={{
+										fontSize: "1.3rem",
+										lineHeight: 1,
+										px: 1.25,
+										py: 0.75,
+										"&.Mui-selected": {
+											bgcolor: "#e8f5e9",
+											color: "#2e7d32",
+											"&:hover": { bgcolor: "#c8e6c9" },
+										},
+									}}
+								>
+									✅
+								</ToggleButton>
+							</Tooltip>
+							<Tooltip title="Failed">
+								<ToggleButton
+									value="failed"
+									aria-label="Failed"
+									sx={{
+										fontSize: "1.3rem",
+										lineHeight: 1,
+										px: 1.25,
+										py: 0.75,
+										"&.Mui-selected": {
+											bgcolor: "#ffebee",
+											color: "#c62828",
+											"&:hover": { bgcolor: "#ffcdd2" },
+										},
+									}}
+								>
+									❌
+								</ToggleButton>
+							</Tooltip>
+						</ToggleButtonGroup>
+						<Typography variant="caption" color="text.secondary">
+							Result
+						</Typography>
+					</Box>
+				</Box>
+				{!isPast && data.interview_dttm && (
+					<Typography
+						variant="caption"
+						color="text.disabled"
+						sx={{ display: "block", mt: 0.5 }}
+					>
+						Available once the interview date has passed
+					</Typography>
+				)}
 			</Box>
 			{error && (
 				<Typography

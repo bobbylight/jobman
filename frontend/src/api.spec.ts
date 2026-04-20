@@ -257,6 +257,8 @@ describe("API module", () => {
 				interview_stage: "onsite" as const,
 				interview_type: null,
 				interview_vibe: "intense" as const,
+				interview_result: null,
+				interview_feeling: null,
 			};
 			const created = { id: 2, job_id: 1, ...formData };
 			mockFetch.mockResolvedValue(makeResponse(created));
@@ -281,6 +283,8 @@ describe("API module", () => {
 				interview_stage: "onsite" as const,
 				interview_type: null,
 				interview_vibe: null,
+				interview_result: null,
+				interview_feeling: null,
 			};
 			const updated = { id: 5, job_id: 1, ...formData };
 			mockFetch.mockResolvedValue(makeResponse(updated));

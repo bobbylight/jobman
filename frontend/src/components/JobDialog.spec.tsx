@@ -52,6 +52,8 @@ const MOCK_INTERVIEW: Interview = {
 	interview_stage: "phone_screen",
 	interview_type: null,
 	interview_vibe: "casual",
+	interview_result: null,
+	interview_feeling: null,
 	job_id: 42,
 };
 

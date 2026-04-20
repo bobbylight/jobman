@@ -41,6 +41,8 @@ function makeInterview(
 		interview_stage: "phone_screen",
 		interview_type: null,
 		interview_vibe: null,
+		interview_result: null,
+		interview_feeling: null,
 		job: {
 			company: "Acme Corp",
 			id: 10,

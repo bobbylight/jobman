@@ -20,6 +20,8 @@ const makeInterview = (overrides: Partial<Interview> = {}): Interview => ({
 	interview_stage: "phone_screen",
 	interview_type: null,
 	interview_vibe: "casual",
+	interview_result: null,
+	interview_feeling: null,
 	job_id: 42,
 	...overrides,
 });
@@ -114,8 +116,8 @@ describe(InterviewsTab, () => {
 		it("shows the vibe chip when present", async () => {
 			render(<InterviewsTab {...DEFAULT_PROPS} />);
 			await waitFor(() => {
-				expect(screen.getByText("Casual")).toBeInTheDocument();
-				expect(screen.getByText("Intense")).toBeInTheDocument();
+				expect(screen.getByText("☕ Casual")).toBeInTheDocument();
+				expect(screen.getByText("⚡ Intense")).toBeInTheDocument();
 			});
 		});
 
@@ -378,6 +380,158 @@ describe(InterviewsTab, () => {
 			await waitFor(() => {
 				expect(api.deleteInterview).toHaveBeenCalledWith(42, INTERVIEW_A.id);
 			});
+		});
+	});
+
+	describe("interview_result and interview_feeling chips", () => {
+		it("shows a Passed chip on a past interview card when result is passed", async () => {
+			vi.mocked(api.getInterviews).mockResolvedValue([
+				makeInterview({
+					interview_dttm: "2024-01-01T10:00",
+					interview_result: "passed",
+				}),
+			]);
+			render(<InterviewsTab {...DEFAULT_PROPS} />);
+			await waitFor(() => {
+				expect(screen.getByText("✓ Passed")).toBeInTheDocument();
+			});
+		});
+
+		it("shows a Failed chip on a past interview card when result is failed", async () => {
+			vi.mocked(api.getInterviews).mockResolvedValue([
+				makeInterview({
+					interview_dttm: "2024-01-01T10:00",
+					interview_result: "failed",
+				}),
+			]);
+			render(<InterviewsTab {...DEFAULT_PROPS} />);
+			await waitFor(() => {
+				expect(screen.getByText("✗ Failed")).toBeInTheDocument();
+			});
+		});
+
+		it("shows a feeling chip on a past interview card when feeling is set", async () => {
+			vi.mocked(api.getInterviews).mockResolvedValue([
+				makeInterview({
+					interview_dttm: "2024-01-01T10:00",
+					interview_feeling: "aced",
+				}),
+			]);
+			render(<InterviewsTab {...DEFAULT_PROPS} />);
+			await waitFor(() => {
+				expect(screen.getByText("🌟 Aced")).toBeInTheDocument();
+			});
+		});
+
+		it("does not show result or feeling chips when they are null", async () => {
+			vi.mocked(api.getInterviews).mockResolvedValue([
+				makeInterview({
+					interview_dttm: "2024-01-01T10:00",
+					interview_result: null,
+					interview_feeling: null,
+				}),
+			]);
+			render(<InterviewsTab {...DEFAULT_PROPS} />);
+			await waitFor(() => {
+				expect(screen.queryByText(/Passed|Failed/)).not.toBeInTheDocument();
+				expect(
+					screen.queryByText(/Aced|Pretty good|Meh|Struggled|Flunked/),
+				).not.toBeInTheDocument();
+			});
+		});
+	});
+
+	describe("After the interview controls", () => {
+		it("shows vibe chip with emoji on a past interview card", async () => {
+			vi.mocked(api.getInterviews).mockResolvedValue([
+				makeInterview({
+					interview_dttm: "2024-01-01T10:00",
+					interview_vibe: "casual",
+				}),
+			]);
+			render(<InterviewsTab {...DEFAULT_PROPS} />);
+			await waitFor(() => {
+				expect(screen.getByText("☕ Casual")).toBeInTheDocument();
+			});
+		});
+
+		it("disables result and feeling controls when the date is in the future", async () => {
+			render(<InterviewsTab {...DEFAULT_PROPS} />);
+			await waitFor(() =>
+				screen.getByRole("button", { name: /Add Interview/i }),
+			);
+			fireEvent.click(screen.getByRole("button", { name: /Add Interview/i }));
+			// Set a future date
+			fireEvent.change(screen.getByLabelText(/Date & Time/i), {
+				target: { value: "2099-12-31T10:00" },
+			});
+			expect(screen.getByRole("button", { name: "Passed" })).toBeDisabled();
+			expect(screen.getByRole("button", { name: "Failed" })).toBeDisabled();
+			expect(screen.getByRole("button", { name: "Casual" })).toBeDisabled();
+			expect(screen.getByRole("button", { name: "Aced" })).toBeDisabled();
+		});
+
+		it("enables result and feeling controls when the date is in the past", async () => {
+			render(<InterviewsTab {...DEFAULT_PROPS} />);
+			await waitFor(() =>
+				screen.getByRole("button", { name: /Add Interview/i }),
+			);
+			fireEvent.click(screen.getByRole("button", { name: /Add Interview/i }));
+			// Set a past date
+			fireEvent.change(screen.getByLabelText(/Date & Time/i), {
+				target: { value: "2020-01-01T10:00" },
+			});
+			expect(screen.getByRole("button", { name: "Passed" })).not.toBeDisabled();
+			expect(screen.getByRole("button", { name: "Failed" })).not.toBeDisabled();
+			expect(screen.getByRole("button", { name: "Casual" })).not.toBeDisabled();
+		});
+
+		it("shows the helper text when a future date is set", async () => {
+			render(<InterviewsTab {...DEFAULT_PROPS} />);
+			await waitFor(() =>
+				screen.getByRole("button", { name: /Add Interview/i }),
+			);
+			fireEvent.click(screen.getByRole("button", { name: /Add Interview/i }));
+			fireEvent.change(screen.getByLabelText(/Date & Time/i), {
+				target: { value: "2099-12-31T10:00" },
+			});
+			expect(
+				screen.getByText(/Available once the interview date has passed/i),
+			).toBeInTheDocument();
+		});
+
+		it("hides the helper text when no date is set", async () => {
+			render(<InterviewsTab {...DEFAULT_PROPS} />);
+			await waitFor(() =>
+				screen.getByRole("button", { name: /Add Interview/i }),
+			);
+			fireEvent.click(screen.getByRole("button", { name: /Add Interview/i }));
+			expect(
+				screen.queryByText(/Available once the interview date has passed/i),
+			).not.toBeInTheDocument();
+		});
+
+		it("pre-fills result and feeling when editing a past interview", async () => {
+			vi.mocked(api.getInterviews).mockResolvedValue([
+				makeInterview({
+					interview_dttm: "2024-01-01T10:00",
+					interview_result: "passed",
+					interview_feeling: "pretty_good",
+				}),
+			]);
+			render(<InterviewsTab {...DEFAULT_PROPS} />);
+			await waitFor(() =>
+				screen.getByRole("button", { name: "Edit interview" }),
+			);
+			fireEvent.click(screen.getByRole("button", { name: "Edit interview" }));
+			// ToggleButton with selected value has aria-pressed="true"
+			expect(screen.getByRole("button", { name: "Passed" })).toHaveAttribute(
+				"aria-pressed",
+				"true",
+			);
+			expect(
+				screen.getByRole("button", { name: "Pretty good" }),
+			).toHaveAttribute("aria-pressed", "true");
 		});
 	});
 
