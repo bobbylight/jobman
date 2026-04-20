@@ -160,8 +160,8 @@ describe(computeDateUpdates, () => {
 		expect(result.date_last_onsite).toBe(jobWithDates.date_last_onsite);
 	});
 
-	it("preserves both dates when moving back to Resume submitted", () => {
-		const result = computeDateUpdates(jobWithDates, "Resume submitted", NOW);
+	it("preserves both dates when moving back to Applied", () => {
+		const result = computeDateUpdates(jobWithDates, "Applied", NOW);
 		expect(result.date_phone_screen).toBe(jobWithDates.date_phone_screen);
 		expect(result.date_last_onsite).toBe(jobWithDates.date_last_onsite);
 	});

@@ -91,7 +91,7 @@ describe(KanbanBoard, () => {
 	it("renders all provided jobs as cards", () => {
 		const jobs: Job[] = [
 			makeJob({ company: "Alpha", id: 1, status: "Not started" }),
-			makeJob({ company: "Beta", id: 2, status: "Resume submitted" }),
+			makeJob({ company: "Beta", id: 2, status: "Applied" }),
 		];
 		render(<KanbanBoard {...DEFAULT_PROPS} jobs={jobs} />);
 		expect(screen.getByText("Alpha")).toBeInTheDocument();

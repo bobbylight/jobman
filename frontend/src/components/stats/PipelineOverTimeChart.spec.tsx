@@ -24,9 +24,9 @@ vi.mock(
 
 const STATUS_OVER_TIME = [
 	{ count: 5, status: "Not started", week: "2026-03-01" },
-	{ count: 3, status: "Resume submitted", week: "2026-03-01" },
+	{ count: 3, status: "Applied", week: "2026-03-01" },
 	{ count: 4, status: "Not started", week: "2026-03-08" },
-	{ count: 4, status: "Resume submitted", week: "2026-03-08" },
+	{ count: 4, status: "Applied", week: "2026-03-08" },
 	{ count: 1, status: "Interviewing", week: "2026-03-08" },
 ];
 
@@ -52,7 +52,7 @@ describe(PipelineOverTimeChart, () => {
 	it("renders an Area for each status present in the data", () => {
 		render(<PipelineOverTimeChart statusOverTime={STATUS_OVER_TIME} />);
 		expect(screen.getByTestId("area-Not started")).toBeInTheDocument();
-		expect(screen.getByTestId("area-Resume submitted")).toBeInTheDocument();
+		expect(screen.getByTestId("area-Applied")).toBeInTheDocument();
 		expect(screen.getByTestId("area-Interviewing")).toBeInTheDocument();
 	});
 

@@ -252,7 +252,7 @@ describe(JobManagementPage, () => {
 
 		// Disable hide-withdrawn via the Filters popover
 		fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
-		fireEvent.click(screen.getByText("Hide withdrawn"));
+		fireEvent.click(screen.getByText("Hide withdrawn/bad fits"));
 
 		expect(screen.getByText("Withdrawn Co")).toBeInTheDocument();
 		expect(screen.getByText("Rejected Co")).toBeInTheDocument();
@@ -442,21 +442,21 @@ describe(JobManagementPage, () => {
 			vi.mocked(api.updateJob).mockResolvedValue({
 				...job,
 				ending_substatus: null,
-				status: "Resume submitted",
+				status: "Applied",
 			});
 
 			renderPage();
 			await waitFor(() => expect(MockKanbanBoard).toHaveBeenCalled());
 
 			const [{ onStatusChange }] = MockKanbanBoard.mock.lastCall!;
-			onStatusChange(job, "Resume submitted");
+			onStatusChange(job, "Applied");
 
 			await waitFor(() => {
 				expect(vi.mocked(api.updateJob)).toHaveBeenCalledWith(
 					1,
 					expect.objectContaining({
 						ending_substatus: null,
-						status: "Resume submitted",
+						status: "Applied",
 					}),
 				);
 			});

@@ -32,8 +32,8 @@ function dateFilter(window: Window): string {
 	return "";
 }
 
-const ACTIVE_STATUSES = `('Not started', 'Resume submitted', 'Phone screen', 'Interviewing')`;
-const SUBMITTED_STATUSES = `('Resume submitted', 'Phone screen', 'Interviewing', 'Offer!', 'Rejected/Withdrawn')`;
+const ACTIVE_STATUSES = `('Not started', 'Applied', 'Phone screen', 'Interviewing')`;
+const SUBMITTED_STATUSES = `('Applied', 'Phone screen', 'Interviewing', 'Offer!', 'Rejected/Withdrawn')`;
 const RESPONDED_STATUSES = `('Phone screen', 'Interviewing', 'Offer!')`;
 
 export function getStats(
@@ -147,7 +147,7 @@ export function getStats(
       GROUP BY status
       ORDER BY MIN(CASE status
         WHEN 'Not started'       THEN 1
-        WHEN 'Resume submitted'  THEN 2
+        WHEN 'Applied'  THEN 2
         WHEN 'Phone screen'      THEN 3
         WHEN 'Interviewing'      THEN 4
         WHEN 'Offer!'            THEN 5
@@ -160,7 +160,13 @@ export function getStats(
 	const transitions = db
 		.prepare(
 			`WITH job_filter AS (
-        SELECT id, status AS current_status, ending_substatus FROM jobs
+        SELECT id, status AS current_status, ending_substatus,
+          CASE
+            WHEN referred_by IS NOT NULL AND referred_by <> '' THEN 'Referred'
+            WHEN recruiter IS NOT NULL AND recruiter <> '' THEN 'Recruited'
+            ELSE 'Direct'
+          END AS starting_status
+        FROM jobs
         WHERE user_id = ?
           AND (ending_substatus IS NULL OR ending_substatus <> 'Withdrawn')
           ${df}
@@ -169,7 +175,8 @@ export function getStats(
       consecutive AS (
         SELECT
           h.job_id,
-          h.status AS from_status,
+          CASE WHEN h.status = 'Not started' THEN jf.starting_status
+               ELSE h.status END AS from_status,
           COALESCE(
             (SELECT h2.status FROM job_status_history h2
              WHERE h2.job_id = h.job_id AND h2.entered_at > h.entered_at
@@ -202,18 +209,36 @@ export function getStats(
 		)
 		.all(userId) as { from: string; to: string; count: number }[];
 
+	// Synthetic link: jobs currently sitting at "Applied" with no
+	// Forward movement yet. These are excluded from the real transitions (their
+	// To_status resolves to NULL) so there is no double-counting.
+	const pendingAppliedCount = (
+		db
+			.prepare(
+				`SELECT COUNT(*) as count FROM jobs WHERE ${baseWhere} AND status = 'Applied'`,
+			)
+			.get(userId) as { count: number }
+	).count;
+	if (pendingAppliedCount > 0) {
+		transitions.push({
+			count: pendingAppliedCount,
+			from: "Applied",
+			to: "No response",
+		});
+	}
+
 	const topCompanies = db
 		.prepare(
 			`SELECT
         company,
         COUNT(*) AS applications,
-        SUM(CASE WHEN status IN ('Not started', 'Resume submitted', 'Phone screen', 'Interviewing', 'Offer!')
+        SUM(CASE WHEN status IN ('Not started', 'Applied', 'Phone screen', 'Interviewing', 'Offer!')
              THEN 1 ELSE 0 END) AS active,
         CASE MAX(CASE status
           WHEN 'Offer!'             THEN 6
           WHEN 'Interviewing'       THEN 5
           WHEN 'Phone screen'       THEN 4
-          WHEN 'Resume submitted'   THEN 3
+          WHEN 'Applied'   THEN 3
           WHEN 'Rejected/Withdrawn' THEN 2
           WHEN 'Not started'        THEN 1
           ELSE 0
@@ -221,7 +246,7 @@ export function getStats(
           WHEN 6 THEN 'Offer!'
           WHEN 5 THEN 'Interviewing'
           WHEN 4 THEN 'Phone screen'
-          WHEN 3 THEN 'Resume submitted'
+          WHEN 3 THEN 'Applied'
           WHEN 2 THEN 'Rejected/Withdrawn'
           WHEN 1 THEN 'Not started'
         END AS bestStage
