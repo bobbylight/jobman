@@ -306,7 +306,12 @@ export default function JobManagementPage() {
 						return false;
 					}
 				}
-				if (deferredHideWithdrawn && j.ending_substatus === "Withdrawn") {
+				if (
+					deferredHideWithdrawn &&
+					(j.ending_substatus === "Withdrawn" ||
+						j.ending_substatus === "Not a good fit" ||
+						j.ending_substatus === "Job closed")
+				) {
 					return false;
 				}
 				if (
@@ -489,7 +494,7 @@ export default function JobManagementPage() {
 								size="small"
 							/>
 						}
-						label="Hide withdrawn"
+						label="Hide withdrawn/bad fits"
 						sx={{
 							"& .MuiFormControlLabel-label": { fontSize: "0.875rem" },
 							mx: 0,

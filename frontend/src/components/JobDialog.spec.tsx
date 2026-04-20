@@ -39,7 +39,7 @@ const BASE_JOB: Job = {
 	referred_by: "Alice",
 	role: "Engineer",
 	salary: "$120k",
-	status: "Resume submitted",
+	status: "Applied",
 	tags: [],
 	updated_at: "2024-01-01T00:00:00.000Z",
 };
@@ -600,7 +600,7 @@ describe(JobDialog, () => {
 				});
 				const field = screen.getByLabelText(/Final Resolution/i);
 
-				changeSelect(/^Status$/i, "Resume submitted");
+				changeSelect(/^Status$/i, "Applied");
 
 				expect(field).not.toHaveTextContent("Offer accepted");
 			});

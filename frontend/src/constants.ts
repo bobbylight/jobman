@@ -2,7 +2,7 @@ import type { EndingSubstatus, FitScore, JobStatus, JobTag } from "./types";
 
 export const STATUSES: JobStatus[] = [
 	"Not started",
-	"Resume submitted",
+	"Applied",
 	"Phone screen",
 	"Interviewing",
 	"Offer!",
@@ -19,6 +19,8 @@ export const ENDING_SUBSTATUSES: EndingSubstatus[] = [
 	"Rejected",
 	"Ghosted",
 	"No response",
+	"Job closed",
+	"Not a good fit",
 	"Offer declined",
 	"Offer accepted",
 ];
@@ -40,7 +42,7 @@ export const STATUS_COLORS = {
 	"Offer!": "#66bb6a",
 	"Phone screen": "#ab47bc",
 	"Rejected/Withdrawn": "#ef5350",
-	"Resume submitted": "#ffa726",
+	Applied: "#ffa726",
 } satisfies Record<JobStatus, string>;
 
 // Sorted alphabetically by display label

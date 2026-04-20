@@ -56,13 +56,15 @@ interface JobRow {
 	ending_substatus?: string | null;
 	date_phone_screen?: string | null;
 	date_applied?: string | null;
+	referred_by?: string | null;
+	recruiter?: string | null;
 }
 
 function insertJob(db: Database.Database, row: JobRow): void {
 	db.prepare(
 		`INSERT INTO jobs
-      (user_id, company, role, link, status, ending_substatus, date_phone_screen, date_applied)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      (user_id, company, role, link, status, ending_substatus, date_phone_screen, date_applied, referred_by, recruiter)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 	).run(
 		row.user_id,
 		row.company ?? "Acme",
@@ -72,6 +74,8 @@ function insertJob(db: Database.Database, row: JobRow): void {
 		row.ending_substatus ?? null,
 		row.date_phone_screen ?? null,
 		row.date_applied ?? null,
+		row.referred_by ?? null,
+		row.recruiter ?? null,
 	);
 }
 
@@ -138,7 +142,7 @@ describe(getStats, () => {
 		it("counts jobs in all four non-terminal statuses", () => {
 			for (const status of [
 				"Not started",
-				"Resume submitted",
+				"Applied",
 				"Phone screen",
 				"Interviewing",
 			]) {
@@ -190,15 +194,15 @@ describe(getStats, () => {
 		});
 
 		it("computes the rate as responded / submitted", () => {
-			// Denominator (submitted): Resume submitted, Phone screen
+			// Denominator (submitted): Applied, Phone screen
 			// Numerator (responded): Phone screen
-			insertJob(db, { status: "Resume submitted", user_id: USER_ID });
+			insertJob(db, { status: "Applied", user_id: USER_ID });
 			insertJob(db, { status: "Phone screen", user_id: USER_ID });
 			expect(getStats(db, USER_ID, "all").responseRate).toBe(0.5);
 		});
 
 		it("counts Rejected/Withdrawn with a date_phone_screen in the numerator", () => {
-			insertJob(db, { status: "Resume submitted", user_id: USER_ID });
+			insertJob(db, { status: "Applied", user_id: USER_ID });
 			insertJob(db, {
 				date_phone_screen: "2025-01-15T10:00",
 				ending_substatus: "Rejected",
@@ -209,7 +213,7 @@ describe(getStats, () => {
 		});
 
 		it("does not count Rejected/Withdrawn without date_phone_screen in the numerator", () => {
-			insertJob(db, { status: "Resume submitted", user_id: USER_ID });
+			insertJob(db, { status: "Applied", user_id: USER_ID });
 			insertJob(db, {
 				date_phone_screen: null,
 				ending_substatus: "Rejected",
@@ -288,7 +292,7 @@ describe(getStats, () => {
 			).run(jobId, "Not started", "2025-01-01T00:00:00Z");
 			db.prepare(
 				"INSERT INTO job_status_history (job_id, status, entered_at) VALUES (?, ?, ?)",
-			).run(jobId, "Resume submitted", "2025-01-02T00:00:00Z");
+			).run(jobId, "Applied", "2025-01-02T00:00:00Z");
 			db.prepare(
 				"INSERT INTO job_status_history (job_id, status, entered_at) VALUES (?, ?, ?)",
 			).run(jobId, "Phone screen", "2025-01-05T00:00:00Z");
@@ -296,8 +300,8 @@ describe(getStats, () => {
 			const {transitions} = getStats(db, USER_ID, "all");
 			expect(transitions).toEqual(
 				expect.arrayContaining([
-					{ count: 1, from: "Not started", to: "Resume submitted" },
-					{ count: 1, from: "Resume submitted", to: "Phone screen" },
+					{ count: 1, from: "Direct", to: "Applied" },
+					{ count: 1, from: "Applied", to: "Phone screen" },
 				]),
 			);
 			expect(transitions).toHaveLength(2);
@@ -320,7 +324,7 @@ describe(getStats, () => {
 			).run(jobId, "Not started", "2025-01-01T00:00:00Z");
 			db.prepare(
 				"INSERT INTO job_status_history (job_id, status, entered_at) VALUES (?, ?, ?)",
-			).run(jobId, "Resume submitted", "2025-01-02T00:00:00Z");
+			).run(jobId, "Applied", "2025-01-02T00:00:00Z");
 
 			expect(getStats(db, USER_ID, "all").transitions).toEqual([]);
 		});
@@ -341,11 +345,11 @@ describe(getStats, () => {
 
 			db.prepare(
 				"INSERT INTO job_status_history (job_id, status, entered_at) VALUES (?, ?, ?)",
-			).run(jobId, "Resume submitted", "2025-01-02T00:00:00Z");
+			).run(jobId, "Applied", "2025-01-02T00:00:00Z");
 
 			const {transitions} = getStats(db, USER_ID, "all");
 			expect(transitions).toEqual([
-				{ count: 1, from: "Resume submitted", to: "Ghosted" },
+				{ count: 1, from: "Applied", to: "Ghosted" },
 			]);
 		});
 	});

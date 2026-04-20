@@ -7,7 +7,7 @@ export interface User {
 
 export type JobStatus =
 	| "Not started"
-	| "Resume submitted"
+	| "Applied"
 	| "Phone screen"
 	| "Interviewing"
 	| "Offer!"
@@ -18,6 +18,8 @@ export type EndingSubstatus =
 	| "Rejected"
 	| "Ghosted"
 	| "No response"
+	| "Job closed"
+	| "Not a good fit"
 	| "Offer declined"
 	| "Offer accepted";
 

@@ -19,7 +19,7 @@ interface SankeyNodeProps {
 	y: number;
 	width: number;
 	height: number;
-	payload: SankeyNode & ChartNode;
+	payload: SankeyNode & ChartNode & { value: number };
 }
 
 interface SankeyLinkProps {
@@ -38,20 +38,33 @@ interface SankeyLinkProps {
 
 const SUBSTATUS_COLORS: Record<EndingSubstatus, string> = {
 	Ghosted: "#8d6e63",
+	"Job closed": "#7b1fa2",
 	"No response": "#bdbdbd",
+	"Not a good fit": "#e65100",
 	"Offer accepted": "#2e7d32",
 	"Offer declined": "#f57c00",
 	Rejected: "#e53935",
 	Withdrawn: "#78909c",
 };
 
-// Full node ordering: main pipeline statuses first, then granular terminal
-// Outcomes. Substatuses must come after all main statuses so every link in
-// The Sankey is a forward link (source index < target index).
-const NODE_ORDER: string[] = [...STATUSES, ...ENDING_SUBSTATUSES];
+const STARTING_STATUS_COLORS: Record<string, string> = {
+	Direct: "#90a4ae",
+	Recruited: "#26c6da",
+	Referred: "#43a047",
+};
+
+// Full node ordering: granular starting statuses first (same Sankey column),
+// Then main pipeline statuses (excluding "Not started"), then terminal
+// Substatuses. All links must be forward (source index < target index).
+const NODE_ORDER: string[] = [
+	...Object.keys(STARTING_STATUS_COLORS),
+	...STATUSES.filter((s) => s !== "Not started"),
+	...ENDING_SUBSTATUSES,
+];
 
 function nodeColor(name: string): string {
 	return (
+		STARTING_STATUS_COLORS[name] ??
 		STATUS_COLORS[name as JobStatus] ??
 		SUBSTATUS_COLORS[name as EndingSubstatus] ??
 		"#90a4ae"
@@ -96,19 +109,37 @@ function toSankeyData(transitions: Props["transitions"]) {
 function CustomNode(props: SankeyNodeProps) {
 	const { x, y, width, height, payload } = props;
 	const color = payload.color ?? "#90a4ae";
+	const labelX = x + width / 2;
+	const labelY = y + height / 2;
+	const padX = 0;
+	const padY = 3;
+	const countStr = String(payload.value);
+	const estimatedTextWidth =
+		countStr.length * 7.5 + 4 + payload.name.length * 6.5;
+	const bgWidth = estimatedTextWidth + padX * 2;
+	const bgHeight = 11 + padY * 2;
 
 	return (
 		<g>
 			<rect x={x} y={y} width={width} height={height} fill={color} rx={3} />
+			<rect
+				x={labelX - bgWidth / 2}
+				y={labelY - bgHeight / 2}
+				width={bgWidth}
+				height={bgHeight}
+				rx={4}
+				fill="rgba(255,255,255,0.82)"
+			/>
 			<text
-				x={x + width + 6}
-				y={y + height / 2}
+				x={labelX}
+				y={labelY}
 				dy="0.35em"
-				textAnchor="start"
+				textAnchor="middle"
 				fontSize={11}
-				fill="#555"
+				fill="#444"
 			>
-				{payload.name}
+				<tspan fontWeight="bold">{countStr}</tspan>
+				{` ${payload.name}`}
 			</text>
 		</g>
 	);
@@ -125,7 +156,7 @@ function CustomLink(props: SankeyLinkProps) {
 		linkWidth,
 		payload,
 	} = props;
-	const color = payload.source.color ?? "#90a4ae";
+	const color = payload.target.color ?? "#90a4ae";
 
 	return (
 		<path
@@ -151,7 +182,7 @@ export default function PipelineFunnelChart({ transitions }: Props) {
 				sx={{
 					alignItems: "center",
 					display: "flex",
-					height: 260,
+					height: 320,
 					justifyContent: "center",
 				}}
 			>
@@ -165,15 +196,16 @@ export default function PipelineFunnelChart({ transitions }: Props) {
 	return (
 		<Sankey
 			width={480}
-			height={260}
+			height={320}
 			data={data}
 			node={CustomNode as any}
 			link={CustomLink as any}
 			nodeWidth={12}
 			nodePadding={14}
 			sort={false}
+			iterations={1}
 			verticalAlign="justify"
-			margin={{ bottom: 4, left: 4, right: 140, top: 4 }}
+			margin={{ bottom: 4, left: 50, right: 55, top: 4 }}
 		>
 			<Tooltip
 				formatter={(value) => [`${value} jobs`]}

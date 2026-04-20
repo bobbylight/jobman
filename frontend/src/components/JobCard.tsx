@@ -56,7 +56,7 @@ const STATUS_DATE_LABEL: Record<
 		getDate: (job) => formatDate(job.updated_at),
 		label: "Last updated",
 	},
-	"Resume submitted": {
+	Applied: {
 		getDate: (job) => formatDate(job.date_applied),
 		label: "Applied",
 	},

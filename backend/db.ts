@@ -118,13 +118,13 @@ db.exec(`
   );
 
   INSERT INTO job_status_history (job_id, status, entered_at)
-  SELECT j.id, 'Resume submitted', j.date_applied
+  SELECT j.id, 'Applied', j.date_applied
   FROM jobs j
   WHERE j.date_applied IS NOT NULL
     AND j.status <> 'Not started'
     AND NOT EXISTS (
       SELECT 1 FROM job_status_history h
-      WHERE h.job_id = j.id AND h.status = 'Resume submitted'
+      WHERE h.job_id = j.id AND h.status = 'Applied'
     );
 
   INSERT INTO job_status_history (job_id, status, entered_at)
@@ -169,9 +169,9 @@ db.exec(`
         AND h2.status <> 'Not started'
     );
 
-  -- Remove spurious 'Resume submitted' backfill entries for jobs still in 'Not started'
+  -- Remove spurious 'Applied' backfill entries for jobs still in 'Not started'
   DELETE FROM job_status_history
-  WHERE status = 'Resume submitted'
+  WHERE status = 'Applied'
     AND job_id IN (
       SELECT id FROM jobs WHERE status = 'Not started'
     );

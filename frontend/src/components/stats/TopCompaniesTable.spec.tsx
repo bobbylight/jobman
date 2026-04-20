@@ -83,7 +83,7 @@ describe(TopCompaniesTable, () => {
 			{
 				active: 1,
 				applications: 1,
-				bestStage: "Resume submitted",
+				bestStage: "Applied",
 				company: "E",
 			},
 		];

@@ -14,9 +14,11 @@ vi.mock(
 );
 
 const TRANSITIONS = [
-	{ count: 8, from: "Not started", to: "Resume submitted" },
-	{ count: 5, from: "Resume submitted", to: "Phone screen" },
-	{ count: 3, from: "Resume submitted", to: "Rejected/Withdrawn" },
+	{ count: 5, from: "Direct", to: "Applied" },
+	{ count: 2, from: "Recruited", to: "Applied" },
+	{ count: 1, from: "Referred", to: "Applied" },
+	{ count: 5, from: "Applied", to: "Phone screen" },
+	{ count: 3, from: "Applied", to: "Rejected/Withdrawn" },
 	{ count: 3, from: "Phone screen", to: "Interviewing" },
 	{ count: 2, from: "Phone screen", to: "Rejected/Withdrawn" },
 	{ count: 1, from: "Interviewing", to: "Offer!" },

@@ -254,11 +254,11 @@ describe("PUT /api/jobs/:id", () => {
 			...BASE_JOB,
 			company: "Updated Corp",
 			referred_by: "Jane Doe",
-			status: "Resume submitted",
+			status: "Applied",
 		});
 		expect(res.status).toBe(200);
 		expect(res.body.company).toBe("Updated Corp");
-		expect(res.body.status).toBe("Resume submitted");
+		expect(res.body.status).toBe("Applied");
 		expect(res.body.referred_by).toBe("Jane Doe");
 	});
 
@@ -324,7 +324,7 @@ describe("DELETE /api/jobs/:id", () => {
 describe("ending_substatus validation", () => {
 	const NON_TERMINAL_CASES = [
 		"Not started",
-		"Resume submitted",
+		"Applied",
 		"Phone screen",
 		"Interviewing",
 	] as const;
@@ -418,7 +418,7 @@ describe("ending_substatus validation", () => {
 			const res = await req("put", `/api/jobs/${id}`).send({
 				...BASE_JOB,
 				ending_substatus: "Ghosted",
-				status: "Resume submitted",
+				status: "Applied",
 			});
 			expect(res.status).toBe(422);
 		});
