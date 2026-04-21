@@ -75,6 +75,8 @@ export const VALID_ENDING_SUBSTATUSES = new Set([
 	"Rejected",
 	"Ghosted",
 	"No response",
+	"Job closed",
+	"Not a good fit",
 	"Offer declined",
 	"Offer accepted",
 ]);
