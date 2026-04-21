@@ -16,6 +16,7 @@ import LookbackToggle from "./stats/LookbackToggle";
 import AvgDaysChart from "./stats/AvgDaysChart";
 import PipelineOverTimeChart from "./stats/PipelineOverTimeChart";
 import TopCompaniesTable from "./stats/TopCompaniesTable";
+import InterviewsPerWeekChart from "./stats/InterviewsPerWeekChart";
 
 export default function StatsPage() {
 	const [window, setWindow] = useState<StatsWindow>("all");
@@ -159,7 +160,7 @@ export default function StatsPage() {
 										color="text.secondary"
 										gutterBottom
 									>
-										Applications Over Time
+										Applications per Week
 									</Typography>
 									<ApplicationsOverTime
 										applicationsByWeek={data.applicationsByWeek}
@@ -167,6 +168,20 @@ export default function StatsPage() {
 								</CardContent>
 							</Card>
 						)}
+						<Card sx={{ flex: "1 1 340px" }}>
+							<CardContent>
+								<Typography
+									variant="subtitle2"
+									color="text.secondary"
+									gutterBottom
+								>
+									Interviews per Week
+								</Typography>
+								<InterviewsPerWeekChart
+									interviewsByWeek={data.interviewsByWeek}
+								/>
+							</CardContent>
+						</Card>
 					</Box>
 					{/* Charts row 3: Pipeline Over Time + Top Companies */}
 					<Box

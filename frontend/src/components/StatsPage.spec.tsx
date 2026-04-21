@@ -44,6 +44,7 @@ const BASE_STATS: StatsResponse = {
 	byStatus: [{ status: "Not started", count: 4 }],
 	offersReceived: 1,
 	responseRate: 0.5,
+	interviewsByWeek: [],
 	statusOverTime: [],
 	topCompanies: [],
 	totalApplications: 10,

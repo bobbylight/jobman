@@ -13,7 +13,8 @@ export interface StatsResponse {
 	transitions: { from: string; to: string; count: number }[];
 	/** Weekly pipeline snapshots — how many jobs were in each status each week. */
 	statusOverTime: { week: string; status: string; count: number }[];
-	/** Top 5 companies by application count with summary stats. */
+	interviewsByWeek: { week: string; count: number }[];
+	/** Top 6 companies by application count with summary stats. */
 	topCompanies: {
 		company: string;
 		applications: number;
@@ -228,6 +229,26 @@ export function getStats(
 		});
 	}
 
+	let interviewDateFilter = "";
+	if (window === "30") {
+		interviewDateFilter = "AND date(i.interview_dttm) >= date('now', '-30 days')";
+	} else if (window === "90") {
+		interviewDateFilter = "AND date(i.interview_dttm) >= date('now', '-90 days')";
+	}
+	const interviewsByWeek = db
+		.prepare(
+			`SELECT
+        strftime('%Y-W%W', date(i.interview_dttm)) as week,
+        COUNT(*) as count
+       FROM interviews i
+       JOIN jobs j ON j.id = i.job_id
+       WHERE j.user_id = ?
+         ${interviewDateFilter}
+       GROUP BY week
+       ORDER BY week ASC`,
+		)
+		.all(userId) as { week: string; count: number }[];
+
 	const topCompanies = db
 		.prepare(
 			`SELECT
@@ -255,7 +276,7 @@ export function getStats(
        WHERE ${baseWhere}
        GROUP BY company
        ORDER BY applications DESC
-       LIMIT 5`,
+       LIMIT 6`,
 		)
 		.all(userId) as {
 		company: string;
@@ -316,6 +337,7 @@ export function getStats(
 		applicationsByWeek,
 		avgDaysPerStage,
 		byStatus,
+		interviewsByWeek,
 		offersReceived: offers,
 		responseRate,
 		statusOverTime,
