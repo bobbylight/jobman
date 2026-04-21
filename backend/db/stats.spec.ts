@@ -34,6 +34,18 @@ const SCHEMA = `
     status     TEXT NOT NULL,
     entered_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
   );
+  CREATE TABLE interviews (
+    id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_id                INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    interview_stage       TEXT NOT NULL,
+    interview_dttm        TEXT NOT NULL,
+    interview_interviewers TEXT,
+    interview_type        TEXT,
+    interview_vibe        TEXT,
+    interview_notes       TEXT,
+    interview_result      TEXT,
+    interview_feeling     TEXT
+  );
 `;
 
 function makeDb() {
