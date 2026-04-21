@@ -530,6 +530,7 @@ describe("API module", () => {
 			byStatus: [{ status: "Not started", count: 2 }],
 			offersReceived: 1,
 			responseRate: 0.6,
+			interviewsByWeek: [],
 			statusOverTime: [],
 			topCompanies: [],
 			totalApplications: 5,
