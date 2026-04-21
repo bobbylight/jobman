@@ -30,6 +30,7 @@ import type {
 	InterviewVibe,
 } from "../types";
 import MarkdownField from "./MarkdownField";
+import MarkdownSnippet from "./MarkdownSnippet";
 import QuestionSubView from "./QuestionSubView";
 import { formatTime } from "../jobUtils";
 
@@ -701,7 +702,7 @@ function InterviewCard({
 								whiteSpace: "nowrap",
 							}}
 						>
-							{interview.interview_notes.split("\n")[0]}
+							<MarkdownSnippet text={interview.interview_notes} />
 						</Typography>
 					)}
 					<Button
