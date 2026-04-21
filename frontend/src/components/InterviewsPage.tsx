@@ -17,6 +17,7 @@ import PhoneIcon from "@mui/icons-material/Phone";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { formatTime } from "../jobUtils";
+import MarkdownSnippet from "./MarkdownSnippet";
 import type {
 	EnrichedInterview,
 	InterviewStage,
@@ -591,7 +592,7 @@ function InterviewRow({
 							whiteSpace: "nowrap",
 						}}
 					>
-						{interview.interview_notes.split("\n")[0]}
+						<MarkdownSnippet text={interview.interview_notes} />
 					</Typography>
 				)}
 			</Box>
