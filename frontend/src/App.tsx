@@ -79,7 +79,7 @@ export default function App() {
 						<Route path="/" element={<Navigate to="/jobs" replace />} />
 						<Route path="/jobs" element={<JobManagementPage />} />
 						<Route path="/jobs/:jobId" element={<JobManagementPage />} />
-						<Route path="/interviews" element={<InterviewsPage />} />
+						<Route path="/calendar" element={<InterviewsPage />} />
 						<Route path="/stats" element={<StatsPage />} />
 						<Route path="*" element={<Navigate to="/jobs" replace />} />
 					</Route>
