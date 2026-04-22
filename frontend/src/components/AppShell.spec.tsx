@@ -49,10 +49,10 @@ describe(AppShell, () => {
 		expect(screen.getByRole("button", { name: "Board" })).toBeInTheDocument();
 	});
 
-	it("renders the Interviews nav button", () => {
+	it("renders the Calendar nav button", () => {
 		renderAppShell();
 		expect(
-			screen.getByRole("button", { name: "Interviews" }),
+			screen.getByRole("button", { name: "Calendar" }),
 		).toBeInTheDocument();
 	});
 
@@ -72,10 +72,10 @@ describe(AppShell, () => {
 		expect(mockNavigate).toHaveBeenCalledWith("/jobs");
 	});
 
-	it("navigates to /interviews when Interviews is clicked", () => {
+	it("navigates to /calendar when Calendar is clicked", () => {
 		renderAppShell();
-		fireEvent.click(screen.getByRole("button", { name: "Interviews" }));
-		expect(mockNavigate).toHaveBeenCalledWith("/interviews");
+		fireEvent.click(screen.getByRole("button", { name: "Calendar" }));
+		expect(mockNavigate).toHaveBeenCalledWith("/calendar");
 	});
 
 	it("navigates to /stats when Stats is clicked", () => {

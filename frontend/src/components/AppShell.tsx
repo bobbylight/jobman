@@ -25,8 +25,8 @@ const NAV_ITEMS = [
 	{ icon: <ViewKanbanOutlinedIcon />, label: "Board", path: "/jobs" },
 	{
 		icon: <CalendarMonthOutlinedIcon />,
-		label: "Interviews",
-		path: "/interviews",
+		label: "Calendar",
+		path: "/calendar",
 	},
 	{ icon: <InsightsIcon />, label: "Stats", path: "/stats" },
 ] as const;
