@@ -68,6 +68,7 @@ export type JobFormData = Omit<Job, "id" | "created_at">;
 
 export type InterviewStage = "phone_screen" | "onsite";
 export type InterviewType =
+	| "recruiter_call"
 	| "behavioral"
 	| "leadership"
 	| "coding"
@@ -129,6 +130,50 @@ export type InterviewQuestionFormData = Omit<
 >;
 
 export type StatsWindow = "all" | "90" | "30";
+
+export interface InterviewInsightsResponse {
+	totalInterviews: number;
+	passRate: number | null;
+	totalQuestions: number;
+	avgDifficulty: number | null;
+	byStage: { stage: string; count: number; passed: number; failed: number }[];
+	byType: { type: string; count: number; passed: number; failed: number }[];
+	feelingVsResult: {
+		feeling: string;
+		passed: number;
+		failed: number;
+		noResult: number;
+	}[];
+	vibeVsResult: {
+		vibe: string;
+		count: number;
+		passed: number;
+		failed: number;
+	}[];
+	questionsByType: {
+		type: string;
+		count: number;
+		avgDifficulty: number;
+		passRate: number | null;
+	}[];
+	difficultyDistribution: {
+		difficulty: number;
+		count: number;
+		passed: number;
+		failed: number;
+	}[];
+	recentQuestions: {
+		id: number;
+		question_text: string;
+		question_type: string;
+		question_notes: string | null;
+		difficulty: number;
+		interview_result: string | null;
+		company: string;
+		role: string;
+		interview_dttm: string;
+	}[];
+}
 
 export interface StatsResponse {
 	totalApplications: number;

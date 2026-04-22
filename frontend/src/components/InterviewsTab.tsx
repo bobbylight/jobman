@@ -40,6 +40,7 @@ const INTERVIEW_STAGE_LABELS: Record<InterviewStage, string> = {
 };
 
 const INTERVIEW_TYPE_LABELS: Record<InterviewType, string> = {
+	recruiter_call: "Recruiter Call",
 	behavioral: "Behavioral",
 	coding: "Coding",
 	culture_fit: "Culture Fit",

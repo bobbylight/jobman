@@ -47,6 +47,7 @@ export function validateJobFields(
 
 export const VALID_INTERVIEW_STAGES = new Set(["phone_screen", "onsite"]);
 export const VALID_INTERVIEW_TYPES = new Set([
+	"recruiter_call",
 	"behavioral",
 	"leadership",
 	"coding",
