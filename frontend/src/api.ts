@@ -2,6 +2,7 @@ import type {
 	EnrichedInterview,
 	Interview,
 	InterviewFormData,
+	InterviewInsightsResponse,
 	InterviewQuestion,
 	InterviewQuestionFormData,
 	Job,
@@ -63,6 +64,8 @@ export const api = {
 	// Stats
 	getStats: (window: StatsWindow) =>
 		request<StatsResponse>(`/stats?window=${window}`),
+	getInterviewInsights: (window: StatsWindow = "all") =>
+		request<InterviewInsightsResponse>(`/interview-insights?window=${window}`),
 
 	// Cross-job interview search
 	loadMoreInterviews: (after: string, limit = 10) => {

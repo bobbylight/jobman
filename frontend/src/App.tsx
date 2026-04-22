@@ -11,6 +11,7 @@ import { api, setUnauthorizedHandler } from "./api";
 import type { User } from "./types";
 import LoginPage from "./components/LoginPage";
 import AppShell from "./components/AppShell";
+import InsightsPage from "./components/InsightsPage";
 import JobManagementPage from "./components/JobManagementPage";
 import InterviewsPage from "./components/InterviewsPage";
 import StatsPage from "./components/StatsPage";
@@ -81,6 +82,7 @@ export default function App() {
 						<Route path="/jobs/:jobId" element={<JobManagementPage />} />
 						<Route path="/calendar" element={<InterviewsPage />} />
 						<Route path="/stats" element={<StatsPage />} />
+						<Route path="/insights" element={<InsightsPage />} />
 						<Route path="*" element={<Navigate to="/jobs" replace />} />
 					</Route>
 				</Routes>
