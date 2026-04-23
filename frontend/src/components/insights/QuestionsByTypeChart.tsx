@@ -33,6 +33,7 @@ interface Props {
 		type: string;
 		count: number;
 		avgDifficulty: number;
+		passRate: number | null;
 	}[];
 }
 
