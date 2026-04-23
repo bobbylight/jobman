@@ -29,7 +29,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 interface Props {
-	byType: { type: string; count: number }[];
+	byType: { type: string; count: number; passed: number; failed: number }[];
 }
 
 export default function TypeDonutChart({ byType }: Props) {
