@@ -17,6 +17,7 @@ import PhoneIcon from "@mui/icons-material/Phone";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { formatTime } from "../jobUtils";
+import { fetchLogo, getCachedLogo } from "../logoCache";
 import MarkdownSnippet from "./MarkdownSnippet";
 import type {
 	EnrichedInterview,
@@ -484,6 +485,33 @@ export default function InterviewsPage() {
 	);
 }
 
+function CompanyLogo({ company }: { company: string }) {
+	const [entry, setEntry] = useState(() => getCachedLogo(company));
+
+	useEffect(() => {
+		void fetchLogo(company).then(setEntry);
+	}, [company]);
+
+	if (!entry || entry.status !== "resolved") {
+		return null;
+	}
+
+	return (
+		<Box
+			component="img"
+			src={entry.src}
+			alt={company}
+			sx={{
+				borderRadius: 0.5,
+				flexShrink: 0,
+				height: 24,
+				objectFit: "contain",
+				width: 24,
+			}}
+		/>
+	);
+}
+
 function InterviewRow({
 	interview,
 	onJobClick,
@@ -597,6 +625,7 @@ function InterviewRow({
 					</Typography>
 				)}
 			</Box>
+			<CompanyLogo company={interview.job.company} />
 		</Box>
 	);
 }

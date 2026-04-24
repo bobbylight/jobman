@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
 	Box,
 	Chip,
@@ -14,6 +14,7 @@ import {
 	Tooltip,
 	Typography,
 } from "@mui/material";
+import { fetchLogo, getCachedLogo } from "../../logoCache";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import RemoveIcon from "@mui/icons-material/Remove";
@@ -33,6 +34,33 @@ const TYPE_LABELS: Record<string, string> = {
 	system_design: "System Design",
 	technical: "Technical",
 };
+
+function CompanyLogo({ company }: { company: string }) {
+	const [entry, setEntry] = useState(() => getCachedLogo(company));
+
+	useEffect(() => {
+		void fetchLogo(company).then(setEntry);
+	}, [company]);
+
+	if (!entry || entry.status !== "resolved") {
+		return null;
+	}
+
+	return (
+		<Box
+			component="img"
+			src={entry.src}
+			alt={company}
+			sx={{
+				borderRadius: 0.5,
+				flexShrink: 0,
+				height: 20,
+				objectFit: "contain",
+				width: 20,
+			}}
+		/>
+	);
+}
 
 function DifficultyStars({ difficulty }: { difficulty: number }) {
 	return (
@@ -190,9 +218,14 @@ export default function QuestionBankTable({ recentQuestions }: Props) {
 									</Tooltip>
 								</TableCell>
 								<TableCell>
-									<Typography variant="body2" noWrap>
-										{q.company}
-									</Typography>
+									<Box
+										sx={{ alignItems: "center", display: "flex", gap: 0.75 }}
+									>
+										<CompanyLogo company={q.company} />
+										<Typography variant="body2" noWrap>
+											{q.company}
+										</Typography>
+									</Box>
 									<Typography variant="caption" color="text.secondary" noWrap>
 										{q.role}
 									</Typography>
