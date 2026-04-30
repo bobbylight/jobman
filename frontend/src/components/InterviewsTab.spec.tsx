@@ -46,6 +46,7 @@ const INTERVIEW_B = makeInterview({
 
 const DEFAULT_PROPS = {
 	jobId: 42,
+	jobStatus: "Not started" as const,
 	onCountChange: vi.fn(),
 	onViewingQuestionsChange: vi.fn(),
 	viewingQuestionsFor: null,
@@ -273,6 +274,76 @@ describe(InterviewsTab, () => {
 					screen.getByText("Failed to save. Please try again."),
 				).toBeInTheDocument();
 			});
+		});
+	});
+
+	describe("smart defaults based on job status", () => {
+		async function openAddFormWithStatus(jobStatus: string) {
+			vi.mocked(api.createInterview).mockResolvedValue(
+				makeInterview({ id: 99 }),
+			);
+			vi.mocked(api.getInterviews)
+				.mockResolvedValueOnce([])
+				.mockResolvedValueOnce([]);
+			render(
+				<InterviewsTab
+					{...DEFAULT_PROPS}
+					jobStatus={jobStatus as "Not started"}
+				/>,
+			);
+			await waitFor(() =>
+				screen.getByRole("button", { name: /Add Interview/i }),
+			);
+			fireEvent.click(screen.getByRole("button", { name: /Add Interview/i }));
+			fireEvent.change(screen.getByLabelText(/Date & Time/i), {
+				target: { value: "2026-04-01T10:00" },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Save Interview" }));
+			await waitFor(() => expect(api.createInterview).toHaveBeenCalled());
+		}
+
+		it("defaults stage to phone_screen and type to recruiter_call for Not started", async () => {
+			await openAddFormWithStatus("Not started");
+			expect(api.createInterview).toHaveBeenCalledWith(
+				42,
+				expect.objectContaining({
+					interview_stage: "phone_screen",
+					interview_type: "recruiter_call",
+				}),
+			);
+		});
+
+		it("defaults stage to phone_screen and type to recruiter_call for Applied", async () => {
+			await openAddFormWithStatus("Applied");
+			expect(api.createInterview).toHaveBeenCalledWith(
+				42,
+				expect.objectContaining({
+					interview_stage: "phone_screen",
+					interview_type: "recruiter_call",
+				}),
+			);
+		});
+
+		it("defaults stage to onsite and type to null for Phone screen", async () => {
+			await openAddFormWithStatus("Phone screen");
+			expect(api.createInterview).toHaveBeenCalledWith(
+				42,
+				expect.objectContaining({
+					interview_stage: "onsite",
+					interview_type: null,
+				}),
+			);
+		});
+
+		it("defaults stage to onsite and type to null for Interviewing", async () => {
+			await openAddFormWithStatus("Interviewing");
+			expect(api.createInterview).toHaveBeenCalledWith(
+				42,
+				expect.objectContaining({
+					interview_stage: "onsite",
+					interview_type: null,
+				}),
+			);
 		});
 	});
 

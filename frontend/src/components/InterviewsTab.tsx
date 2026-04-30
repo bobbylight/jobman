@@ -28,6 +28,7 @@ import type {
 	InterviewStage,
 	InterviewType,
 	InterviewVibe,
+	JobStatus,
 } from "../types";
 import MarkdownField from "./MarkdownField";
 import MarkdownSnippet from "./MarkdownSnippet";
@@ -144,21 +145,25 @@ const FEELING_OPTIONS: {
 	},
 ];
 
-const EMPTY_FORM: InterviewFormData = {
-	interview_dttm: "",
-	interview_interviewers: null,
-	interview_notes: null,
-	interview_stage: "phone_screen",
-	interview_type: null,
-	interview_vibe: null,
-	interview_result: null,
-	interview_feeling: null,
-};
+function makeEmptyForm(jobStatus: JobStatus): InterviewFormData {
+	const isEarly = jobStatus === "Not started" || jobStatus === "Applied";
+	return {
+		interview_dttm: "",
+		interview_interviewers: null,
+		interview_notes: null,
+		interview_stage: isEarly ? "phone_screen" : "onsite",
+		interview_type: isEarly ? "recruiter_call" : null,
+		interview_vibe: null,
+		interview_result: null,
+		interview_feeling: null,
+	};
+}
 
 type Mode = "list" | "add" | { editId: number } | { confirmDeleteId: number };
 
 interface Props {
 	jobId: number;
+	jobStatus: JobStatus;
 	onCountChange: (count: number) => void;
 	viewingQuestionsFor: Interview | null;
 	onViewingQuestionsChange: (interview: Interview | null) => void;
@@ -166,6 +171,7 @@ interface Props {
 
 export default function InterviewsTab({
 	jobId,
+	jobStatus,
 	onCountChange,
 	viewingQuestionsFor,
 	onViewingQuestionsChange,
@@ -173,7 +179,9 @@ export default function InterviewsTab({
 	const [interviews, setInterviews] = useState<Interview[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [mode, setMode] = useState<Mode>("list");
-	const [form, setForm] = useState<InterviewFormData>(EMPTY_FORM);
+	const [form, setForm] = useState<InterviewFormData>(() =>
+		makeEmptyForm(jobStatus),
+	);
 	const [formError, setFormError] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
 	const [questionCounts, setQuestionCounts] = useState<Record<number, number>>(
@@ -251,7 +259,7 @@ export default function InterviewsTab({
 	}
 
 	function handleAddClick() {
-		setForm(EMPTY_FORM);
+		setForm(makeEmptyForm(jobStatus));
 		setFormError(null);
 		setMode("add");
 	}
