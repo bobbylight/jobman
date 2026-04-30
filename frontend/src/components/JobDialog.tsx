@@ -663,6 +663,7 @@ export default function JobDialog({
 						{isEdit && activeTab === 1 && (
 							<InterviewsTab
 								jobId={jobId!}
+								jobStatus={form.status}
 								onCountChange={setInterviewCount}
 								viewingQuestionsFor={viewingQuestionsFor}
 								onViewingQuestionsChange={setViewingQuestionsFor}
