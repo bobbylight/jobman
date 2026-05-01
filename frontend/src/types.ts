@@ -177,6 +177,9 @@ export interface InterviewInsightsResponse {
 
 export interface StatsResponse {
 	totalApplications: number;
+	companiesApplied: number;
+	companiesPhoneScreened: number;
+	companiesOnSited: number;
 	activePipeline: number;
 	offersReceived: number;
 	/** Fraction 0–1, or null when there's no data. */

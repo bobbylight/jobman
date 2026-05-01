@@ -66,19 +66,37 @@ export default function StatsPage() {
 			) : null}
 			{!loading && data && (
 				<>
-					{/* Metric cards */}
-					<Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 4 }}>
+					{/* Metric cards row 1 */}
+					<Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 2 }}>
+						<StatCard
+							label="Companies Applied To"
+							value={data.companiesApplied}
+							subtitle="Unique companies"
+						/>
 						<StatCard
 							label="Total Applications"
 							value={data.totalApplications}
 							subtitle="Excluding withdrawn"
 						/>
 						<StatCard
+							label="Companies Phone Screened"
+							value={data.companiesPhoneScreened}
+							subtitle="Unique companies"
+						/>
+						<StatCard
+							label="Companies On-Sited"
+							value={data.companiesOnSited}
+							subtitle="Unique companies"
+						/>
+					</Box>
+
+					{/* Metric cards row 2 */}
+					<Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 4 }}>
+						<StatCard
 							label="Active Pipeline"
 							value={data.activePipeline}
 							subtitle="Not yet terminal"
 						/>
-						<StatCard label="Offers Received" value={data.offersReceived} />
 						<StatCard
 							label="Response Rate"
 							value={
@@ -93,6 +111,7 @@ export default function StatsPage() {
 									: "Not enough data"
 							}
 						/>
+						<StatCard label="Offers Received" value={data.offersReceived} />
 					</Box>
 
 					{/* Charts row 1: Funnel + Donut */}
