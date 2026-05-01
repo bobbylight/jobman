@@ -19,6 +19,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import type { FitScore, Job, JobStatus } from "../types";
 import { STATUS_COLORS, TAG_LABELS, tagChipProps } from "../constants";
+import { isPossiblyGhosted } from "../jobUtils";
 
 function formatDate(dateStr: string | null): string | null {
 	if (!dateStr) {
@@ -128,6 +129,8 @@ const JobCard = React.memo(function JobCard({
 			id: String(job.id),
 		});
 
+	const isGhosted = isPossiblyGhosted(job);
+
 	const style = {
 		opacity: isDragging ? 0.4 : 1,
 		transform: CSS.Translate.toString(transform),
@@ -140,8 +143,11 @@ const JobCard = React.memo(function JobCard({
 			elevation={0}
 			sx={{
 				"&:hover": {
-					boxShadow: `0 0 0 1px rgba(99,102,241,0.3), 0 4px 12px rgba(0,0,0,0.1)`,
+					boxShadow: isGhosted
+						? `inset 3px 0 0 #ef5350, 0 0 0 1px rgba(239,83,80,0.5), 0 4px 12px rgba(239,83,80,0.2)`
+						: `0 0 0 1px rgba(99,102,241,0.3), 0 4px 12px rgba(0,0,0,0.1)`,
 				},
+				boxShadow: isGhosted ? "inset 3px 0 0 #ef5350" : undefined,
 				mb: 1.5,
 				transition: "box-shadow 0.15s",
 			}}
@@ -269,6 +275,16 @@ const JobCard = React.memo(function JobCard({
 								variant="outlined"
 								sx={{ maxWidth: 120 }}
 							/>
+						)}
+						{isGhosted && (
+							<Tooltip title="No company response in 30+ days">
+								<Chip
+									label="👻 Possibly ghosted"
+									size="small"
+									variant="outlined"
+									sx={{ borderColor: "#ef5350", color: "#ef5350" }}
+								/>
+							</Tooltip>
 						)}
 					</Box>
 

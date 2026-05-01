@@ -1,4 +1,5 @@
 import React from "react";
+
 import { fireEvent, render, screen } from "@testing-library/react";
 import JobCard from "./JobCard";
 import type { Job } from "../types";
@@ -226,6 +227,140 @@ describe(JobCard, () => {
 				/>,
 			);
 			expect(screen.queryByText("Remote")).not.toBeInTheDocument();
+		});
+	});
+
+	describe("possibly ghosted chip", () => {
+		// Pin time so dates relative to "now" are deterministic
+		const NOW = new Date("2026-01-31T00:00:00.000Z").getTime();
+
+		beforeEach(() => {
+			vi.useFakeTimers();
+			vi.setSystemTime(NOW);
+		});
+
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		it("shows 'Possibly ghosted' chip when Applied with old date_applied", () => {
+			render(
+				<JobCard
+					job={{ ...BASE_JOB, status: "Applied", date_applied: "2024-12-31" }}
+					onCardClick={vi.fn()}
+					onToggleFavorite={vi.fn()}
+				/>,
+			);
+			expect(screen.getByText("👻 Possibly ghosted")).toBeInTheDocument();
+		});
+
+		it("shows 'Possibly ghosted' chip for Phone screen with old date_phone_screen", () => {
+			render(
+				<JobCard
+					job={{
+						...BASE_JOB,
+						status: "Phone screen",
+						date_phone_screen: "2024-12-31",
+					}}
+					onCardClick={vi.fn()}
+					onToggleFavorite={vi.fn()}
+				/>,
+			);
+			expect(screen.getByText("👻 Possibly ghosted")).toBeInTheDocument();
+		});
+
+		it("shows 'Possibly ghosted' chip for Interviewing with old date_last_onsite", () => {
+			render(
+				<JobCard
+					job={{
+						...BASE_JOB,
+						status: "Interviewing",
+						date_last_onsite: "2024-12-31",
+					}}
+					onCardClick={vi.fn()}
+					onToggleFavorite={vi.fn()}
+				/>,
+			);
+			expect(screen.getByText("👻 Possibly ghosted")).toBeInTheDocument();
+		});
+
+		it("does not show chip when date is within 30 days", () => {
+			render(
+				<JobCard
+					job={{ ...BASE_JOB, status: "Applied", date_applied: "2026-01-20" }}
+					onCardClick={vi.fn()}
+					onToggleFavorite={vi.fn()}
+				/>,
+			);
+			expect(screen.queryByText("👻 Possibly ghosted")).not.toBeInTheDocument();
+		});
+
+		it("does not show chip for 'Not started' even with old dates", () => {
+			render(
+				<JobCard
+					job={{
+						...BASE_JOB,
+						status: "Not started",
+						date_applied: "2024-12-31",
+					}}
+					onCardClick={vi.fn()}
+					onToggleFavorite={vi.fn()}
+				/>,
+			);
+			expect(screen.queryByText("👻 Possibly ghosted")).not.toBeInTheDocument();
+		});
+
+		it("does not show chip for 'Offer!' even with old dates", () => {
+			render(
+				<JobCard
+					job={{ ...BASE_JOB, status: "Offer!", date_applied: "2024-12-31" }}
+					onCardClick={vi.fn()}
+					onToggleFavorite={vi.fn()}
+				/>,
+			);
+			expect(screen.queryByText("👻 Possibly ghosted")).not.toBeInTheDocument();
+		});
+
+		it("does not show chip for 'Rejected/Withdrawn' even with old dates", () => {
+			render(
+				<JobCard
+					job={{
+						...BASE_JOB,
+						status: "Rejected/Withdrawn",
+						date_applied: "2024-12-31",
+					}}
+					onCardClick={vi.fn()}
+					onToggleFavorite={vi.fn()}
+				/>,
+			);
+			expect(screen.queryByText("👻 Possibly ghosted")).not.toBeInTheDocument();
+		});
+
+		it("does not show chip when all dates are null", () => {
+			render(
+				<JobCard
+					job={{ ...BASE_JOB, status: "Applied" }}
+					onCardClick={vi.fn()}
+					onToggleFavorite={vi.fn()}
+				/>,
+			);
+			expect(screen.queryByText("👻 Possibly ghosted")).not.toBeInTheDocument();
+		});
+
+		it("does not show chip when most recent date is within 30 days even if others are old", () => {
+			render(
+				<JobCard
+					job={{
+						...BASE_JOB,
+						status: "Phone screen",
+						date_applied: "2024-12-31",
+						date_phone_screen: "2026-01-20",
+					}}
+					onCardClick={vi.fn()}
+					onToggleFavorite={vi.fn()}
+				/>,
+			);
+			expect(screen.queryByText("👻 Possibly ghosted")).not.toBeInTheDocument();
 		});
 	});
 
