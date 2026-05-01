@@ -2,6 +2,9 @@ import type Database from "better-sqlite3";
 
 export interface StatsResponse {
 	totalApplications: number;
+	companiesApplied: number;
+	companiesPhoneScreened: number;
+	companiesOnSited: number;
 	activePipeline: number;
 	offersReceived: number;
 	/** Fraction of submitted apps that got a human response. null when no data. */
@@ -93,6 +96,38 @@ export function getStats(
 
 	const responseRate =
 		denominator > 0 ? Math.round((numerator / denominator) * 100) / 100 : null;
+
+	const companiesApplied = (
+		db
+			.prepare(
+				`SELECT COUNT(DISTINCT company) as count FROM jobs WHERE ${baseWhere} AND status IN ${SUBMITTED_STATUSES}`,
+			)
+			.get(userId) as { count: number }
+	).count;
+
+	const companiesPhoneScreened = (
+		db
+			.prepare(
+				`SELECT COUNT(DISTINCT company) as count FROM jobs WHERE ${baseWhere}
+       AND (
+         status IN ('Phone screen', 'Interviewing', 'Offer!')
+         OR (status = 'Rejected/Withdrawn' AND date_phone_screen IS NOT NULL)
+       )`,
+			)
+			.get(userId) as { count: number }
+	).count;
+
+	const companiesOnSited = (
+		db
+			.prepare(
+				`SELECT COUNT(DISTINCT company) as count FROM jobs WHERE ${baseWhere}
+       AND (
+         status IN ('Interviewing', 'Offer!')
+         OR (status = 'Rejected/Withdrawn' AND date_last_onsite IS NOT NULL)
+       )`,
+			)
+			.get(userId) as { count: number }
+	).count;
 
 	const byStatus = db
 		.prepare(
@@ -337,6 +372,9 @@ export function getStats(
 		applicationsByWeek,
 		avgDaysPerStage,
 		byStatus,
+		companiesApplied,
+		companiesOnSited,
+		companiesPhoneScreened,
 		interviewsByWeek,
 		offersReceived: offers,
 		responseRate,
