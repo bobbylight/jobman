@@ -131,6 +131,70 @@ export type InterviewQuestionFormData = Omit<
 
 export type StatsWindow = "all" | "90" | "30";
 
+export type RadarEligibility =
+	| "active"
+	| "cooling_down"
+	| "clear"
+	| "no_history"
+	| "limit_reached";
+export type RadarTier = "faang" | "faang_adjacent" | "custom";
+export type RadarPolicyConfidence = "official" | "community" | "estimate";
+
+export interface RadarPolicy {
+	application_cooldown_days: number | null;
+	phone_screen_cooldown_days: number | null;
+	onsite_cooldown_days: number | null;
+	max_apps_per_period: number | null;
+	apps_period_days: number | null;
+	summary: string | null;
+	url: string | null;
+	confidence: RadarPolicyConfidence | null;
+	updated_at: string | null;
+}
+
+export interface RadarJobSummary {
+	id: number;
+	role: string;
+	status: string;
+	date_applied: string | null;
+}
+
+export interface RadarEntry {
+	id: number;
+	name: string;
+	tier: RadarTier;
+	eligibility: RadarEligibility;
+	unlock_date: string | null;
+	days_until_unlock: number | null;
+	last_application_date: string | null;
+	last_interview_date: string | null;
+	latest_active_status: string | null;
+	active_job_id: number | null;
+	jobs: RadarJobSummary[];
+	policy: RadarPolicy;
+	user_notes: string | null;
+	hidden: boolean;
+}
+
+export interface RadarResponse {
+	entries: RadarEntry[];
+	generated_at: string;
+}
+
+export type RadarPatch = Partial<{
+	hidden: number;
+	user_notes: string | null;
+	application_cooldown_days: number | null;
+	phone_screen_cooldown_days: number | null;
+	onsite_cooldown_days: number | null;
+	max_apps_per_period: number | null;
+	apps_period_days: number | null;
+	policy_summary: string | null;
+	policy_url: string | null;
+	policy_confidence: string | null;
+	policy_updated_at: string | null;
+}>;
+
 export interface InterviewInsightsResponse {
 	totalInterviews: number;
 	passRate: number | null;

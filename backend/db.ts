@@ -99,6 +99,25 @@ db.exec(`
   );
 
   CREATE INDEX IF NOT EXISTS idx_job_tags_tag ON job_tags(tag);
+
+  CREATE TABLE IF NOT EXISTS target_companies (
+    id                         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name                       TEXT    NOT NULL UNIQUE,
+    tier                       TEXT    NOT NULL DEFAULT 'faang_adjacent'
+                                       CHECK(tier IN ('faang', 'faang_adjacent', 'custom')),
+    application_cooldown_days  INTEGER,
+    phone_screen_cooldown_days INTEGER,
+    onsite_cooldown_days       INTEGER,
+    max_apps_per_period        INTEGER,
+    apps_period_days           INTEGER,
+    policy_summary             TEXT,
+    policy_url                 TEXT,
+    policy_confidence          TEXT
+                               CHECK(policy_confidence IN ('official', 'community', 'estimate')),
+    policy_updated_at          TEXT,
+    user_notes                 TEXT,
+    hidden                     INTEGER NOT NULL DEFAULT 0
+  );
 `);
 
 // One-time backfill: synthesise history rows from existing date columns for
@@ -175,6 +194,60 @@ db.exec(`
     AND job_id IN (
       SELECT id FROM jobs WHERE status = 'Not started'
     );
+`);
+
+// Seed target companies (INSERT OR IGNORE — safe to re-run)
+db.exec(`
+  INSERT OR IGNORE INTO target_companies
+    (name, tier, application_cooldown_days, phone_screen_cooldown_days, onsite_cooldown_days, policy_summary, policy_confidence)
+  VALUES
+    ('Google',     'faang',          90,   180,  365, '90-day reapplication window; 6 months after phone screen; 12 months after onsite', 'community'),
+    ('Meta',       'faang',          NULL, 180,  365, '6 months after phone screen rejection; 12 months after onsite rejection',          'community'),
+    ('Apple',      'faang',          180,  180,  180, '6 months across all rejection stages',                                             'community'),
+    ('Amazon',     'faang',          180,  180,  180, '6 months after any rejection',                                                     'community'),
+    ('Netflix',    'faang',          NULL, NULL, 180, 'No formal policy; ~6 months informal cooling period after rejection',              'estimate'),
+    ('Microsoft',  'faang',          90,   90,   180, '3 months after application or phone screen; 6 months after onsite',               'estimate'),
+    ('Uber',       'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Lyft',       'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Snap',       'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Twitter/X',  'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Salesforce', 'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Adobe',      'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Stripe',     'faang_adjacent', NULL, 180,  180, '6 months after rejection',                                                        'community'),
+    ('Airbnb',     'faang_adjacent', NULL, 180,  365, '6 months after phone screen; 12 months after onsite rejection',                   'community'),
+    ('DoorDash',   'faang_adjacent', NULL, NULL, 180, '~6 months after rejection',                                                       'estimate'),
+    ('Instacart',  'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Databricks', 'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('OpenAI',     'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Anthropic',  'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Nvidia',     'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Palantir',   'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('LinkedIn',   'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Spotify',    'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Block',      'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Coinbase',   'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Robinhood',  'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Pinterest',  'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Reddit',     'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Twilio',     'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Okta',       'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Datadog',    'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('MongoDB',    'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Confluent',  'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Snowflake',  'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('ServiceNow', 'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Workday',    'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Atlassian',  'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Cloudflare', 'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Twitch',     'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('GitHub',     'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('GitLab',     'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('HashiCorp',  'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Figma',      'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Notion',     'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Airtable',   'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Rippling',   'faang_adjacent', NULL, NULL, NULL, NULL, NULL),
+    ('Scale AI',   'faang_adjacent', NULL, NULL, NULL, NULL, NULL);
 `);
 
 export default db;

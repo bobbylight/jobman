@@ -7,6 +7,8 @@ import type {
 	InterviewQuestionFormData,
 	Job,
 	JobFormData,
+	RadarPatch,
+	RadarResponse,
 	StatsResponse,
 	StatsWindow,
 	User,
@@ -60,6 +62,17 @@ export const api = {
 		request<Job>(`/jobs/${id}`, { body: JSON.stringify(data), method: "PUT" }),
 	deleteJob: (id: number) =>
 		request<{ success: boolean }>(`/jobs/${id}`, { method: "DELETE" }),
+
+	// Radar
+	getRadar: (includeHidden = false) =>
+		request<RadarResponse>(
+			`/radar${includeHidden ? "?includeHidden=true" : ""}`,
+		),
+	patchRadarEntry: (id: number, patch: RadarPatch) =>
+		request<{ success: boolean }>(`/radar/${id}`, {
+			body: JSON.stringify(patch),
+			method: "PATCH",
+		}),
 
 	// Stats
 	getStats: (window: StatsWindow) =>

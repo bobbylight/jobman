@@ -14,6 +14,7 @@ import AppShell from "./components/AppShell";
 import InsightsPage from "./components/InsightsPage";
 import JobManagementPage from "./components/JobManagementPage";
 import InterviewsPage from "./components/InterviewsPage";
+import RadarPage from "./components/RadarPage";
 import StatsPage from "./components/StatsPage";
 
 export default function App() {
@@ -83,6 +84,7 @@ export default function App() {
 						<Route path="/calendar" element={<InterviewsPage />} />
 						<Route path="/stats" element={<StatsPage />} />
 						<Route path="/insights" element={<InsightsPage />} />
+						<Route path="/radar" element={<RadarPage />} />
 						<Route path="*" element={<Navigate to="/jobs" replace />} />
 					</Route>
 				</Routes>
