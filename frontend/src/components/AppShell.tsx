@@ -17,6 +17,7 @@ import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import InsightsIcon from "@mui/icons-material/Insights";
 import PsychologyOutlinedIcon from "@mui/icons-material/PsychologyOutlined";
+import RadarIcon from "@mui/icons-material/Radar";
 import ViewKanbanOutlinedIcon from "@mui/icons-material/ViewKanbanOutlined";
 import Tooltip from "@mui/material/Tooltip";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -35,6 +36,7 @@ const NAV_ITEMS = [
 		label: "Insights",
 		path: "/insights",
 	},
+	{ icon: <RadarIcon />, label: "Radar", path: "/radar" },
 ] as const;
 
 interface Props {

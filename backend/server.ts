@@ -11,6 +11,7 @@ import {
 	createInterviewsRouter,
 } from "./routes/interviews.js";
 import { createJobsRouter } from "./routes/jobs.js";
+import { createRadarRouter } from "./routes/radar.js";
 import { createStatsRouter } from "./routes/stats.js";
 
 // Augment express-session to include our custom fields
@@ -70,6 +71,7 @@ export function createApp(db: Database.Database) {
 		requireAuth,
 		createInterviewsRouter(db),
 	);
+	app.use("/api/radar", requireAuth, createRadarRouter(db));
 	app.use("/api/stats", requireAuth, createStatsRouter(db));
 	app.use(
 		"/api/interview-insights",
