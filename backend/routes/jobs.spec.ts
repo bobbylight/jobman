@@ -5,7 +5,8 @@ import { createApp } from "../server.js";
 import {
 	JOB_MAX_LENGTHS,
 	TERMINAL_STATUSES,
-	VALID_ENDING_SUBSTATUSES,
+	VALID_OFFER_SUBSTATUSES,
+	VALID_REJECTED_SUBSTATUSES,
 } from "../validators.js";
 
 const SCHEMA = `
@@ -328,7 +329,6 @@ describe("ending_substatus validation", () => {
 		"Phone screen",
 		"Interviewing",
 	] as const;
-	const VALID_SUBSTATUSES = [...VALID_ENDING_SUBSTATUSES];
 
 	describe("POST /api/jobs", () => {
 		it.each([...TERMINAL_STATUSES])(
@@ -352,8 +352,8 @@ describe("ending_substatus validation", () => {
 			},
 		);
 
-		it.each(VALID_SUBSTATUSES)(
-			'accepts ending_substatus "%s" with terminal status',
+		it.each([...VALID_OFFER_SUBSTATUSES])(
+			'accepts ending_substatus "%s" with Offer! status',
 			async (ending_substatus) => {
 				const res = await req("post", "/api/jobs").send({
 					...BASE_JOB,
@@ -364,6 +364,37 @@ describe("ending_substatus validation", () => {
 				expect(res.body.ending_substatus).toBe(ending_substatus);
 			},
 		);
+
+		it.each([...VALID_REJECTED_SUBSTATUSES])(
+			'accepts ending_substatus "%s" with Rejected/Withdrawn status',
+			async (ending_substatus) => {
+				const res = await req("post", "/api/jobs").send({
+					...BASE_JOB,
+					ending_substatus,
+					status: "Rejected/Withdrawn",
+				});
+				expect(res.status).toBe(201);
+				expect(res.body.ending_substatus).toBe(ending_substatus);
+			},
+		);
+
+		it("rejects a rejection substatus for Offer! status", async () => {
+			const res = await req("post", "/api/jobs").send({
+				...BASE_JOB,
+				ending_substatus: "Ghosted",
+				status: "Offer!",
+			});
+			expect(res.status).toBe(422);
+		});
+
+		it("rejects an offer substatus for Rejected/Withdrawn status", async () => {
+			const res = await req("post", "/api/jobs").send({
+				...BASE_JOB,
+				ending_substatus: "Offer accepted",
+				status: "Rejected/Withdrawn",
+			});
+			expect(res.status).toBe(422);
+		});
 
 		it.each(NON_TERMINAL_CASES)(
 			'returns 422 when status is "%s" and ending_substatus is set',

@@ -121,21 +121,69 @@ describe(EndingStatusDialog, () => {
 			);
 		});
 
-		it("disables the Final Resolution dropdown when destination is Offer!", () => {
+		it("leaves the Final Resolution dropdown enabled so the user can change it", () => {
 			render(<EndingStatusDialog {...OFFER_PROPS} />);
-			expect(screen.getByRole("combobox")).toHaveAttribute(
+			expect(screen.getByRole("combobox")).not.toHaveAttribute(
 				"aria-disabled",
 				"true",
 			);
 		});
 
-		it("calls onConfirm with 'Offer accepted' without any user selection", () => {
+		it("calls onConfirm with 'Offer accepted' when confirmed without changing the default", () => {
 			render(<EndingStatusDialog {...OFFER_PROPS} />);
 			fireEvent.click(screen.getByRole("button", { name: "OK" }));
 			expect(DEFAULT_PROPS.onConfirm).toHaveBeenCalledWith(
 				"Offer accepted",
 				"Some existing notes",
 			);
+		});
+
+		it("allows selecting 'Offer declined'", () => {
+			render(<EndingStatusDialog {...OFFER_PROPS} />);
+			changeSelect(/Final Resolution/i, "Offer declined");
+			fireEvent.click(screen.getByRole("button", { name: "OK" }));
+			expect(DEFAULT_PROPS.onConfirm).toHaveBeenCalledWith(
+				"Offer declined",
+				"Some existing notes",
+			);
+		});
+
+		it("only shows offer substatuses in the dropdown", () => {
+			render(<EndingStatusDialog {...OFFER_PROPS} />);
+			fireEvent.mouseDown(screen.getByLabelText(/Final Resolution/i));
+			expect(
+				screen.getByRole("option", { name: "Offer accepted" }),
+			).toBeInTheDocument();
+			expect(
+				screen.getByRole("option", { name: "Offer declined" }),
+			).toBeInTheDocument();
+			// Rejection-only values must not appear
+			expect(
+				screen.queryByRole("option", { name: "Ghosted" }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("option", { name: "Withdrawn" }),
+			).not.toBeInTheDocument();
+		});
+	});
+
+	describe("Rejected/Withdrawn destination", () => {
+		it("only shows rejection substatuses in the dropdown", () => {
+			render(<EndingStatusDialog {...DEFAULT_PROPS} />);
+			fireEvent.mouseDown(screen.getByLabelText(/Final Resolution/i));
+			expect(
+				screen.getByRole("option", { name: "Withdrawn" }),
+			).toBeInTheDocument();
+			expect(
+				screen.getByRole("option", { name: "Ghosted" }),
+			).toBeInTheDocument();
+			// Offer-only values must not appear
+			expect(
+				screen.queryByRole("option", { name: "Offer accepted" }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("option", { name: "Offer declined" }),
+			).not.toBeInTheDocument();
 		});
 	});
 });

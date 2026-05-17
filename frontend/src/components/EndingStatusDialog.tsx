@@ -9,7 +9,7 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
-import { ENDING_SUBSTATUSES } from "../constants";
+import { OFFER_SUBSTATUSES, REJECTED_SUBSTATUSES } from "../constants";
 import type { EndingSubstatus, Job, JobStatus } from "../types";
 
 interface Props {
@@ -31,15 +31,16 @@ export default function EndingStatusDialog({
 	const [notes, setNotes] = useState("");
 	const [error, setError] = useState("");
 
-	const isOffer = newStatus === "Offer!";
+	const substatusOptions =
+		newStatus === "Offer!" ? OFFER_SUBSTATUSES : REJECTED_SUBSTATUSES;
 
 	useEffect(() => {
 		if (open) {
-			setSubstatus(isOffer ? "Offer accepted" : "");
+			setSubstatus(newStatus === "Offer!" ? "Offer accepted" : "");
 			setNotes(job?.notes ?? "");
 			setError("");
 		}
-	}, [open, job, isOffer]);
+	}, [open, job, newStatus]);
 
 	function handleConfirm() {
 		if (!substatus) {
@@ -70,14 +71,13 @@ export default function EndingStatusDialog({
 							setError("");
 						}
 					}}
-					disabled={isOffer}
 					error={Boolean(error)}
 					helperText={error}
 					fullWidth
 					size="small"
 					sx={{ mb: 2 }}
 				>
-					{ENDING_SUBSTATUSES.map((s) => (
+					{substatusOptions.map((s) => (
 						<MenuItem key={s} value={s}>
 							{s}
 						</MenuItem>

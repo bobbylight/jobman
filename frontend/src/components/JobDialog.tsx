@@ -28,7 +28,8 @@ import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
-	ENDING_SUBSTATUSES,
+	OFFER_SUBSTATUSES,
+	REJECTED_SUBSTATUSES,
 	FIT_SCORES,
 	JOB_MAX_LENGTHS,
 	JOB_TAGS,
@@ -434,13 +435,23 @@ export default function JobDialog({
 										onChange={(e) => {
 											const newStatus = e.target.value as JobStatus;
 											const isTerminal = TERMINAL_STATUSES.has(newStatus);
-											setForm((f) => ({
-												...f,
-												ending_substatus: isTerminal
-													? f.ending_substatus
-													: null,
-												status: newStatus,
-											}));
+											setForm((f) => {
+												const validSet =
+													newStatus === "Offer!"
+														? (OFFER_SUBSTATUSES as string[])
+														: (REJECTED_SUBSTATUSES as string[]);
+												const keepSubstatus =
+													isTerminal &&
+													f.ending_substatus !== null &&
+													validSet.includes(f.ending_substatus);
+												return {
+													...f,
+													ending_substatus: keepSubstatus
+														? f.ending_substatus
+														: null,
+													status: newStatus,
+												};
+											});
 											if (errors.status) {
 												setErrors(({ status: _, ...rest }) => rest);
 											}
@@ -479,7 +490,10 @@ export default function JobDialog({
 										<MenuItem value="">
 											<em>None</em>
 										</MenuItem>
-										{ENDING_SUBSTATUSES.map((s) => (
+										{(form.status === "Offer!"
+											? OFFER_SUBSTATUSES
+											: REJECTED_SUBSTATUSES
+										).map((s) => (
 											<MenuItem key={s} value={s}>
 												{s}
 											</MenuItem>
