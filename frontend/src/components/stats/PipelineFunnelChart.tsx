@@ -1,40 +1,34 @@
-import React, { useMemo } from "react";
-import { Sankey, Tooltip } from "recharts";
-import type { SankeyNode } from "recharts/types/util/types";
-import { Box, Typography, useTheme } from "@mui/material";
+import React, {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
+import {
+	sankey as d3Sankey,
+	sankeyJustify,
+	sankeyLinkHorizontal,
+	type SankeyLink,
+	type SankeyNode,
+} from "d3-sankey";
+import { Box, Paper, Typography, useTheme } from "@mui/material";
 import { ENDING_SUBSTATUSES, STATUSES, STATUS_COLORS } from "../../constants";
 import type { EndingSubstatus, JobStatus } from "../../types";
 
 interface Props {
 	transitions: { from: string; to: string; count: number }[];
+	onLinkClick?: (from: string, to: string) => void;
 }
 
-interface ChartNode {
+interface NodeDatum {
 	name: string;
 	color: string;
 }
 
-interface SankeyNodeProps {
-	x: number;
-	y: number;
-	width: number;
-	height: number;
-	payload: SankeyNode & ChartNode & { value: number };
-}
-
-interface SankeyLinkProps {
-	sourceX: number;
-	targetX: number;
-	sourceY: number;
-	targetY: number;
-	sourceControlX: number;
-	targetControlX: number;
-	linkWidth: number;
-	payload: {
-		source: SankeyNode & ChartNode;
-		target: SankeyNode & ChartNode;
-	};
-}
+// D3-sankey mutates nodes/links in place, so these carry the layout fields after compute
+type LayoutNode = SankeyNode<NodeDatum, object>;
+type LayoutLink = SankeyLink<NodeDatum, object>;
 
 const SUBSTATUS_COLORS: Record<EndingSubstatus, string> = {
 	Ghosted: "#8d6e63",
@@ -53,12 +47,14 @@ const STARTING_STATUS_COLORS: Record<string, string> = {
 	Referred: "#43a047",
 };
 
-// Full node ordering: granular starting statuses first (same Sankey column),
-// Then main pipeline statuses (excluding "Not started"), then terminal
-// Substatuses. All links must be forward (source index < target index).
+// Full node ordering: source nodes first, then active pipeline stages, then
+// Terminal nodes. "Rejected/Withdrawn" is a fallback for jobs without a
+// Specific ending substatus. All links must be forward (source index < target
+// Index) to keep the Sankey flowing left→right.
 const NODE_ORDER: string[] = [
 	...Object.keys(STARTING_STATUS_COLORS),
-	...STATUSES.filter((s) => s !== "Not started"),
+	...STATUSES.filter((s) => s !== "Not started" && s !== "Rejected/Withdrawn"),
+	"Rejected/Withdrawn",
 	...ENDING_SUBSTATUSES,
 ];
 
@@ -71,20 +67,25 @@ function nodeColor(name: string): string {
 	);
 }
 
-/** Build the { nodes, links } structure that recharts Sankey expects. */
+// Logical terminal nodes — stages that never have outgoing progression links.
+// Pipeline stages like "Phone screen" are intentionally excluded so they always
+// Exit from the bottom of a source node, keeping the active funnel at the bottom.
+const TERMINAL_NAMES = new Set<string>([
+	"Rejected/Withdrawn",
+	...ENDING_SUBSTATUSES,
+]);
+
 function toSankeyData(transitions: Props["transitions"]) {
-	// Collect every status that appears in the transition data
 	const statusSet = new Set<string>();
 	for (const t of transitions) {
 		statusSet.add(t.from);
 		statusSet.add(t.to);
 	}
 
-	// Order nodes by the canonical pipeline order so the Sankey flows left→right
 	const ordered = NODE_ORDER.filter((s) => statusSet.has(s));
 	const indexMap = new Map<string, number>(ordered.map((s, i) => [s, i]));
 
-	const nodes: ChartNode[] = ordered.map((s) => ({
+	const nodes: NodeDatum[] = ordered.map((s) => ({
 		color: nodeColor(s),
 		name: s,
 	}));
@@ -93,96 +94,153 @@ function toSankeyData(transitions: Props["transitions"]) {
 		.filter((t) => {
 			const src = indexMap.get(t.from);
 			const tgt = indexMap.get(t.to);
-			// Only include forward links (source index < target index) to avoid
-			// Cycles or self-loops which crash the Sankey layout.
+			// Only include forward links to avoid cycles / self-loops.
 			return src !== undefined && tgt !== undefined && src < tgt;
 		})
 		.map((t) => ({
 			source: indexMap.get(t.from) as number,
 			target: indexMap.get(t.to) as number,
 			value: t.count,
-		}));
+		}))
+		// Within each source node, order links so they stack without crossing:
+		//   1. Terminal links in ASCENDING target-index order — matches the node
+		//      Order in the terminal column (NODE_ORDER top→bottom), so each link
+		//      Arrives at the same vertical rank it exits, eliminating crossings.
+		//   2. Progression links (next active stage) come last → bottom of node.
+		// D3-sankey with linkSort(null) preserves this order exactly.
+		.toSorted((a, b) => {
+			// Sort by source first so same-source links are contiguous — this ensures
+			// The secondary (terminal/progression) sort actually fires for all pairs.
+			if (a.source !== b.source) {
+				return a.source - b.source;
+			}
+			const aTerminal = TERMINAL_NAMES.has(ordered[a.target] ?? "");
+			const bTerminal = TERMINAL_NAMES.has(ordered[b.target] ?? "");
+			if (aTerminal !== bTerminal) {
+				return aTerminal ? -1 : 1;
+			}
+			if (aTerminal) {
+				return a.target - b.target;
+			}
+			return 0;
+		});
 
 	return { links, nodes };
 }
 
-function CustomNode(props: SankeyNodeProps) {
-	const { x, y, width, height, payload } = props;
-	const color = payload.color ?? "#90a4ae";
-	const labelX = x + width / 2;
-	const labelY = y + height / 2;
-	const padX = 0;
-	const padY = 3;
-	const countStr = String(payload.value);
-	const estimatedTextWidth =
-		countStr.length * 7.5 + 4 + payload.name.length * 6.5;
-	const bgWidth = estimatedTextWidth + padX * 2;
-	const bgHeight = 11 + padY * 2;
+const NODE_WIDTH = 12;
+const NODE_PADDING = 60;
+const MARGIN = { bottom: 4, left: 50, right: 130, top: 4 };
 
-	return (
-		<g>
-			<rect x={x} y={y} width={width} height={height} fill={color} rx={3} />
-			<rect
-				x={labelX - bgWidth / 2}
-				y={labelY - bgHeight / 2}
-				width={bgWidth}
-				height={bgHeight}
-				rx={4}
-				fill="rgba(255,255,255,0.82)"
-			/>
-			<text
-				x={labelX}
-				y={labelY}
-				dy="0.35em"
-				textAnchor="middle"
-				fontSize={11}
-				fill="#444"
-			>
-				<tspan fontWeight="bold">{countStr}</tspan>
-				{` ${payload.name}`}
-			</text>
-		</g>
-	);
+const pathGen = sankeyLinkHorizontal();
+
+function nodeName(n: number | string | NodeDatum): string {
+	return typeof n === "object" ? n.name : "";
+}
+function nodeColor2(n: number | string | NodeDatum): string {
+	return typeof n === "object" ? n.color : "#90a4ae";
 }
 
-function CustomLink(props: SankeyLinkProps) {
-	const {
-		sourceX,
-		targetX,
-		sourceY,
-		targetY,
-		sourceControlX,
-		targetControlX,
-		linkWidth,
-		payload,
-	} = props;
-	const color = payload.target.color ?? "#90a4ae";
-
-	return (
-		<path
-			d={`
-        M${sourceX},${sourceY}
-        C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}
-      `}
-			fill="none"
-			stroke={color}
-			strokeWidth={linkWidth}
-			strokeOpacity={0.3}
-		/>
-	);
-}
-
-export default function PipelineFunnelChart({ transitions }: Props) {
+export default function PipelineFunnelChart({
+	transitions,
+	onLinkClick,
+}: Props) {
 	const theme = useTheme();
-	const data = useMemo(() => toSankeyData(transitions), [transitions]);
+	const containerRef = useRef<HTMLDivElement>(null);
+	const [chartWidth, setChartWidth] = useState(700);
+	const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+	const [tooltip, setTooltip] = useState<{
+		x: number;
+		y: number;
+		text: string;
+	} | null>(null);
 
-	if (data.links.length === 0) {
+	useEffect(() => {
+		const el = containerRef.current;
+		if (!el) {
+			return;
+		}
+		const ro = new ResizeObserver((entries) => {
+			const [entry] = entries;
+			if (entry) {
+				setChartWidth(Math.floor(entry.contentRect.width));
+			}
+		});
+		ro.observe(el);
+		return () => ro.disconnect();
+	}, []);
+
+	const raw = useMemo(() => toSankeyData(transitions), [transitions]);
+
+	const terminalCount = raw.nodes.filter((n) =>
+		ENDING_SUBSTATUSES.includes(n.name as EndingSubstatus),
+	).length;
+	const chartHeight = Math.max(360, terminalCount * 60 + 40);
+
+	const { nodes, links } = useMemo(() => {
+		if (raw.links.length === 0) {
+			return { links: [], nodes: [] };
+		}
+
+		const gen = d3Sankey<NodeDatum, object>()
+			.nodeId((d) => (d as LayoutNode).index ?? 0)
+			.nodeAlign(sankeyJustify)
+			.nodeWidth(NODE_WIDTH)
+			.nodePadding(NODE_PADDING)
+			.nodeSort(null) // Preserve NODE_ORDER within each column
+			.linkSort(null) // Preserve link data order: progression last = bottom
+			.extent([
+				[MARGIN.left, MARGIN.top],
+				[chartWidth - MARGIN.right, chartHeight - MARGIN.bottom],
+			]);
+
+		// D3-sankey mutates input, so pass fresh copies
+		return gen({
+			nodes: raw.nodes.map((n) => ({ ...n })),
+			links: raw.links.map((l) => ({ ...l })),
+		});
+	}, [raw, chartWidth, chartHeight]);
+
+	const handleLinkEnter = useCallback(
+		(e: React.MouseEvent, idx: number, text: string) => {
+			const rect = containerRef.current?.getBoundingClientRect();
+			if (!rect) {
+				return;
+			}
+			setHoveredIdx(idx);
+			setTooltip({
+				text,
+				x: e.clientX - rect.left + 10,
+				y: e.clientY - rect.top - 20,
+			});
+		},
+		[],
+	);
+
+	const handleLinkMove = useCallback((e: React.MouseEvent, text: string) => {
+		const rect = containerRef.current?.getBoundingClientRect();
+		if (!rect) {
+			return;
+		}
+		setTooltip({
+			text,
+			x: e.clientX - rect.left + 10,
+			y: e.clientY - rect.top - 20,
+		});
+	}, []);
+
+	const handleLinkLeave = useCallback(() => {
+		setHoveredIdx(null);
+		setTooltip(null);
+	}, []);
+
+	if (raw.links.length === 0) {
 		return (
 			<Box
 				sx={{
 					alignItems: "center",
 					display: "flex",
-					height: 320,
+					height: chartHeight,
 					justifyContent: "center",
 				}}
 			>
@@ -194,27 +252,110 @@ export default function PipelineFunnelChart({ transitions }: Props) {
 	}
 
 	return (
-		<Sankey
-			width={480}
-			height={320}
-			data={data}
-			node={CustomNode as any}
-			link={CustomLink as any}
-			nodeWidth={12}
-			nodePadding={14}
-			sort={false}
-			iterations={1}
-			verticalAlign="justify"
-			margin={{ bottom: 4, left: 50, right: 55, top: 4 }}
-		>
-			<Tooltip
-				formatter={(value) => [`${value} jobs`]}
-				contentStyle={{
-					border: `1px solid ${theme.palette.divider}`,
-					borderRadius: 8,
-					fontSize: 12,
-				}}
-			/>
-		</Sankey>
+		<Box ref={containerRef} sx={{ position: "relative", width: "100%" }}>
+			<svg
+				data-testid="sankey-chart"
+				width={chartWidth}
+				height={chartHeight}
+				style={{ overflow: "visible" }}
+			>
+				{/* Links */}
+				<g>
+					{(links as LayoutLink[]).map((link, i) => {
+						const color = nodeColor2(link.target);
+						const tipText = `${link.value} jobs`;
+						const key = `${nodeName(link.source)}->${nodeName(link.target)}`;
+						return (
+							<path
+								key={key}
+								d={pathGen(link as any) ?? ""}
+								fill="none"
+								stroke={color}
+								strokeWidth={link.width ?? 1}
+								strokeOpacity={hoveredIdx === i ? 0.55 : 0.3}
+								onClick={
+									onLinkClick
+										? () =>
+												onLinkClick(
+													nodeName(link.source),
+													nodeName(link.target),
+												)
+										: undefined
+								}
+								onMouseEnter={(e) => handleLinkEnter(e, i, tipText)}
+								onMouseMove={(e) => handleLinkMove(e, tipText)}
+								onMouseLeave={handleLinkLeave}
+								style={onLinkClick ? { cursor: "pointer" } : undefined}
+							/>
+						);
+					})}
+				</g>
+
+				{/* Nodes */}
+				<g>
+					{(nodes as LayoutNode[]).map((node) => {
+						const x = node.x0 ?? 0;
+						const y = node.y0 ?? 0;
+						const w = (node.x1 ?? 0) - x;
+						const h = (node.y1 ?? 0) - y;
+						const lx = x + w + 6;
+						const cy = y + h / 2;
+						const count = String(node.value ?? 0);
+						const bgW = count.length * 7.5 + 4 + node.name.length * 6.5;
+						const bgH = 17;
+						return (
+							<g key={node.name}>
+								<rect
+									x={x}
+									y={y}
+									width={w}
+									height={h}
+									fill={node.color}
+									rx={3}
+								/>
+								<rect
+									x={lx - 2}
+									y={cy - bgH / 2}
+									width={bgW}
+									height={bgH}
+									rx={4}
+									fill="rgba(255,255,255,0.82)"
+								/>
+								<text
+									x={lx}
+									y={cy}
+									dy="0.35em"
+									textAnchor="start"
+									fontSize={11}
+									fill="#444"
+								>
+									<tspan fontWeight="bold">{count}</tspan>
+									{` ${node.name}`}
+								</text>
+							</g>
+						);
+					})}
+				</g>
+			</svg>
+
+			{tooltip !== null && (
+				<Paper
+					elevation={2}
+					sx={{
+						border: `1px solid ${theme.palette.divider}`,
+						borderRadius: 2,
+						fontSize: 12,
+						left: tooltip.x,
+						p: "4px 8px",
+						pointerEvents: "none",
+						position: "absolute",
+						top: tooltip.y,
+						zIndex: 10,
+					}}
+				>
+					{tooltip.text}
+				</Paper>
+			)}
+		</Box>
 	);
 }

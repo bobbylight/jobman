@@ -194,6 +194,9 @@ export function getStats(
 		)
 		.all(userId) as { stage: string; avgDays: number }[];
 
+	// Each job is counted once per stage it reached (distinct-job counting).
+	// This ensures flow conservation: count at stage S = sum of counts at all
+	// Outgoing links from S (jobs that progressed + jobs that terminated there).
 	const transitions = db
 		.prepare(
 			`WITH job_filter AS (
@@ -208,61 +211,74 @@ export function getStats(
           AND (ending_substatus IS NULL OR ending_substatus NOT IN ${EXCLUDED_SUBSTATUSES})
           ${df}
       ),
-      -- Pair each history row with the next history row for the same job
-      consecutive AS (
+      -- For each job, record which active pipeline stages it ever reached
+      job_stages AS (
         SELECT
-          h.job_id,
-          CASE WHEN h.status = 'Not started' THEN jf.starting_status
-               ELSE h.status END AS from_status,
-          COALESCE(
-            (SELECT h2.status FROM job_status_history h2
-             WHERE h2.job_id = h.job_id AND h2.entered_at > h.entered_at
-             ORDER BY h2.entered_at LIMIT 1),
-            -- If there is no next history row and the job's current status
-            -- differs from this row, treat the current status as the target.
-            CASE WHEN jf.current_status <> h.status
-                 THEN jf.current_status END
-          ) AS to_status,
-          jf.ending_substatus
-        FROM job_status_history h
-        JOIN job_filter jf ON h.job_id = jf.id
-      ),
-      -- Replace terminal statuses with their ending_substatus when set,
-      -- so the Sankey shows granular outcomes rather than the bucket label.
-      resolved AS (
-        SELECT
-          from_status,
-          CASE
-            WHEN to_status IN ('Rejected/Withdrawn', 'Offer!') AND ending_substatus IS NOT NULL
-            THEN ending_substatus
-            ELSE to_status
-          END AS to_status
-        FROM consecutive
-        WHERE to_status IS NOT NULL
+          jf.id,
+          jf.starting_status,
+          jf.current_status,
+          jf.ending_substatus,
+          MAX(CASE WHEN h.status = 'Applied'      THEN 1 ELSE 0 END) AS reached_applied,
+          MAX(CASE WHEN h.status = 'Phone screen' THEN 1 ELSE 0 END) AS reached_phone_screen,
+          MAX(CASE WHEN h.status = 'Interviewing' THEN 1 ELSE 0 END) AS reached_interviewing,
+          MAX(CASE WHEN h.status = 'Offer!'       THEN 1 ELSE 0 END) AS reached_offer
+        FROM job_filter jf
+        LEFT JOIN job_status_history h ON h.job_id = jf.id
+        GROUP BY jf.id, jf.starting_status, jf.current_status, jf.ending_substatus
       )
-      SELECT from_status AS "from", to_status AS "to", COUNT(*) AS count
-      FROM resolved
-      GROUP BY from_status, to_status`,
+      -- Source → Applied
+      SELECT starting_status AS "from", 'Applied' AS "to", COUNT(*) AS count
+      FROM job_stages WHERE reached_applied = 1
+      GROUP BY starting_status
+
+      UNION ALL
+      -- Applied → Phone screen
+      SELECT 'Applied', 'Phone screen', COUNT(*) FROM job_stages
+      WHERE reached_phone_screen = 1 HAVING COUNT(*) > 0
+
+      UNION ALL
+      -- Phone screen → Interviewing
+      SELECT 'Phone screen', 'Interviewing', COUNT(*) FROM job_stages
+      WHERE reached_interviewing = 1 HAVING COUNT(*) > 0
+
+      UNION ALL
+      -- Interviewing → Offer!
+      SELECT 'Interviewing', 'Offer!', COUNT(*) FROM job_stages
+      WHERE reached_offer = 1 HAVING COUNT(*) > 0
+
+      UNION ALL
+      -- Terminal at Applied (stopped before Phone screen, then rejected/withdrawn)
+      SELECT 'Applied', COALESCE(ending_substatus, 'Rejected/Withdrawn'), COUNT(*)
+      FROM job_stages
+      WHERE reached_applied = 1 AND reached_phone_screen = 0
+        AND current_status = 'Rejected/Withdrawn'
+      GROUP BY COALESCE(ending_substatus, 'Rejected/Withdrawn')
+
+      UNION ALL
+      -- Terminal at Phone screen (stopped before Interviewing, then rejected/withdrawn)
+      SELECT 'Phone screen', COALESCE(ending_substatus, 'Rejected/Withdrawn'), COUNT(*)
+      FROM job_stages
+      WHERE reached_phone_screen = 1 AND reached_interviewing = 0
+        AND current_status = 'Rejected/Withdrawn'
+      GROUP BY COALESCE(ending_substatus, 'Rejected/Withdrawn')
+
+      UNION ALL
+      -- Terminal at Interviewing (stopped before Offer!, then rejected/withdrawn)
+      SELECT 'Interviewing', COALESCE(ending_substatus, 'Rejected/Withdrawn'), COUNT(*)
+      FROM job_stages
+      WHERE reached_interviewing = 1 AND reached_offer = 0
+        AND current_status = 'Rejected/Withdrawn'
+      GROUP BY COALESCE(ending_substatus, 'Rejected/Withdrawn')
+
+      UNION ALL
+      -- Terminal at Offer! (offer concluded or rejected after reaching Offer!)
+      SELECT 'Offer!', COALESCE(ending_substatus, 'Rejected/Withdrawn'), COUNT(*)
+      FROM job_stages
+      WHERE reached_offer = 1
+        AND (ending_substatus IS NOT NULL OR current_status = 'Rejected/Withdrawn')
+      GROUP BY COALESCE(ending_substatus, 'Rejected/Withdrawn')`,
 		)
 		.all(userId) as { from: string; to: string; count: number }[];
-
-	// Synthetic link: jobs currently sitting at "Applied" with no
-	// Forward movement yet. These are excluded from the real transitions (their
-	// To_status resolves to NULL) so there is no double-counting.
-	const pendingAppliedCount = (
-		db
-			.prepare(
-				`SELECT COUNT(*) as count FROM jobs WHERE ${baseWhere} AND status = 'Applied'`,
-			)
-			.get(userId) as { count: number }
-	).count;
-	if (pendingAppliedCount > 0) {
-		transitions.push({
-			count: pendingAppliedCount,
-			from: "Applied",
-			to: "No response",
-		});
-	}
 
 	let interviewDateFilter = "";
 	if (window === "30") {
@@ -383,4 +399,134 @@ export function getStats(
 		totalApplications: total,
 		transitions,
 	};
+}
+
+export interface LinkJob {
+	id: number;
+	company: string;
+	role: string;
+	status: string;
+	ending_substatus: string | null;
+	date_applied: string | null;
+	link: string;
+}
+
+const VALID_LINK_NODES = new Set([
+	"Direct", "Recruited", "Referred",
+	"Applied", "Phone screen", "Interviewing", "Offer!",
+	"Rejected/Withdrawn",
+	"Ghosted", "Job closed", "No response", "Not a good fit",
+	"Offer accepted", "Offer declined", "Rejected", "Withdrawn",
+]);
+
+const STAGE_TO_COL: Record<string, string> = {
+	Applied: "reached_applied",
+	"Phone screen": "reached_phone_screen",
+	Interviewing: "reached_interviewing",
+	"Offer!": "reached_offer",
+};
+
+const STAGE_NEXT: Record<string, string | undefined> = {
+	Applied: "Phone screen",
+	"Phone screen": "Interviewing",
+	Interviewing: "Offer!",
+	"Offer!": undefined,
+};
+
+const SOURCES = new Set(["Direct", "Recruited", "Referred"]);
+
+function buildLinkCondition(from: string, to: string): [string, string[]] {
+	if (SOURCES.has(from) && to === "Applied") {
+		return ["js.starting_status = ? AND js.reached_applied = 1", [from]];
+	}
+	if (from === "Applied" && to === "Phone screen") {
+		return ["js.reached_phone_screen = 1", []];
+	}
+	if (from === "Phone screen" && to === "Interviewing") {
+		return ["js.reached_interviewing = 1", []];
+	}
+	if (from === "Interviewing" && to === "Offer!") {
+		return ["js.reached_offer = 1", []];
+	}
+
+	// Terminal link — from is an active stage, to is a substatus or the fallback
+	const fromCol = STAGE_TO_COL[from];
+	if (!fromCol) { return ["1 = 0", []]; }
+
+	const nextStage = STAGE_NEXT[from];
+	const notNextCond = nextStage ? `AND js.${STAGE_TO_COL[nextStage]} = 0` : "";
+
+	if (from === "Offer!") {
+		if (to === "Rejected/Withdrawn") {
+			return [
+				"js.reached_offer = 1 AND js.current_status = 'Rejected/Withdrawn' AND js.ending_substatus IS NULL",
+				[],
+			];
+		}
+		return [
+			"js.reached_offer = 1 AND (js.ending_substatus IS NOT NULL OR js.current_status = 'Rejected/Withdrawn') AND js.ending_substatus = ?",
+			[to],
+		];
+	}
+
+	if (to === "Rejected/Withdrawn") {
+		return [
+			`js.${fromCol} = 1 ${notNextCond} AND js.current_status = 'Rejected/Withdrawn' AND js.ending_substatus IS NULL`,
+			[],
+		];
+	}
+
+	return [
+		`js.${fromCol} = 1 ${notNextCond} AND js.current_status = 'Rejected/Withdrawn' AND js.ending_substatus = ?`,
+		[to],
+	];
+}
+
+export function getJobsForLink(
+	db: Database.Database,
+	userId: number,
+	from: string,
+	to: string,
+	window: Window,
+): LinkJob[] | null {
+	if (!VALID_LINK_NODES.has(from) || !VALID_LINK_NODES.has(to)) { return null; }
+
+	const df = dateFilter(window);
+	const [condition, condParams] = buildLinkCondition(from, to);
+
+	return db
+		.prepare(
+			`WITH job_filter AS (
+        SELECT id, status AS current_status, ending_substatus,
+          CASE
+            WHEN referred_by IS NOT NULL AND referred_by <> '' THEN 'Referred'
+            WHEN recruiter IS NOT NULL AND recruiter <> '' THEN 'Recruited'
+            ELSE 'Direct'
+          END AS starting_status
+        FROM jobs
+        WHERE user_id = ?
+          AND (ending_substatus IS NULL OR ending_substatus NOT IN ${EXCLUDED_SUBSTATUSES})
+          ${df}
+      ),
+      job_stages AS (
+        SELECT
+          jf.id,
+          jf.starting_status,
+          jf.current_status,
+          jf.ending_substatus,
+          MAX(CASE WHEN h.status = 'Applied'      THEN 1 ELSE 0 END) AS reached_applied,
+          MAX(CASE WHEN h.status = 'Phone screen' THEN 1 ELSE 0 END) AS reached_phone_screen,
+          MAX(CASE WHEN h.status = 'Interviewing' THEN 1 ELSE 0 END) AS reached_interviewing,
+          MAX(CASE WHEN h.status = 'Offer!'       THEN 1 ELSE 0 END) AS reached_offer
+        FROM job_filter jf
+        LEFT JOIN job_status_history h ON h.job_id = jf.id
+        GROUP BY jf.id, jf.starting_status, jf.current_status, jf.ending_substatus
+      )
+      SELECT j.id, j.company, j.role, j.status, j.ending_substatus, j.date_applied, j.link
+      FROM job_stages js
+      JOIN jobs j ON j.id = js.id
+      WHERE ${condition}
+      ORDER BY j.date_applied DESC, j.created_at DESC`,
+		)
+		.all(userId, ...condParams) as LinkJob[];
 }

@@ -2,17 +2,6 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import PipelineFunnelChart from "./PipelineFunnelChart";
 
-vi.mock(
-	import("recharts"),
-	() =>
-		({
-			Sankey: ({ children }: { children: React.ReactNode }) => (
-				<div data-testid="sankey-chart">{children}</div>
-			),
-			Tooltip: () => null,
-		}) as any,
-);
-
 const TRANSITIONS = [
 	{ count: 5, from: "Direct", to: "Applied" },
 	{ count: 2, from: "Recruited", to: "Applied" },
@@ -28,6 +17,15 @@ const TRANSITIONS = [
 describe(PipelineFunnelChart, () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		// Jsdom does not implement ResizeObserver
+		vi.stubGlobal(
+			"ResizeObserver",
+			class {
+				observe() {}
+				unobserve() {}
+				disconnect() {}
+			},
+		);
 	});
 
 	it("shows empty state when transitions is empty", () => {
