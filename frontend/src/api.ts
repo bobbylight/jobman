@@ -7,6 +7,7 @@ import type {
 	InterviewQuestionFormData,
 	Job,
 	JobFormData,
+	LinkJob,
 	RadarPatch,
 	RadarResponse,
 	StatsResponse,
@@ -77,6 +78,10 @@ export const api = {
 	// Stats
 	getStats: (window: StatsWindow) =>
 		request<StatsResponse>(`/stats?window=${window}`),
+	getLinkJobs: (from: string, to: string, window: StatsWindow) =>
+		request<LinkJob[]>(
+			`/stats/link-jobs?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&window=${window}`,
+		),
 	getInterviewInsights: (window: StatsWindow = "all") =>
 		request<InterviewInsightsResponse>(`/interview-insights?window=${window}`),
 

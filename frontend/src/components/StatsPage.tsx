@@ -11,6 +11,7 @@ import type { StatsResponse, StatsWindow } from "../types";
 import StatCard from "./stats/StatCard";
 import StatusDonutChart from "./stats/StatusDonutChart";
 import PipelineFunnelChart from "./stats/PipelineFunnelChart";
+import TransitionJobsDialog from "./stats/TransitionJobsDialog";
 import ApplicationsOverTime from "./stats/ApplicationsOverTime";
 import LookbackToggle from "./stats/LookbackToggle";
 import AvgDaysChart from "./stats/AvgDaysChart";
@@ -23,6 +24,10 @@ export default function StatsPage() {
 	const [data, setData] = useState<StatsResponse | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(false);
+	const [linkClick, setLinkClick] = useState<{
+		from: string;
+		to: string;
+	} | null>(null);
 
 	useEffect(() => {
 		setLoading(true);
@@ -114,17 +119,9 @@ export default function StatsPage() {
 						<StatCard label="Offers Received" value={data.offersReceived} />
 					</Box>
 
-					{/* Charts row 1: Funnel + Donut */}
-					<Box
-						sx={{
-							display: "flex",
-							gap: 2,
-							flexWrap: "wrap",
-							alignItems: "flex-start",
-							mb: 2,
-						}}
-					>
-						<Card sx={{ flex: "1 1 340px" }}>
+					{/* Charts row 1: Funnel (full width) */}
+					<Box sx={{ mb: 2 }}>
+						<Card>
 							<CardContent>
 								<Typography
 									variant="subtitle2"
@@ -133,9 +130,23 @@ export default function StatsPage() {
 								>
 									Pipeline Funnel
 								</Typography>
-								<PipelineFunnelChart transitions={data.transitions} />
+								<PipelineFunnelChart
+									transitions={data.transitions}
+									onLinkClick={(from, to) => setLinkClick({ from, to })}
+								/>
 							</CardContent>
 						</Card>
+					</Box>
+
+					{/* Charts row 2: Donut + Avg Days Per Stage + Applications Over Time */}
+					<Box
+						sx={{
+							display: "flex",
+							gap: 2,
+							flexWrap: "wrap",
+							alignItems: "flex-start",
+						}}
+					>
 						<Card sx={{ flex: "1 1 340px" }}>
 							<CardContent>
 								<Typography
@@ -148,17 +159,6 @@ export default function StatsPage() {
 								<StatusDonutChart byStatus={data.byStatus} />
 							</CardContent>
 						</Card>
-					</Box>
-
-					{/* Charts row 2: Avg Days Per Stage + Applications Over Time */}
-					<Box
-						sx={{
-							display: "flex",
-							gap: 2,
-							flexWrap: "wrap",
-							alignItems: "flex-start",
-						}}
-					>
 						<Card sx={{ flex: "1 1 340px" }}>
 							<CardContent>
 								<Typography
@@ -238,6 +238,16 @@ export default function StatsPage() {
 						</Card>
 					</Box>
 				</>
+			)}
+
+			{linkClick !== null && (
+				<TransitionJobsDialog
+					from={linkClick.from}
+					to={linkClick.to}
+					open={linkClick !== null}
+					window={window}
+					onClose={() => setLinkClick(null)}
+				/>
 			)}
 		</Box>
 	);
