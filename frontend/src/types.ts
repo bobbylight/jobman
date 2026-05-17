@@ -13,15 +13,17 @@ export type JobStatus =
 	| "Offer!"
 	| "Rejected/Withdrawn";
 
-export type EndingSubstatus =
+export type RejectedSubstatus =
 	| "Withdrawn"
 	| "Rejected"
 	| "Ghosted"
 	| "No response"
 	| "Job closed"
-	| "Not a good fit"
-	| "Offer declined"
-	| "Offer accepted";
+	| "Not a good fit";
+
+export type OfferSubstatus = "Offer accepted" | "Offer declined";
+
+export type EndingSubstatus = RejectedSubstatus | OfferSubstatus;
 
 export type FitScore =
 	| "Not sure"

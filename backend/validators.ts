@@ -71,27 +71,42 @@ export const VALID_QUESTION_TYPES = new Set([
 	"coding",
 	"culture_fit",
 ]);
-export const VALID_ENDING_SUBSTATUSES = new Set([
+export const VALID_REJECTED_SUBSTATUSES = new Set([
 	"Withdrawn",
 	"Rejected",
 	"Ghosted",
 	"No response",
 	"Job closed",
 	"Not a good fit",
-	"Offer declined",
+]);
+
+export const VALID_OFFER_SUBSTATUSES = new Set([
 	"Offer accepted",
+	"Offer declined",
+]);
+
+export const VALID_ENDING_SUBSTATUSES = new Set([
+	...VALID_REJECTED_SUBSTATUSES,
+	...VALID_OFFER_SUBSTATUSES,
 ]);
 
 export function validateEndingSubstatus(
 	status: string,
 	ending_substatus: unknown,
 ): string | null {
-	if (TERMINAL_STATUSES.has(status)) {
+	if (status === "Offer!") {
 		if (
 			typeof ending_substatus !== "string" ||
-			!VALID_ENDING_SUBSTATUSES.has(ending_substatus)
+			!VALID_OFFER_SUBSTATUSES.has(ending_substatus)
 		) {
-			return `ending_substatus is required for status "${status}" and must be one of: ${[...VALID_ENDING_SUBSTATUSES].join(", ")}`;
+			return `ending_substatus is required for status "Offer!" and must be one of: ${[...VALID_OFFER_SUBSTATUSES].join(", ")}`;
+		}
+	} else if (status === "Rejected/Withdrawn") {
+		if (
+			typeof ending_substatus !== "string" ||
+			!VALID_REJECTED_SUBSTATUSES.has(ending_substatus)
+		) {
+			return `ending_substatus is required for status "Rejected/Withdrawn" and must be one of: ${[...VALID_REJECTED_SUBSTATUSES].join(", ")}`;
 		}
 	} else if (ending_substatus != null) {
 		return `ending_substatus must be null when status is "${status}"`;

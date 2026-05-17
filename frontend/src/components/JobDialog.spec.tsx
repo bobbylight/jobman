@@ -605,7 +605,7 @@ describe(JobDialog, () => {
 				expect(field).not.toHaveTextContent("Offer accepted");
 			});
 
-			it("preserves the substatus when switching between two terminal statuses", async () => {
+			it("clears the substatus when switching between terminal statuses with incompatible values", async () => {
 				vi.mocked(api.getJob).mockResolvedValue(
 					terminalJob("Offer!", "Offer accepted"),
 				);
@@ -616,9 +616,26 @@ describe(JobDialog, () => {
 					);
 				});
 				changeSelect(/^Status$/i, "Rejected/Withdrawn");
-				expect(screen.getByLabelText(/Final Resolution/i)).toHaveTextContent(
-					"Offer accepted",
+				// "Offer accepted" is not valid for Rejected/Withdrawn — must be cleared
+				expect(
+					screen.getByLabelText(/Final Resolution/i),
+				).not.toHaveTextContent("Offer accepted");
+			});
+
+			it("preserves the substatus when switching between terminal statuses with a compatible value", async () => {
+				vi.mocked(api.getJob).mockResolvedValue(
+					terminalJob("Rejected/Withdrawn", "Ghosted"),
 				);
+				render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
+				await waitFor(() => {
+					expect(screen.getByLabelText(/Final Resolution/i)).toHaveTextContent(
+						"Ghosted",
+					);
+				});
+				changeSelect(/^Status$/i, "Offer!");
+				expect(
+					screen.getByLabelText(/Final Resolution/i),
+				).not.toHaveTextContent("Ghosted");
 			});
 		});
 
@@ -729,6 +746,70 @@ describe(JobDialog, () => {
 				fireEvent.click(screen.getByRole("button", { name: "Add Job" }));
 				expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
 					expect.objectContaining({ ending_substatus: null }),
+				);
+			});
+		});
+
+		describe("substatus options filtered by status", () => {
+			it("shows only offer substatuses when status is Offer!", async () => {
+				vi.mocked(api.getJob).mockResolvedValue(
+					terminalJob("Offer!", "Offer accepted"),
+				);
+				render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
+				await waitFor(() =>
+					expect(screen.getByRole("button", { name: "Save" })).toBeEnabled(),
+				);
+				fireEvent.mouseDown(screen.getByLabelText(/Final Resolution/i));
+				expect(
+					screen.getByRole("option", { name: "Offer accepted" }),
+				).toBeInTheDocument();
+				expect(
+					screen.getByRole("option", { name: "Offer declined" }),
+				).toBeInTheDocument();
+				expect(
+					screen.queryByRole("option", { name: "Ghosted" }),
+				).not.toBeInTheDocument();
+				expect(
+					screen.queryByRole("option", { name: "Withdrawn" }),
+				).not.toBeInTheDocument();
+			});
+
+			it("shows only rejection substatuses when status is Rejected/Withdrawn", async () => {
+				vi.mocked(api.getJob).mockResolvedValue(
+					terminalJob("Rejected/Withdrawn", "Ghosted"),
+				);
+				render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
+				await waitFor(() =>
+					expect(screen.getByRole("button", { name: "Save" })).toBeEnabled(),
+				);
+				fireEvent.mouseDown(screen.getByLabelText(/Final Resolution/i));
+				expect(
+					screen.getByRole("option", { name: "Ghosted" }),
+				).toBeInTheDocument();
+				expect(
+					screen.getByRole("option", { name: "Withdrawn" }),
+				).toBeInTheDocument();
+				expect(
+					screen.queryByRole("option", { name: "Offer accepted" }),
+				).not.toBeInTheDocument();
+				expect(
+					screen.queryByRole("option", { name: "Offer declined" }),
+				).not.toBeInTheDocument();
+			});
+
+			it("can save with 'Offer declined' for an Offer! job", async () => {
+				vi.mocked(api.getJob).mockResolvedValue(terminalJob("Offer!", null));
+				render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
+				await waitFor(() =>
+					expect(screen.getByRole("button", { name: "Save" })).toBeEnabled(),
+				);
+				changeSelect(/Final Resolution/i, "Offer declined");
+				fireEvent.click(screen.getByRole("button", { name: "Save" }));
+				expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
+					expect.objectContaining({
+						ending_substatus: "Offer declined",
+						status: "Offer!",
+					}),
 				);
 			});
 		});
