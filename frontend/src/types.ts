@@ -40,6 +40,16 @@ export type JobTag =
 	| "faang-adjacent"
 	| "startup";
 
+export interface LinkJob {
+	id: number;
+	company: string;
+	role: string;
+	status: string;
+	ending_substatus: string | null;
+	date_applied: string | null;
+	link: string;
+}
+
 export interface Job {
 	id: number;
 	date_applied: string | null;
