@@ -16,9 +16,9 @@ export const TERMINAL_STATUSES = new Set<JobStatus>([
 
 export const ENDING_SUBSTATUSES: EndingSubstatus[] = [
 	"Withdrawn",
+	"No response",
 	"Rejected",
 	"Ghosted",
-	"No response",
 	"Job closed",
 	"Not a good fit",
 	"Offer declined",

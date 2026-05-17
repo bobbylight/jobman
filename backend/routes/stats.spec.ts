@@ -222,3 +222,71 @@ describe("GET /api/stats", () => {
 		expect(res.body.totalApplications).toBe(1);
 	});
 });
+
+describe("GET /api/stats/link-jobs", () => {
+	afterEach(() => {
+		testDb.exec("DELETE FROM jobs");
+	});
+
+	it("returns 401 when the request is not authenticated", async () => {
+		const res = await request(app).get("/api/stats/link-jobs?from=Direct&to=Applied");
+		expect(res.status).toBe(401);
+	});
+
+	it("returns 400 when 'from' is missing", async () => {
+		const res = await req("/api/stats/link-jobs?to=Applied");
+		expect(res.status).toBe(400);
+	});
+
+	it("returns 400 when 'to' is missing", async () => {
+		const res = await req("/api/stats/link-jobs?from=Direct");
+		expect(res.status).toBe(400);
+	});
+
+	it("returns 400 when 'from' is not a valid node name", async () => {
+		const res = await req("/api/stats/link-jobs?from=Hacking&to=Applied");
+		expect(res.status).toBe(400);
+	});
+
+	it("returns 400 when 'to' is not a valid node name", async () => {
+		const res = await req("/api/stats/link-jobs?from=Direct&to=Hacking");
+		expect(res.status).toBe(400);
+	});
+
+	it("returns 200 with an empty array when no jobs match the link", async () => {
+		const res = await req("/api/stats/link-jobs?from=Direct&to=Applied");
+		expect(res.status).toBe(200);
+		expect(res.body).toEqual([]);
+	});
+
+	it("returns 200 with matching jobs and correct fields", async () => {
+		const jobId = testDb
+			.prepare(
+				`INSERT INTO jobs (user_id, company, role, link, status, date_applied)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+			)
+			.run(TEST_USER_ID, "Acme", "Engineer", "https://acme.com", "Applied", "2025-05-01")
+			.lastInsertRowid;
+		testDb
+			.prepare(
+				"INSERT INTO job_status_history (job_id, status, entered_at) VALUES (?, ?, ?)",
+			)
+			.run(jobId, "Applied", "2025-05-01T00:00:00Z");
+
+		const res = await req("/api/stats/link-jobs?from=Direct&to=Applied");
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(1);
+		expect(res.body[0]).toMatchObject({
+			company: "Acme",
+			date_applied: "2025-05-01",
+			link: "https://acme.com",
+			role: "Engineer",
+		});
+	});
+
+	it("treats an unrecognised window value as 'all'", async () => {
+		const res = await req("/api/stats/link-jobs?from=Direct&to=Applied&window=bogus");
+		expect(res.status).toBe(200);
+		expect(res.body).toEqual([]);
+	});
+});

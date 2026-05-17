@@ -4,6 +4,7 @@ import type {
 	InterviewQuestionFormData,
 	Job,
 	JobFormData,
+	LinkJob,
 	StatsResponse,
 } from "./types";
 
@@ -575,6 +576,50 @@ describe("API module", () => {
 				makeResponse({ error: "Unauthorized" }, false),
 			);
 			await expect(api.getStats("all")).rejects.toThrow("API error 400");
+		});
+	});
+
+	describe("getLinkJobs", () => {
+		const MOCK_LINK_JOBS: LinkJob[] = [
+			{
+				company: "Acme",
+				date_applied: "2026-03-01",
+				ending_substatus: null,
+				id: 1,
+				link: "https://acme.com/job",
+				role: "Engineer",
+				status: "Applied",
+			},
+		];
+
+		it("GETs /api/stats/link-jobs with encoded from, to, and window params", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_LINK_JOBS));
+			const result = await api.getLinkJobs("Applied", "Phone screen", "all");
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/stats/link-jobs?from=Applied&to=Phone%20screen&window=all",
+				expect.objectContaining({
+					headers: { "Content-Type": "application/json" },
+				}),
+			);
+			expect(result).toEqual(MOCK_LINK_JOBS);
+		});
+
+		it("URL-encodes special characters in from and to params", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_LINK_JOBS));
+			await api.getLinkJobs("Rejected/Withdrawn", "Offer!", "30");
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/stats/link-jobs?from=Rejected%2FWithdrawn&to=Offer!&window=30",
+				expect.any(Object),
+			);
+		});
+
+		it("throws when the response is not ok", async () => {
+			mockFetch.mockResolvedValue(
+				makeResponse({ error: "Unauthorized" }, false),
+			);
+			await expect(
+				api.getLinkJobs("Applied", "Phone screen", "all"),
+			).rejects.toThrow("API error 400");
 		});
 	});
 });
