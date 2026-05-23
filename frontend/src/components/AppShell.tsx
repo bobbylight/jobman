@@ -22,6 +22,7 @@ import ViewKanbanOutlinedIcon from "@mui/icons-material/ViewKanbanOutlined";
 import Tooltip from "@mui/material/Tooltip";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import type { User } from "../types";
+import Footer from "./Footer";
 
 const NAV_ITEMS = [
 	{ icon: <ViewKanbanOutlinedIcon />, label: "Board", path: "/jobs" },
@@ -52,8 +53,15 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 	);
 
 	return (
-		<>
-			<AppBar position="sticky">
+		<Box
+			sx={{
+				display: "flex",
+				flexDirection: "column",
+				height: "100vh",
+				overflow: "hidden",
+			}}
+		>
+			<AppBar position="static">
 				<Toolbar sx={{ gap: 1, minHeight: "56px !important" }}>
 					<Box
 						component="img"
@@ -113,7 +121,8 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 			<Box
 				sx={{
 					display: "flex",
-					height: "calc(100vh - 56px)",
+					flex: 1,
+					minHeight: 0,
 					overflow: "hidden",
 				}}
 			>
@@ -163,14 +172,19 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 				<Box
 					sx={{
 						bgcolor: "background.default",
+						display: "flex",
 						flex: 1,
+						flexDirection: "column",
 						minWidth: 0,
 						overflowY: "auto",
 					}}
 				>
-					<Outlet />
+					<Box sx={{ flex: 1 }}>
+						<Outlet />
+					</Box>
+					<Footer />
 				</Box>
 			</Box>
-		</>
+		</Box>
 	);
 }

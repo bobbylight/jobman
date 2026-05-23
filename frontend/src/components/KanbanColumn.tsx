@@ -30,10 +30,10 @@ export default memo(function KanbanColumn({
 				border: "1px solid rgba(0,0,0,0.08)",
 				borderRadius: 0,
 				display: "flex",
-				flex: "0 0 260px",
+				flex: "0 0 220px",
 				flexDirection: "column",
-				maxWidth: 280,
-				minWidth: 240,
+				maxWidth: 240,
+				minWidth: 200,
 				ml: "-1px",
 				overflow: "hidden",
 			}}
