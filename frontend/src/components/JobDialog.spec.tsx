@@ -1047,6 +1047,19 @@ describe(JobDialog, () => {
 			expect(DEFAULT_PROPS.onSave).not.toHaveBeenCalled();
 		});
 
+		it("shows an error when notes exceeds 20,000 characters", () => {
+			render(<JobDialog {...DEFAULT_PROPS} jobId={null} />);
+			fillRequiredFields();
+			fireEvent.change(screen.getByLabelText(/^Notes$/i), {
+				target: { value: "a".repeat(20_001) },
+			});
+			clickSave();
+			expect(
+				screen.getByText("Must be 20,000 characters or fewer"),
+			).toBeInTheDocument();
+			expect(DEFAULT_PROPS.onSave).not.toHaveBeenCalled();
+		});
+
 		it("calls onSave when all fields are within limits", () => {
 			render(<JobDialog {...DEFAULT_PROPS} jobId={null} />);
 			fillRequiredFields();

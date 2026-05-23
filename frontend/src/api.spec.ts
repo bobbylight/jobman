@@ -622,4 +622,105 @@ describe("API module", () => {
 			).rejects.toThrow("API error 400");
 		});
 	});
+
+	describe("getRadar", () => {
+		const MOCK_RADAR = {
+			entries: [],
+			generated_at: "2026-01-01T00:00:00.000Z",
+		};
+
+		it("GETs /api/radar when includeHidden is false (default)", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_RADAR));
+			const result = await api.getRadar();
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/radar",
+				expect.objectContaining({
+					headers: { "Content-Type": "application/json" },
+				}),
+			);
+			expect(result).toEqual(MOCK_RADAR);
+		});
+
+		it("GETs /api/radar?includeHidden=true when includeHidden is true", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_RADAR));
+			await api.getRadar(true);
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/radar?includeHidden=true",
+				expect.any(Object),
+			);
+		});
+
+		it("throws when the response is not ok", async () => {
+			mockFetch.mockResolvedValue(
+				makeResponse({ error: "Unauthorized" }, false),
+			);
+			await expect(api.getRadar()).rejects.toThrow("API error 400");
+		});
+	});
+
+	describe("patchRadarEntry", () => {
+		it("PATCHes /api/radar/:id with JSON body and returns success", async () => {
+			mockFetch.mockResolvedValue(makeResponse({ success: true }));
+			const result = await api.patchRadarEntry(7, { hidden: 1 });
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/radar/7",
+				expect.objectContaining({
+					body: JSON.stringify({ hidden: 1 }),
+					method: "PATCH",
+				}),
+			);
+			expect(result.success).toBeTruthy();
+		});
+
+		it("throws when the response is not ok", async () => {
+			mockFetch.mockResolvedValue(makeResponse({ error: "Not found" }, false));
+			await expect(api.patchRadarEntry(99, { hidden: 1 })).rejects.toThrow(
+				"API error 400",
+			);
+		});
+	});
+
+	describe("getInterviewInsights", () => {
+		const MOCK_INSIGHTS = {
+			avgDifficulty: null,
+			byStage: [],
+			byType: [],
+			difficultyDistribution: [],
+			feelingVsResult: [],
+			passRate: null,
+			questionsByType: [],
+			topQuestions: [],
+			totalInterviews: 0,
+			totalQuestions: 0,
+			vibeVsResult: [],
+		};
+
+		it("GETs /api/interview-insights?window=all by default", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_INSIGHTS));
+			const result = await api.getInterviewInsights();
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/interview-insights?window=all",
+				expect.objectContaining({
+					headers: { "Content-Type": "application/json" },
+				}),
+			);
+			expect(result).toEqual(MOCK_INSIGHTS);
+		});
+
+		it("GETs /api/interview-insights?window=30 when window is '30'", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_INSIGHTS));
+			await api.getInterviewInsights("30");
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/interview-insights?window=30",
+				expect.any(Object),
+			);
+		});
+
+		it("throws when the response is not ok", async () => {
+			mockFetch.mockResolvedValue(
+				makeResponse({ error: "Unauthorized" }, false),
+			);
+			await expect(api.getInterviewInsights()).rejects.toThrow("API error 400");
+		});
+	});
 });

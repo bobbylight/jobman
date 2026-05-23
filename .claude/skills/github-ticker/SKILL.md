@@ -29,7 +29,9 @@ Read a GitHub ticket and implement the requested changes in a worktree, then ope
    you can decide yourself.
 
 6. **Create a worktree**: Once the approach is clear, create a worktree branch with a name that
-   reflects the work (e.g., `feature/add-history-chart`). Use the `EnterWorktree` tool.
+   reflects the work (e.g., `feature/add-history-chart`). Use the `EnterWorktree` tool. The
+   worktree will be created inside `.claude/worktrees/` — do not pass an explicit path argument;
+   the `EnterWorktree` tool handles placement automatically.
 
 7. **Implement the changes**: Write all code inside the worktree. Follow CLAUDE.md conventions
    exactly.
