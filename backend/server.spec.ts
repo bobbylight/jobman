@@ -43,6 +43,29 @@ const SCHEMA = `
     PRIMARY KEY (job_id, tag)
   );
 
+  CREATE TABLE IF NOT EXISTS target_companies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    tier TEXT NOT NULL DEFAULT 'faang_adjacent',
+    application_cooldown_days INTEGER,
+    phone_screen_cooldown_days INTEGER,
+    onsite_cooldown_days INTEGER,
+    max_apps_per_period INTEGER,
+    apps_period_days INTEGER,
+    policy_summary TEXT,
+    policy_url TEXT,
+    policy_confidence TEXT,
+    policy_updated_at TEXT,
+    user_notes TEXT,
+    hidden INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE TABLE IF NOT EXISTS job_status_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_id INTEGER NOT NULL,
+    status TEXT NOT NULL,
+    entered_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+  );
+
   CREATE INDEX IF NOT EXISTS idx_job_tags_tag ON job_tags(tag);
 `;
 
@@ -84,6 +107,18 @@ describe("requireAuth middleware", () => {
 
 	it("returns 401 for unauthenticated requests to interview routes", async () => {
 		const res = await request(app).get("/api/jobs/1/interviews");
+		expect(res.status).toBe(401);
+		expect(res.body.error).toBe("Unauthorized");
+	});
+
+	it("returns 401 for unauthenticated requests to radar routes", async () => {
+		const res = await request(app).get("/api/radar");
+		expect(res.status).toBe(401);
+		expect(res.body.error).toBe("Unauthorized");
+	});
+
+	it("returns 401 for unauthenticated requests to interview-insights routes", async () => {
+		const res = await request(app).get("/api/interview-insights");
 		expect(res.status).toBe(401);
 		expect(res.body.error).toBe("Unauthorized");
 	});

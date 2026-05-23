@@ -8,6 +8,7 @@ coverage/
 .DS_Store
 *.iml
 .idea/
+.claude/worktrees/
 settings.local.json
 .env
 .env.deploy
