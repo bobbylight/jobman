@@ -70,6 +70,7 @@ export interface Job {
 	ending_substatus: EndingSubstatus | null;
 	date_phone_screen: string | null;
 	date_last_onsite: string | null;
+	date_offer_extended: string | null;
 	favorite: boolean;
 	tags: JobTag[];
 	created_at: string;

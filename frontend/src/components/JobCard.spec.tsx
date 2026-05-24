@@ -38,6 +38,7 @@ const BASE_JOB: Job = {
 	created_at: "2024-01-01T00:00:00.000Z",
 	date_applied: null,
 	date_last_onsite: null,
+	date_offer_extended: null,
 	date_phone_screen: null,
 	ending_substatus: null,
 	favorite: false,
@@ -390,6 +391,36 @@ describe(JobCard, () => {
 				/>,
 			);
 			expect(screen.getByText("Last updated")).toBeInTheDocument();
+		});
+	});
+
+	describe("Offer! date label", () => {
+		it("displays 'Offer received' with the formatted date_offer_extended", () => {
+			render(
+				<JobCard
+					job={{
+						...BASE_JOB,
+						status: "Offer!",
+						// Include time so the string is parsed as local time (no UTC shift)
+						date_offer_extended: "2026-05-15T12:00",
+					}}
+					onCardClick={vi.fn()}
+					onToggleFavorite={vi.fn()}
+				/>,
+			);
+			expect(screen.getByText(/Offer received/)).toBeInTheDocument();
+			expect(screen.getByText(/May 15, 2026/)).toBeInTheDocument();
+		});
+
+		it("renders 'Offer received' without a date when date_offer_extended is null", () => {
+			render(
+				<JobCard
+					job={{ ...BASE_JOB, status: "Offer!" }}
+					onCardClick={vi.fn()}
+					onToggleFavorite={vi.fn()}
+				/>,
+			);
+			expect(screen.getByText("Offer received")).toBeInTheDocument();
 		});
 	});
 });

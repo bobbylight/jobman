@@ -46,9 +46,10 @@ db.exec(`
     created_at       TEXT DEFAULT (datetime('now')),
     job_description  TEXT     CHECK(length(job_description) <= 20000),
     ending_substatus TEXT     CHECK(length(ending_substatus) <= 128),
-    date_phone_screen TEXT    CHECK(length(date_phone_screen) <= 16),
-    date_last_onsite TEXT     CHECK(length(date_last_onsite) <= 16),
-    updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
+    date_phone_screen TEXT     CHECK(length(date_phone_screen) <= 16),
+    date_last_onsite  TEXT     CHECK(length(date_last_onsite) <= 16),
+    date_offer_extended TEXT   CHECK(length(date_offer_extended) <= 16),
+    updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
   CREATE TRIGGER IF NOT EXISTS jobs_updated_at
@@ -119,6 +120,15 @@ db.exec(`
     hidden                     INTEGER NOT NULL DEFAULT 0
   );
 `);
+
+// Additive migrations — safe to re-run on an existing DB
+try {
+	db.exec(
+		"ALTER TABLE jobs ADD COLUMN date_offer_extended TEXT CHECK(length(date_offer_extended) <= 16)",
+	);
+} catch {
+	// Column already exists
+}
 
 // One-time backfill: synthesise history rows from existing date columns for
 // Jobs that don't yet have any history entries for a given status.

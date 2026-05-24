@@ -2,7 +2,7 @@ import type Database from "better-sqlite3";
 import express from "express";
 import * as JobsDb from "../db/jobs.js";
 import type { JobView } from "../db/jobs.js";
-import { validateEndingSubstatus, validateJobFields } from "../validators.js";
+import { validateEndingSubstatus, validateJobFields, validateOfferDate } from "../validators.js";
 
 export function createJobsRouter(db: Database.Database) {
 	const router = express.Router();
@@ -31,6 +31,12 @@ export function createJobsRouter(db: Database.Database) {
 		);
 		if (substatusError) {return res.status(422).json({ error: substatusError });}
 
+		const offerDateError = validateOfferDate(
+			f.status ?? "Not started",
+			f.date_offer_extended ?? null,
+		);
+		if (offerDateError) {return res.status(422).json({ error: offerDateError });}
+
 		if (f.company && f.link && JobsDb.jobExists(db, f.company, f.link, userId)) {
 			return res.status(409).json({ error: "Job already exists" });
 		}
@@ -39,6 +45,7 @@ export function createJobsRouter(db: Database.Database) {
 			company: f.company,
 			date_applied: f.date_applied ?? null,
 			date_last_onsite: f.date_last_onsite ?? null,
+			date_offer_extended: f.date_offer_extended ?? null,
 			date_phone_screen: f.date_phone_screen ?? null,
 			ending_substatus: f.ending_substatus ?? null,
 			favorite: f.favorite ?? false,
@@ -69,6 +76,12 @@ export function createJobsRouter(db: Database.Database) {
 		);
 		if (substatusError) {return res.status(422).json({ error: substatusError });}
 
+		const offerDateError = validateOfferDate(
+			f.status,
+			f.date_offer_extended ?? null,
+		);
+		if (offerDateError) {return res.status(422).json({ error: offerDateError });}
+
 		const job = JobsDb.updateJob(
 			db,
 			Number(req.params.id),
@@ -90,6 +103,7 @@ export function createJobsRouter(db: Database.Database) {
 				ending_substatus: f.ending_substatus ?? null,
 				date_phone_screen: f.date_phone_screen ?? null,
 				date_last_onsite: f.date_last_onsite ?? null,
+				date_offer_extended: f.date_offer_extended ?? null,
 				favorite: f.favorite ?? false,
 				tags: Array.isArray(f.tags) ? f.tags : [],
 			},
