@@ -26,7 +26,8 @@ const SCHEMA = `
     job_description TEXT,
     ending_substatus TEXT,
     date_phone_screen TEXT,
-    date_last_onsite TEXT
+    date_last_onsite TEXT,
+    date_offer_extended TEXT
   );
   CREATE TABLE job_status_history (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,6 +54,7 @@ const BASE_JOB: Omit<JobCreateData, "user_id"> = {
 	company: "Acme Corp",
 	date_applied: null,
 	date_last_onsite: null,
+	date_offer_extended: null,
 	date_phone_screen: null,
 	ending_substatus: null,
 	favorite: false,
@@ -156,6 +158,20 @@ describe("jobs db", () => {
 			expect(job.recruiter).toBeNull();
 			expect(job.notes).toBeNull();
 		});
+
+		it("stores and returns date_offer_extended", () => {
+			const job = createJob(db, {
+				...BASE_JOB,
+				date_offer_extended: "2026-05-15",
+				user_id: USER_ID,
+			});
+			expect(job.date_offer_extended).toBe("2026-05-15");
+		});
+
+		it("stores date_offer_extended as null when not provided", () => {
+			const job = createJob(db, { ...BASE_JOB, user_id: USER_ID });
+			expect(job.date_offer_extended).toBeNull();
+		});
 	});
 
 	describe(updateJob, () => {
@@ -184,6 +200,21 @@ describe("jobs db", () => {
 			const created = createJob(db, { ...BASE_JOB, favorite: false, user_id: USER_ID });
 			const updated = updateJob(db, created.id, USER_ID, { ...BASE_JOB, favorite: true });
 			expect(updated?.favorite).toBeTruthy();
+		});
+
+		it("stores and clears date_offer_extended on update", () => {
+			const created = createJob(db, { ...BASE_JOB, user_id: USER_ID });
+			const withDate = updateJob(db, created.id, USER_ID, {
+				...BASE_JOB,
+				date_offer_extended: "2026-05-15",
+			});
+			expect(withDate?.date_offer_extended).toBe("2026-05-15");
+
+			const cleared = updateJob(db, created.id, USER_ID, {
+				...BASE_JOB,
+				date_offer_extended: null,
+			});
+			expect(cleared?.date_offer_extended).toBeNull();
 		});
 	});
 

@@ -27,6 +27,7 @@ const BASE_JOB: Job = {
 	created_at: "2024-01-01T00:00:00.000Z",
 	date_applied: "2024-03-01",
 	date_last_onsite: null,
+	date_offer_extended: null,
 	date_phone_screen: null,
 	ending_substatus: null,
 	favorite: false,
@@ -798,7 +799,10 @@ describe(JobDialog, () => {
 			});
 
 			it("can save with 'Offer declined' for an Offer! job", async () => {
-				vi.mocked(api.getJob).mockResolvedValue(terminalJob("Offer!", null));
+				vi.mocked(api.getJob).mockResolvedValue({
+					...terminalJob("Offer!", "Offer accepted"),
+					date_offer_extended: "2026-04-10",
+				});
 				render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 				await waitFor(() =>
 					expect(screen.getByRole("button", { name: "Save" })).toBeEnabled(),
@@ -866,6 +870,83 @@ describe(JobDialog, () => {
 			fireEvent.click(screen.getByRole("button", { name: "Add Job" }));
 			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
 				expect.objectContaining({ tags: [] }),
+			);
+		});
+	});
+
+	describe("Offer Date field", () => {
+		it("does not show Offer Date in add mode", () => {
+			render(<JobDialog {...DEFAULT_PROPS} jobId={null} />);
+			expect(screen.queryByLabelText(/Offer Date/i)).not.toBeInTheDocument();
+		});
+
+		it("shows Offer Date in edit mode", async () => {
+			vi.mocked(api.getJob).mockResolvedValue(BASE_JOB);
+			render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
+			await waitFor(() =>
+				expect(screen.getByLabelText(/Offer Date/i)).toBeInTheDocument(),
+			);
+		});
+
+		it("is disabled when job status is not Offer!", async () => {
+			vi.mocked(api.getJob).mockResolvedValue({
+				...BASE_JOB,
+				status: "Applied",
+			});
+			render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
+			await waitFor(() =>
+				expect(screen.getByLabelText(/Offer Date/i)).toBeDisabled(),
+			);
+		});
+
+		it("is enabled when job status is Offer!", async () => {
+			vi.mocked(api.getJob).mockResolvedValue(
+				terminalJob("Offer!", "Offer accepted"),
+			);
+			render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
+			await waitFor(() =>
+				expect(screen.getByLabelText(/Offer Date/i)).not.toBeDisabled(),
+			);
+		});
+
+		it("pre-fills value from date_offer_extended on the loaded job", async () => {
+			vi.mocked(api.getJob).mockResolvedValue({
+				...terminalJob("Offer!", "Offer accepted"),
+				date_offer_extended: "2026-04-10",
+			});
+			render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
+			await waitFor(() =>
+				expect(screen.getByLabelText(/Offer Date/i)).toHaveValue("2026-04-10"),
+			);
+		});
+
+		it("shows validation error when saving Offer! job without an offer date", async () => {
+			vi.mocked(api.getJob).mockResolvedValue(
+				terminalJob("Offer!", "Offer accepted"),
+			);
+			render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
+			await waitFor(() =>
+				expect(screen.getByRole("button", { name: "Save" })).toBeEnabled(),
+			);
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+			expect(
+				screen.getByText("Required for Offer! status"),
+			).toBeInTheDocument();
+			expect(DEFAULT_PROPS.onSave).not.toHaveBeenCalled();
+		});
+
+		it("includes date_offer_extended in onSave payload when set", async () => {
+			vi.mocked(api.getJob).mockResolvedValue({
+				...terminalJob("Offer!", "Offer accepted"),
+				date_offer_extended: "2026-04-10",
+			});
+			render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
+			await waitFor(() =>
+				expect(screen.getByRole("button", { name: "Save" })).toBeEnabled(),
+			);
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
+				expect.objectContaining({ date_offer_extended: "2026-04-10" }),
 			);
 		});
 	});

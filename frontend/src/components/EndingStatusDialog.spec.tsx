@@ -8,6 +8,7 @@ const BASE_JOB: Job = {
 	created_at: "2024-01-01T00:00:00.000Z",
 	date_applied: null,
 	date_last_onsite: null,
+	date_offer_extended: null,
 	date_phone_screen: null,
 	ending_substatus: null,
 	favorite: false,
@@ -71,13 +72,14 @@ describe(EndingStatusDialog, () => {
 		expect(DEFAULT_PROPS.onConfirm).not.toHaveBeenCalled();
 	});
 
-	it("calls onConfirm with substatus and notes when OK is clicked with valid input", () => {
+	it("calls onConfirm with substatus, notes, and null offerDate for Rejected/Withdrawn", () => {
 		render(<EndingStatusDialog {...DEFAULT_PROPS} />);
 		changeSelect(/Final Resolution/i, "Rejected");
 		fireEvent.click(screen.getByRole("button", { name: "OK" }));
 		expect(DEFAULT_PROPS.onConfirm).toHaveBeenCalledWith(
 			"Rejected",
 			"Some existing notes",
+			null,
 		);
 	});
 
@@ -88,7 +90,11 @@ describe(EndingStatusDialog, () => {
 			target: { value: "" },
 		});
 		fireEvent.click(screen.getByRole("button", { name: "OK" }));
-		expect(DEFAULT_PROPS.onConfirm).toHaveBeenCalledWith("Rejected", null);
+		expect(DEFAULT_PROPS.onConfirm).toHaveBeenCalledWith(
+			"Rejected",
+			null,
+			null,
+		);
 	});
 
 	it("calls onCancel when Cancel is clicked", () => {
@@ -112,7 +118,17 @@ describe(EndingStatusDialog, () => {
 	});
 
 	describe("Offer! destination", () => {
+		const FIXED_TODAY = "2026-05-24";
 		const OFFER_PROPS = { ...DEFAULT_PROPS, newStatus: "Offer!" as const };
+
+		beforeEach(() => {
+			vi.useFakeTimers();
+			vi.setSystemTime(new Date(FIXED_TODAY));
+		});
+
+		afterEach(() => {
+			vi.useRealTimers();
+		});
 
 		it("pre-selects 'Offer accepted' when destination is Offer!", () => {
 			render(<EndingStatusDialog {...OFFER_PROPS} />);
@@ -129,22 +145,61 @@ describe(EndingStatusDialog, () => {
 			);
 		});
 
-		it("calls onConfirm with 'Offer accepted' when confirmed without changing the default", () => {
+		it("shows Offer Date field for Offer! destination", () => {
+			render(<EndingStatusDialog {...OFFER_PROPS} />);
+			expect(screen.getByLabelText(/Offer Date/i)).toBeInTheDocument();
+		});
+
+		it("does not show Offer Date field for Rejected/Withdrawn", () => {
+			render(<EndingStatusDialog {...DEFAULT_PROPS} />);
+			expect(screen.queryByLabelText(/Offer Date/i)).not.toBeInTheDocument();
+		});
+
+		it("defaults Offer Date to today when job has no date_offer_extended", () => {
+			render(<EndingStatusDialog {...OFFER_PROPS} />);
+			expect(screen.getByLabelText(/Offer Date/i)).toHaveValue(FIXED_TODAY);
+		});
+
+		it("defaults Offer Date to the job's existing date_offer_extended", () => {
+			render(
+				<EndingStatusDialog
+					{...OFFER_PROPS}
+					job={{ ...BASE_JOB, date_offer_extended: "2026-04-10" }}
+				/>,
+			);
+			expect(screen.getByLabelText(/Offer Date/i)).toHaveValue("2026-04-10");
+		});
+
+		it("shows validation error when OK is clicked without Offer Date", () => {
+			render(<EndingStatusDialog {...OFFER_PROPS} />);
+			fireEvent.change(screen.getByLabelText(/Offer Date/i), {
+				target: { value: "" },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "OK" }));
+			expect(DEFAULT_PROPS.onConfirm).not.toHaveBeenCalled();
+		});
+
+		it("calls onConfirm with 'Offer accepted' and today's date when confirmed without changing defaults", () => {
 			render(<EndingStatusDialog {...OFFER_PROPS} />);
 			fireEvent.click(screen.getByRole("button", { name: "OK" }));
 			expect(DEFAULT_PROPS.onConfirm).toHaveBeenCalledWith(
 				"Offer accepted",
 				"Some existing notes",
+				FIXED_TODAY,
 			);
 		});
 
-		it("allows selecting 'Offer declined'", () => {
+		it("allows selecting 'Offer declined' and passes chosen offer date", () => {
 			render(<EndingStatusDialog {...OFFER_PROPS} />);
 			changeSelect(/Final Resolution/i, "Offer declined");
+			fireEvent.change(screen.getByLabelText(/Offer Date/i), {
+				target: { value: "2026-05-01" },
+			});
 			fireEvent.click(screen.getByRole("button", { name: "OK" }));
 			expect(DEFAULT_PROPS.onConfirm).toHaveBeenCalledWith(
 				"Offer declined",
 				"Some existing notes",
+				"2026-05-01",
 			);
 		});
 

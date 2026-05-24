@@ -39,6 +39,7 @@ const makeJob = (
 	created_at: "2024-01-01T00:00:00.000Z",
 	date_applied: null,
 	date_last_onsite: null,
+	date_offer_extended: null,
 	date_phone_screen: null,
 	ending_substatus: null,
 	favorite: false,

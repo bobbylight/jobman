@@ -40,7 +40,8 @@ const SCHEMA = `
     job_description TEXT,
     ending_substatus TEXT,
     date_phone_screen TEXT,
-    date_last_onsite TEXT
+    date_last_onsite TEXT,
+    date_offer_extended TEXT
   );
   CREATE TABLE IF NOT EXISTS job_status_history (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,

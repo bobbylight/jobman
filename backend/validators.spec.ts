@@ -1,5 +1,6 @@
 import {
 	validateEndingSubstatus,
+	validateOfferDate,
 	VALID_OFFER_SUBSTATUSES,
 	VALID_REJECTED_SUBSTATUSES,
 } from "./validators.js";
@@ -85,6 +86,47 @@ describe(validateEndingSubstatus, () => {
 			ACTIVE_STATUSES,
 		)("rejects a substatus value for active status '%s'", (status) => {
 			expect(validateEndingSubstatus(status, "Withdrawn")).not.toBeNull();
+		});
+	});
+});
+
+describe(validateOfferDate, () => {
+	describe("Offer! status", () => {
+		it("accepts a valid date string", () => {
+			expect(validateOfferDate("Offer!", "2026-05-15")).toBeNull();
+		});
+
+		it("rejects null for Offer! (date is required)", () => {
+			expect(validateOfferDate("Offer!", null)).not.toBeNull();
+		});
+
+		it("rejects empty string for Offer!", () => {
+			expect(validateOfferDate("Offer!", "")).not.toBeNull();
+		});
+
+		it("returns an error mentioning date_offer_extended", () => {
+			const err = validateOfferDate("Offer!", null);
+			expect(err).toMatch(/date_offer_extended/);
+		});
+	});
+
+	describe("non-Offer! statuses", () => {
+		const NON_OFFER_STATUSES = [
+			"Not started",
+			"Applied",
+			"Phone screen",
+			"Interviewing",
+			"Rejected/Withdrawn",
+		];
+
+		it.each(NON_OFFER_STATUSES)("accepts null for status '%s'", (status) => {
+			expect(validateOfferDate(status, null)).toBeNull();
+		});
+
+		it.each(
+			NON_OFFER_STATUSES,
+		)("rejects a non-null date for status '%s'", (status) => {
+			expect(validateOfferDate(status, "2026-05-15")).not.toBeNull();
 		});
 	});
 });

@@ -14,6 +14,7 @@ const BASE_JOB: Job = {
 	fit_score: null,
 	salary: null,
 	date_applied: null,
+	date_offer_extended: null,
 	date_phone_screen: null,
 	date_last_onsite: null,
 	referred_by: null,

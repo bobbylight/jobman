@@ -54,6 +54,7 @@ const EMPTY: JobFormData = {
 	company: "",
 	date_applied: null,
 	date_last_onsite: null,
+	date_offer_extended: null,
 	date_phone_screen: null,
 	ending_substatus: null,
 	favorite: false,
@@ -209,6 +210,9 @@ export default function JobDialog({
 
 		if (TERMINAL_STATUSES.has(form.status) && !form.ending_substatus) {
 			e.ending_substatus = "Required for this status";
+		}
+		if (isEdit && form.status === "Offer!" && !form.date_offer_extended) {
+			e.date_offer_extended = "Required for Offer! status";
 		}
 		setErrors(e);
 		return Object.keys(e).length === 0;
@@ -598,7 +602,7 @@ export default function JobDialog({
 									/>
 								</Grid>
 
-								<Grid size={12}>
+								<Grid size={{ sm: isEdit ? 6 : 12, xs: 12 }}>
 									<Autocomplete
 										multiple
 										options={JOB_TAGS}
@@ -621,6 +625,25 @@ export default function JobDialog({
 										)}
 									/>
 								</Grid>
+
+								{isEdit && (
+									<Grid size={{ sm: 6, xs: 12 }}>
+										<TextField
+											label="Offer Date"
+											type="date"
+											value={form.date_offer_extended ?? ""}
+											onChange={(e) =>
+												set("date_offer_extended", e.target.value || null)
+											}
+											error={Boolean(errors.date_offer_extended)}
+											helperText={errors.date_offer_extended}
+											disabled={form.status !== "Offer!"}
+											fullWidth
+											size="small"
+											slotProps={{ inputLabel: { shrink: true } }}
+										/>
+									</Grid>
+								)}
 
 								<Grid size={12}>
 									<MarkdownField

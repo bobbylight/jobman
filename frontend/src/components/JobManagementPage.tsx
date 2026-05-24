@@ -241,13 +241,20 @@ export default function JobManagementPage() {
 				setPendingTerminalChange({ job, newStatus });
 				return;
 			}
-			void applyStatusChange(job, newStatus, { ending_substatus: null });
+			void applyStatusChange(job, newStatus, {
+				ending_substatus: null,
+				date_offer_extended: null,
+			});
 		},
 		[applyStatusChange],
 	);
 
 	const handleTerminalConfirm = useCallback(
-		(substatus: EndingSubstatus, notes: string | null) => {
+		(
+			substatus: EndingSubstatus,
+			notes: string | null,
+			offerDate: string | null,
+		) => {
 			if (!pendingTerminalChange) {
 				return;
 			}
@@ -256,6 +263,7 @@ export default function JobManagementPage() {
 			void applyStatusChange(job, newStatus, {
 				ending_substatus: substatus,
 				notes,
+				date_offer_extended: newStatus === "Offer!" ? offerDate : null,
 			});
 		},
 		[pendingTerminalChange, applyStatusChange],

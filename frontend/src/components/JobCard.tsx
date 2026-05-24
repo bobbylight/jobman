@@ -48,7 +48,10 @@ const STATUS_DATE_LABEL: Record<
 		getDate: (job) => formatDate(job.created_at),
 		label: "Last updated",
 	},
-	"Offer!": { getDate: () => null, label: "Last updated" },
+	"Offer!": {
+		getDate: (job) => formatDate(job.date_offer_extended),
+		label: "Offer received",
+	},
 	"Phone screen": {
 		getDate: (job) => formatDate(job.date_phone_screen),
 		label: "Phone screen",

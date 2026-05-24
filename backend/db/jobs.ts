@@ -17,6 +17,7 @@ interface JobDbRow {
 	ending_substatus: string | null;
 	date_phone_screen: string | null;
 	date_last_onsite: string | null;
+	date_offer_extended: string | null;
 	favorite: number;
 	created_at: string;
 	updated_at: string;
@@ -57,6 +58,7 @@ export interface JobCreateData {
 	ending_substatus: string | null;
 	date_phone_screen: string | null;
 	date_last_onsite: string | null;
+	date_offer_extended: string | null;
 	favorite: boolean;
 	tags: string[];
 }
@@ -129,8 +131,8 @@ export function createJob(
 			.prepare(
 				`INSERT INTO jobs (user_id, date_applied, company, role, link, salary, fit_score,
           referred_by, status, recruiter, notes, job_description, ending_substatus,
-          date_phone_screen, date_last_onsite, favorite)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          date_phone_screen, date_last_onsite, date_offer_extended, favorite)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			)
 			.run(
 				data.user_id,
@@ -148,6 +150,7 @@ export function createJob(
 				data.ending_substatus,
 				data.date_phone_screen,
 				data.date_last_onsite,
+				data.date_offer_extended,
 				data.favorite ? 1 : 0,
 			);
 		db.prepare(
@@ -187,7 +190,7 @@ export function updateJob(
           notes = CASE WHEN ? THEN ? ELSE notes END,
           job_description = CASE WHEN ? THEN ? ELSE job_description END,
           ending_substatus = ?, date_phone_screen = ?,
-          date_last_onsite = ?, favorite = ?
+          date_last_onsite = ?, date_offer_extended = ?, favorite = ?
         WHERE id = ? AND user_id = ?`,
 			)
 			.run(
@@ -205,6 +208,7 @@ export function updateJob(
 				data.ending_substatus,
 				data.date_phone_screen,
 				data.date_last_onsite,
+				data.date_offer_extended,
 				data.favorite ? 1 : 0,
 				jobId,
 				userId,

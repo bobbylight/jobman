@@ -33,10 +33,17 @@ Read a GitHub ticket and implement the requested changes in a worktree, then ope
    worktree will be created inside `.claude/worktrees/` — do not pass an explicit path argument;
    the `EnterWorktree` tool handles placement automatically.
 
-7. **Implement the changes**: Write all code inside the worktree. Follow CLAUDE.md conventions
+7. **Set up the worktree for local dev**: Immediately after creating the worktree, run:
+   ```bash
+   npm run setup:worktree
+   ```
+   This installs dependencies, symlinks `backend/.env` from the main project, and copies
+   `backend/jobman.db` so the worktree is ready for `npm run dev` without manual setup.
+
+8. **Implement the changes**: Write all code inside the worktree. Follow CLAUDE.md conventions
    exactly.
 
-8. **Run tests and linting, then commit**:
+9. **Run tests and linting, then commit**:
     - Run `npm test` - fix any broken tests before proceeding.
     - Run `npm run lint:fix` — fix any linting failures before proceeding.
     - Run `npm run format:fix` — fix any formatting failures before proceeding.
@@ -45,7 +52,7 @@ Read a GitHub ticket and implement the requested changes in a worktree, then ope
       Include `Co-Authored-By: Claude <model> <version> <noreply@anthropic.com>` in the commit message.
       For example, `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`.
 
-9. **Create a draft PR**: Push the branch and open a draft PR via `gh pr create --draft`.
+10. **Create a draft PR**: Push the branch and open a draft PR via `gh pr create --draft`.
     - Title: concise, matching the commit style
     - Body: use the project's GitHub pull request template. Reference the issue number (e.g.,
       `Closes #34`), summarize what changed and add the footer:

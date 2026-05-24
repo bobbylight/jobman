@@ -114,6 +114,20 @@ export function validateEndingSubstatus(
 	return null;
 }
 
+export function validateOfferDate(
+	status: string,
+	date_offer_extended: unknown,
+): string | null {
+	if (status === "Offer!") {
+		if (typeof date_offer_extended !== "string" || !date_offer_extended) {
+			return 'date_offer_extended is required when status is "Offer!"';
+		}
+	} else if (date_offer_extended != null) {
+		return `date_offer_extended must be null when status is not "Offer!"`;
+	}
+	return null;
+}
+
 export function validateInterview(
 	body: Record<string, unknown>,
 ): string | null {

@@ -16,7 +16,11 @@ interface Props {
 	open: boolean;
 	job: Job | null;
 	newStatus: JobStatus | null;
-	onConfirm: (substatus: EndingSubstatus, notes: string | null) => void;
+	onConfirm: (
+		substatus: EndingSubstatus,
+		notes: string | null,
+		offerDate: string | null,
+	) => void;
 	onCancel: () => void;
 }
 
@@ -29,25 +33,43 @@ export default function EndingStatusDialog({
 }: Props) {
 	const [substatus, setSubstatus] = useState<EndingSubstatus | "">("");
 	const [notes, setNotes] = useState("");
+	const [offerDate, setOfferDate] = useState("");
 	const [error, setError] = useState("");
+	const [offerDateError, setOfferDateError] = useState("");
 
-	const substatusOptions =
-		newStatus === "Offer!" ? OFFER_SUBSTATUSES : REJECTED_SUBSTATUSES;
+	const isOffer = newStatus === "Offer!";
+	const substatusOptions = isOffer ? OFFER_SUBSTATUSES : REJECTED_SUBSTATUSES;
 
 	useEffect(() => {
 		if (open) {
-			setSubstatus(newStatus === "Offer!" ? "Offer accepted" : "");
+			setSubstatus(isOffer ? "Offer accepted" : "");
 			setNotes(job?.notes ?? "");
+			setOfferDate(
+				job?.date_offer_extended ?? new Date().toISOString().slice(0, 10),
+			);
 			setError("");
+			setOfferDateError("");
 		}
-	}, [open, job, newStatus]);
+	}, [open, job, isOffer]);
 
 	function handleConfirm() {
+		let hasError = false;
 		if (!substatus) {
 			setError("Required");
+			hasError = true;
+		}
+		if (isOffer && !offerDate) {
+			setOfferDateError("Required");
+			hasError = true;
+		}
+		if (hasError) {
 			return;
 		}
-		onConfirm(substatus, notes || null);
+		onConfirm(
+			substatus as EndingSubstatus,
+			notes || null,
+			isOffer ? offerDate : null,
+		);
 	}
 
 	return (
@@ -83,6 +105,25 @@ export default function EndingStatusDialog({
 						</MenuItem>
 					))}
 				</TextField>
+				{isOffer && (
+					<TextField
+						label="Offer Date *"
+						type="date"
+						value={offerDate}
+						onChange={(e) => {
+							setOfferDate(e.target.value);
+							if (offerDateError) {
+								setOfferDateError("");
+							}
+						}}
+						error={Boolean(offerDateError)}
+						helperText={offerDateError}
+						fullWidth
+						size="small"
+						slotProps={{ inputLabel: { shrink: true } }}
+						sx={{ mb: 2 }}
+					/>
+				)}
 				<TextField
 					label="Notes"
 					value={notes}

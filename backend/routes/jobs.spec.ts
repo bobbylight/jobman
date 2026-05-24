@@ -37,7 +37,8 @@ const SCHEMA = `
     job_description TEXT,
     ending_substatus TEXT,
     date_phone_screen TEXT,
-    date_last_onsite TEXT
+    date_last_onsite TEXT,
+    date_offer_extended TEXT
   );
   CREATE TABLE IF NOT EXISTS job_status_history (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -218,6 +219,7 @@ describe("POST /api/jobs", () => {
 		expect(res.body.ending_substatus).toBeNull();
 		expect(res.body.date_phone_screen).toBeNull();
 		expect(res.body.date_last_onsite).toBeNull();
+		expect(res.body.date_offer_extended).toBeNull();
 	});
 
 	it("returns 409 when a job with the same company and link already exists", async () => {
@@ -357,6 +359,7 @@ describe("ending_substatus validation", () => {
 			async (ending_substatus) => {
 				const res = await req("post", "/api/jobs").send({
 					...BASE_JOB,
+					date_offer_extended: "2026-05-15",
 					ending_substatus,
 					status: "Offer!",
 				});
@@ -457,6 +460,7 @@ describe("ending_substatus validation", () => {
 		it("clears ending_substatus when moving from terminal back to non-terminal", async () => {
 			const createRes = await req("post", "/api/jobs").send({
 				...BASE_JOB,
+				date_offer_extended: "2026-05-15",
 				ending_substatus: "Offer accepted",
 				status: "Offer!",
 			});
@@ -464,6 +468,7 @@ describe("ending_substatus validation", () => {
 
 			const res = await req("put", `/api/jobs/${id}`).send({
 				...BASE_JOB,
+				date_offer_extended: null,
 				status: "Interviewing",
 			});
 			expect(res.status).toBe(200);
@@ -514,6 +519,94 @@ describe("date_phone_screen and date_last_onsite fields", () => {
 		expect(res.status).toBe(200);
 		expect(res.body.date_phone_screen).toBeNull();
 		expect(res.body.date_last_onsite).toBeNull();
+	});
+});
+
+describe("date_offer_extended validation", () => {
+	const OFFER_BASE = {
+		...BASE_JOB,
+		ending_substatus: "Offer accepted",
+		status: "Offer!",
+	};
+
+	describe("POST /api/jobs", () => {
+		it("returns 422 when status is Offer! and date_offer_extended is absent", async () => {
+			const res = await req("post", "/api/jobs").send(OFFER_BASE);
+			expect(res.status).toBe(422);
+			expect(res.body.error).toMatch(/date_offer_extended/);
+		});
+
+		it("returns 201 when status is Offer! and date_offer_extended is set", async () => {
+			const res = await req("post", "/api/jobs").send({
+				...OFFER_BASE,
+				date_offer_extended: "2026-05-15",
+			});
+			expect(res.status).toBe(201);
+			expect(res.body.date_offer_extended).toBe("2026-05-15");
+		});
+
+		it("returns 422 when status is non-Offer! and date_offer_extended is set", async () => {
+			const res = await req("post", "/api/jobs").send({
+				...BASE_JOB,
+				date_offer_extended: "2026-05-15",
+				status: "Applied",
+			});
+			expect(res.status).toBe(422);
+			expect(res.body.error).toMatch(/date_offer_extended/);
+		});
+	});
+
+	describe("PUT /api/jobs/:id", () => {
+		it("returns 422 when updating to Offer! without date_offer_extended", async () => {
+			const createRes = await req("post", "/api/jobs").send(BASE_JOB);
+			const {id} = createRes.body;
+
+			const res = await req("put", `/api/jobs/${id}`).send({
+				...OFFER_BASE,
+			});
+			expect(res.status).toBe(422);
+			expect(res.body.error).toMatch(/date_offer_extended/);
+		});
+
+		it("returns 200 when updating to Offer! with date_offer_extended", async () => {
+			const createRes = await req("post", "/api/jobs").send(BASE_JOB);
+			const {id} = createRes.body;
+
+			const res = await req("put", `/api/jobs/${id}`).send({
+				...OFFER_BASE,
+				date_offer_extended: "2026-05-15",
+			});
+			expect(res.status).toBe(200);
+			expect(res.body.date_offer_extended).toBe("2026-05-15");
+		});
+
+		it("returns 422 when updating a non-Offer! job with date_offer_extended set", async () => {
+			const createRes = await req("post", "/api/jobs").send(BASE_JOB);
+			const {id} = createRes.body;
+
+			const res = await req("put", `/api/jobs/${id}`).send({
+				...BASE_JOB,
+				date_offer_extended: "2026-05-15",
+				status: "Applied",
+			});
+			expect(res.status).toBe(422);
+		});
+
+		it("clears date_offer_extended when moving from Offer! to a non-terminal status", async () => {
+			const createRes = await req("post", "/api/jobs").send({
+				...OFFER_BASE,
+				date_offer_extended: "2026-05-15",
+			});
+			const {id} = createRes.body;
+
+			const res = await req("put", `/api/jobs/${id}`).send({
+				...BASE_JOB,
+				date_offer_extended: null,
+				status: "Interviewing",
+			});
+			expect(res.status).toBe(200);
+			expect(res.body.date_offer_extended).toBeNull();
+		});
 	});
 });
 
