@@ -18,8 +18,8 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
-import { fetchLogo, getCachedLogo } from "../logoCache";
 import type { RadarEntry, RadarPatch, RadarResponse } from "../types";
+import CompanyLogo from "./CompanyLogo";
 
 type TabValue = "all" | "eligible" | "active" | "cooling_down";
 
@@ -154,33 +154,6 @@ function EligibilityChip({ entry }: { entry: RadarEntry }) {
 			label="No History"
 			size="small"
 			sx={{ bgcolor: "#f5f5f5", color: "#9e9e9e" }}
-		/>
-	);
-}
-
-// ── Company logo ──────────────────────────────────────────────────────────────
-
-function CompanyLogo({ company }: { company: string }) {
-	const [entry, setEntry] = useState(() => getCachedLogo(company));
-	useEffect(() => {
-		void fetchLogo(company).then(setEntry);
-	}, [company]);
-
-	if (!entry || entry.status !== "resolved") {
-		return <Box sx={{ width: 20, height: 20, flexShrink: 0 }} />;
-	}
-	return (
-		<Box
-			component="img"
-			src={entry.src}
-			alt={company}
-			sx={{
-				borderRadius: 0.5,
-				flexShrink: 0,
-				height: 20,
-				objectFit: "contain",
-				width: 20,
-			}}
 		/>
 	);
 }

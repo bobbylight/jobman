@@ -2,93 +2,159 @@
 
 ## What This Is
 
-JobMan is a personal job search tracker with a Kanban board UI. Users drag job applications through 6 status columns, track details (salary, fit score, recruiter, notes), and search/filter their pipeline.
+JobMan is a personal job search tracker with a Kanban board UI. Users drag job applications through 6 status columns, track details (salary, fit score, recruiter, notes), log interviews with questions, and view analytics across their pipeline. Auth is Google OAuth; sessions are persisted in SQLite.
 
 ## Project Structure
 
 ```
 jobman/
 ├── backend/
-│   ├── server.ts       # Express API (port 3001)
-│   └── db.ts           # SQLite setup (node:sqlite built-in)
-├── frontend/
-│   └── src/
-│       ├── App.tsx             # Root: state, search, dialog control
-│       ├── api.ts              # Fetch wrappers for all API calls
-│       ├── types.ts            # Job, JobFormData, JobStatus, FitScore
-│       ├── constants.ts        # STATUSES, FIT_SCORES, color maps
-│       └── components/
-│           ├── KanbanBoard.tsx # DnD context, drag overlay
-│           ├── KanbanColumn.tsx# Droppable column
-│           ├── JobCard.tsx     # Draggable card (drag handle only)
-│           └── JobDialog.tsx   # Add/edit/delete form modal
-├── biome.json          # Formatter (formatting only, linting off)
-├── oxlint.json         # Linter (react + typescript plugins)
-└── package.json        # Root scripts
+│   ├── server.ts            # Express app factory + production startup
+│   ├── db.ts                # better-sqlite3 setup, schema creation
+│   ├── validators.ts        # Request field validators (length, substatus rules)
+│   ├── db/                  # DB query modules (one per domain)
+│   │   ├── jobs.ts
+│   │   ├── interviews.ts
+│   │   ├── interviewInsights.ts
+│   │   ├── radar.ts
+│   │   ├── stats.ts
+│   │   └── users.ts
+│   └── routes/              # Express routers (one per domain)
+│       ├── auth.ts          # Google OAuth + session login/logout
+│       ├── jobs.ts
+│       ├── interviews.ts
+│       ├── interviewInsights.ts
+│       ├── radar.ts
+│       └── stats.ts
+└── frontend/
+    └── src/
+        ├── App.tsx                  # Auth check, routing, global state
+        ├── api.ts                   # Fetch wrappers for all API calls
+        ├── types.ts                 # All shared types (Job, Interview, Radar, Stats…)
+        ├── constants.ts             # STATUSES, FIT_SCORES, color maps
+        ├── theme.ts                 # MUI theme
+        ├── jobUtils.ts              # Job helper functions
+        ├── logoCache.ts             # Company logo URL cache
+        ├── useCompanyLogo.ts        # Hook for logo fetch
+        └── components/
+            ├── AppShell.tsx         # Nav drawer + top bar
+            ├── LoginPage.tsx        # Google OAuth login screen
+            ├── JobManagementPage.tsx# Kanban board page
+            ├── KanbanBoard.tsx      # DnD context, drag overlay
+            ├── KanbanColumn.tsx     # Droppable column
+            ├── JobCard.tsx          # Draggable card (drag handle only)
+            ├── JobDialog.tsx        # Add/edit/delete form modal
+            ├── EndingStatusDialog.tsx # Rejected/offer substatus picker
+            ├── InterviewsPage.tsx   # Cross-job interviews list
+            ├── InterviewsTab.tsx    # Per-job interview list + add form
+            ├── QuestionSubView.tsx  # Interview question log
+            ├── InsightsPage.tsx     # Interview analytics page
+            ├── StatsPage.tsx        # Pipeline stats/charts page
+            ├── RadarPage.tsx        # Company re-application radar
+            ├── CompanyLogo.tsx      # Company logo image
+            ├── DifficultySelector.tsx
+            ├── MarkdownField.tsx    # Markdown textarea editor
+            ├── MarkdownSnippet.tsx  # Markdown renderer
+            ├── Footer.tsx
+            ├── insights/            # Chart components for InsightsPage
+            └── stats/               # Chart components for StatsPage
 ```
 
 ## Tech Stack
 
-| Layer      | Technology                                  |
-|------------|---------------------------------------------|
-| Backend    | Node.js + Express, `node:sqlite` (built-in) |
-| Frontend   | React 18, Vite, Material UI v5              |
-| Drag & Drop| @dnd-kit/core                               |
-| TypeScript | Strict mode, exactOptionalPropertyTypes     |
-| Formatter  | Biome                                       |
-| Linter     | Oxlint (Rust-based)                         |
+| Layer        | Technology                                          |
+|--------------|-----------------------------------------------------|
+| Backend      | Node.js + Express 5, `better-sqlite3`               |
+| Auth         | Google OAuth 2.0 via Passport.js + express-session  |
+| Session store| better-sqlite3-session-store                        |
+| Frontend     | React 18, Vite, Material UI v5, react-router-dom v6 |
+| Drag & Drop  | @dnd-kit/core                                       |
+| TypeScript   | Strict mode, exactOptionalPropertyTypes             |
+| Formatter    | Biome                                               |
+| Linter       | Oxlint (Rust-based)                                 |
 
 ## Commands
 
 ```bash
 npm run dev          # Start both backend (:3001) and frontend (:5173)
-npm run install:all  # Install all dependencies (root + backend + frontend)
+npm run test         # Run all tests (backend + frontend)
 npm run lint         # Oxlint check
-npm run format       # Biome format
+npm run lint:fix     # Oxlint autofix
+npm run format       # Biome format check
+npm run format:fix   # Biome format write
+npm run tsc          # Type-check all workspaces
+npm run install:all  # Install all dependencies (root + backend + frontend)
 ```
 
 Vite proxies `/api/*` → `http://localhost:3001`.
 
 ## API Endpoints
 
-| Method | Path           | Description          |
-|--------|----------------|----------------------|
-| GET    | /api/jobs      | Fetch all jobs       |
-| POST   | /api/jobs      | Create job (201)     |
-| PUT    | /api/jobs/:id  | Update job           |
-| DELETE | /api/jobs/:id  | Delete job           |
+All routes except `/api/auth/*` require an active session (`requireAuth` middleware).
+
+| Method | Path                               | Description                        |
+|--------|------------------------------------|------------------------------------|
+| GET    | /api/auth/me                       | Current user or 401                |
+| GET    | /api/auth/google                   | Initiate Google OAuth              |
+| GET    | /api/auth/google/callback          | OAuth callback                     |
+| POST   | /api/auth/logout                   | Destroy session                    |
+| GET    | /api/jobs                          | List jobs (`?view=summary` or `full`) |
+| GET    | /api/jobs/:id                      | Fetch single job (full view)       |
+| POST   | /api/jobs                          | Create job (201)                   |
+| PUT    | /api/jobs/:id                      | Update job                         |
+| DELETE | /api/jobs/:id                      | Delete job                         |
+| GET    | /api/jobs/:jobId/interviews        | List interviews for a job          |
+| POST   | /api/jobs/:jobId/interviews        | Add interview                      |
+| PUT    | /api/jobs/:jobId/interviews/:id    | Update interview                   |
+| DELETE | /api/jobs/:jobId/interviews/:id    | Delete interview                   |
+| GET    | /api/interviews                    | Cross-job interview search         |
+| GET    | /api/interview-insights            | Aggregated interview analytics     |
+| GET    | /api/stats                         | Pipeline stats (`?window=all`, `90`, or `30`) |
+| GET    | /api/radar                         | Company re-application radar       |
+| PATCH  | /api/radar/:id                     | Update radar entry (notes, policy) |
 
 ## Key Data Model
 
 ```typescript
 interface Job {
   id: number;
-  company: string;           // required
-  role: string;              // required
-  link: string;              // required (URL)
-  status: JobStatus;         // 6 Kanban columns
+  company: string;              // required
+  role: string;                 // required
+  link: string;                 // required (URL)
+  status: JobStatus;            // 6 Kanban columns
+  ending_substatus: EndingSubstatus | null;
   fit_score: FitScore | null;
   salary: string | null;
   date_applied: string | null;
+  date_phone_screen: string | null;
+  date_last_onsite: string | null;
+  date_offer_extended: string | null;
   recruiter: string | null;
-  notes: string | null;
-  referred_by: string | null; // name of the person who referred you
-  favorite: number;          // SQLite 0/1 boolean
+  notes?: string | null;        // absent in summary view
+  job_description?: string | null; // absent in summary view
+  referred_by: string | null;
+  tags: JobTag[];
+  favorite: boolean;
   created_at: string;
+  updated_at: string;
 }
 ```
 
 **JobStatus values:** `"Not started"` | `"Applied"` | `"Phone screen"` | `"Interviewing"` | `"Offer!"` | `"Rejected/Withdrawn"`
 
-**SQLite boolean note:** `favorite` is stored as 0/1. The API's `toClient()` helper converts it to `true`/`false` before returning JSON.
+**EndingSubstatus:** `"Withdrawn"` | `"Rejected"` | `"Ghosted"` | `"No response"` | `"Job closed"` | `"Not a good fit"` | `"Offer accepted"` | `"Offer declined"`
+
+**JobTag values:** `"remote"` | `"hybrid"` | `"in-office"` | `"high-pay"` | `"faang"` | `"faang-adjacent"` | `"startup"`
 
 ## Implementation Notes
 
+- **Auth:** Google OAuth 2.0. Sessions stored in SQLite via better-sqlite3-session-store. All non-auth API routes require `req.session.userId`. CORS is restricted to `FRONTEND_URL` env var (default: `http://localhost:5173`).
 - **Optimistic updates:** Favorite toggles and status drag-and-drops update UI immediately, reverting on API error with a Snackbar notification.
 - **Drag handle:** Only the `DragIndicatorIcon` on each card is draggable — not the full card — to avoid conflicts with the click-to-edit behavior.
 - **Search:** Case-insensitive substring match on company or role, applied before passing jobs to KanbanBoard.
-- **No migrations:** Schema is defined inline in `db.ts` and auto-created on server start.
-- **CORS:** Open to all origins (dev convenience).
+- **Job summary vs full view:** `GET /api/jobs` returns a summary view by default (omits `notes` and `job_description`). Pass `?view=full` or fetch `GET /api/jobs/:id` for the complete record.
+- **Schema:** Defined inline in `db.ts` using `CREATE TABLE IF NOT EXISTS`. No migration files.
+- **Environment:** Backend reads `.env.development` (or `.env.production`). Required vars: `SESSION_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`.
 
 ## Frontend Unit Test Conventions
 

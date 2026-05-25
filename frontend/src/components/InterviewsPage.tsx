@@ -1,12 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-	Alert,
 	Box,
 	Button,
 	Chip,
 	CircularProgress,
 	Link,
-	Snackbar,
 	TextField,
 	Tooltip,
 	Typography,
@@ -16,34 +14,14 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PhoneIcon from "@mui/icons-material/Phone";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
+import { INTERVIEW_STAGE_LABELS, INTERVIEW_TYPE_LABELS } from "../constants";
+import { useSnackbar } from "../useSnackbar";
 import { formatTime } from "../jobUtils";
-import { fetchLogo, getCachedLogo } from "../logoCache";
 import MarkdownSnippet from "./MarkdownSnippet";
-import type {
-	EnrichedInterview,
-	InterviewStage,
-	InterviewType,
-	InterviewVibe,
-} from "../types";
-
-type Severity = "success" | "info" | "warning" | "error";
+import CompanyLogo from "./CompanyLogo";
+import type { EnrichedInterview, InterviewVibe } from "../types";
 
 const PAGE_SIZE = 10;
-
-const INTERVIEW_STAGE_LABELS: Record<InterviewStage, string> = {
-	onsite: "Onsite",
-	phone_screen: "Phone Screen",
-};
-
-const INTERVIEW_TYPE_LABELS: Record<InterviewType, string> = {
-	recruiter_call: "Recruiter Call",
-	behavioral: "Behavioral",
-	coding: "Coding",
-	culture_fit: "Culture Fit",
-	leadership: "Leadership",
-	past_experience: "Past Experience",
-	system_design: "System Design",
-};
 
 const VIBE_CHIP_SX: Record<InterviewVibe, object> = {
 	casual: { bgcolor: "#e3f2fd", color: "#1565c0" },
@@ -180,20 +158,10 @@ export default function InterviewsPage() {
 	const [error, setError] = useState(false);
 	const [loadingMore, setLoadingMore] = useState(false);
 	const [reachedEnd, setReachedEnd] = useState(false);
-	const [snack, setSnack] = useState<{
-		open: boolean;
-		message: string;
-		severity: Severity;
-	}>({ message: "", open: false, severity: "success" });
+	const [notify, snackbarNode] = useSnackbar();
 	const defaults = getDefaultDateRange();
 	const [from, setFrom] = useState(defaults.from);
 	const [to, setTo] = useState(defaults.to);
-
-	const notify = useCallback(
-		(message: string, severity: Severity = "success") =>
-			setSnack({ message, open: true, severity }),
-		[],
-	);
 
 	// When Load More advances `to`, we suppress the re-fetch that would otherwise
 	// Be triggered by the date change (the list is already up to date).
@@ -467,48 +435,8 @@ export default function InterviewsPage() {
 				)}
 			</Box>
 
-			<Snackbar
-				open={snack.open}
-				autoHideDuration={3000}
-				onClose={() => setSnack((s) => ({ ...s, open: false }))}
-				anchorOrigin={{ horizontal: "center", vertical: "bottom" }}
-			>
-				<Alert
-					severity={snack.severity}
-					variant="filled"
-					sx={{ width: "100%" }}
-				>
-					{snack.message}
-				</Alert>
-			</Snackbar>
+			{snackbarNode}
 		</>
-	);
-}
-
-function CompanyLogo({ company }: { company: string }) {
-	const [entry, setEntry] = useState(() => getCachedLogo(company));
-
-	useEffect(() => {
-		void fetchLogo(company).then(setEntry);
-	}, [company]);
-
-	if (!entry || entry.status !== "resolved") {
-		return null;
-	}
-
-	return (
-		<Box
-			component="img"
-			src={entry.src}
-			alt={company}
-			sx={{
-				borderRadius: 0.5,
-				flexShrink: 0,
-				height: 24,
-				objectFit: "contain",
-				width: 24,
-			}}
-		/>
 	);
 }
 
@@ -625,7 +553,7 @@ function InterviewRow({
 					</Typography>
 				)}
 			</Box>
-			<CompanyLogo company={interview.job.company} />
+			<CompanyLogo company={interview.job.company} size={24} />
 		</Box>
 	);
 }

@@ -13,6 +13,11 @@ vi.mock(
 		}) as any,
 );
 
+vi.mock(
+	import("../useCompanyLogo"),
+	() => ({ useCompanyLogo: vi.fn(() => null) }) as any,
+);
+
 const mockNavigate = vi.fn();
 
 vi.mock(import("react-router-dom"), async (importOriginal) => {

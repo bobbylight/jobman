@@ -19,7 +19,11 @@ import EditIcon from "@mui/icons-material/Edit";
 import PhoneIcon from "@mui/icons-material/Phone";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import { api } from "../api";
-import { INTERVIEW_MAX_LENGTHS } from "../constants";
+import {
+	INTERVIEW_MAX_LENGTHS,
+	INTERVIEW_STAGE_LABELS,
+	INTERVIEW_TYPE_LABELS,
+} from "../constants";
 import type {
 	Interview,
 	InterviewFeeling,
@@ -34,21 +38,6 @@ import MarkdownField from "./MarkdownField";
 import MarkdownSnippet from "./MarkdownSnippet";
 import QuestionSubView from "./QuestionSubView";
 import { formatTime } from "../jobUtils";
-
-const INTERVIEW_STAGE_LABELS: Record<InterviewStage, string> = {
-	onsite: "Onsite",
-	phone_screen: "Phone Screen",
-};
-
-const INTERVIEW_TYPE_LABELS: Record<InterviewType, string> = {
-	recruiter_call: "Recruiter Call",
-	behavioral: "Behavioral",
-	coding: "Coding",
-	culture_fit: "Culture Fit",
-	leadership: "Leadership",
-	past_experience: "Past Experience",
-	system_design: "System Design",
-};
 
 const VIBE_OPTIONS: {
 	value: InterviewVibe;

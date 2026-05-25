@@ -17,12 +17,8 @@ vi.mock(
 );
 
 vi.mock(
-	import("../logoCache"),
-	() =>
-		({
-			fetchLogo: vi.fn().mockResolvedValue(null),
-			getCachedLogo: vi.fn().mockReturnValue(null),
-		}) as any,
+	import("../useCompanyLogo"),
+	() => ({ useCompanyLogo: vi.fn(() => null) }) as any,
 );
 
 const mockGetRadar = vi.mocked(api.getRadar);
