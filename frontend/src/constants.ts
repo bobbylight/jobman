@@ -1,6 +1,8 @@
 import type {
 	EndingSubstatus,
 	FitScore,
+	InterviewStage,
+	InterviewType,
 	JobStatus,
 	JobTag,
 	OfferSubstatus,
@@ -164,3 +166,18 @@ export const FIT_SCORE_COLORS = {
 	FitScore,
 	"default" | "error" | "warning" | "info" | "success"
 >;
+
+export const INTERVIEW_STAGE_LABELS: Record<InterviewStage, string> = {
+	onsite: "Onsite",
+	phone_screen: "Phone Screen",
+};
+
+export const INTERVIEW_TYPE_LABELS: Record<InterviewType, string> = {
+	behavioral: "Behavioral",
+	coding: "Coding",
+	culture_fit: "Culture Fit",
+	leadership: "Leadership",
+	past_experience: "Past Experience",
+	recruiter_call: "Recruiter Call",
+	system_design: "System Design",
+};

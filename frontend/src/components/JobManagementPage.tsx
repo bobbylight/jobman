@@ -7,7 +7,6 @@ import React, {
 	useState,
 } from "react";
 import {
-	Alert,
 	Badge,
 	Box,
 	Button,
@@ -20,7 +19,6 @@ import {
 	MenuItem,
 	Popover,
 	Select,
-	Snackbar,
 	Stack,
 	Switch,
 	TextField,
@@ -34,6 +32,7 @@ import StarBorderIcon from "@mui/icons-material/StarBorder";
 import TuneIcon from "@mui/icons-material/Tune";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
+import { useSnackbar } from "../useSnackbar";
 import type {
 	EndingSubstatus,
 	FitScore,
@@ -52,8 +51,6 @@ import {
 import KanbanBoard from "./KanbanBoard";
 import JobDialog from "./JobDialog";
 import EndingStatusDialog from "./EndingStatusDialog";
-
-type Severity = "success" | "error" | "info" | "warning";
 
 /** Strip heavy fields not needed by the Kanban board to keep state lean. */
 function toSummaryJob(job: Job): Job {
@@ -93,19 +90,7 @@ export default function JobManagementPage() {
 		newStatus: JobStatus;
 	} | null>(null);
 	const searchRef = useRef<HTMLInputElement>(null);
-
-	const [snack, setSnack] = useState<{
-		open: boolean;
-		message: string;
-		severity: Severity;
-	}>({
-		message: "",
-		open: false,
-		severity: "success",
-	});
-
-	const notify = (message: string, severity: Severity = "success") =>
-		setSnack({ message, open: true, severity });
+	const [notify, snackbarNode] = useSnackbar();
 
 	const loadJobs = useCallback(async () => {
 		try {
@@ -116,7 +101,7 @@ export default function JobManagementPage() {
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	}, [notify]);
 
 	useEffect(() => {
 		void loadJobs();
@@ -196,7 +181,7 @@ export default function JobManagementPage() {
 				notify("Failed to save job", "error");
 			}
 		},
-		[dialogJob, closeDialog],
+		[dialogJob, closeDialog, notify],
 	);
 
 	const handleDelete = useCallback(
@@ -210,7 +195,7 @@ export default function JobManagementPage() {
 				notify("Failed to delete job", "error");
 			}
 		},
-		[closeDialog],
+		[closeDialog, notify],
 	);
 
 	const applyStatusChange = useCallback(
@@ -232,7 +217,7 @@ export default function JobManagementPage() {
 				notify("Failed to move job", "error");
 			}
 		},
-		[],
+		[notify],
 	);
 
 	const handleStatusChange = useCallback(
@@ -269,16 +254,19 @@ export default function JobManagementPage() {
 		[pendingTerminalChange, applyStatusChange],
 	);
 
-	const handleToggleFavorite = useCallback(async (job: Job) => {
-		const updated = { ...job, favorite: !job.favorite };
-		setJobs((prev) => prev.map((j) => (j.id === job.id ? updated : j)));
-		try {
-			await api.updateJob(job.id, updated);
-		} catch {
-			setJobs((prev) => prev.map((j) => (j.id === job.id ? job : j)));
-			notify("Failed to update favorite", "error");
-		}
-	}, []);
+	const handleToggleFavorite = useCallback(
+		async (job: Job) => {
+			const updated = { ...job, favorite: !job.favorite };
+			setJobs((prev) => prev.map((j) => (j.id === job.id ? updated : j)));
+			try {
+				await api.updateJob(job.id, updated);
+			} catch {
+				setJobs((prev) => prev.map((j) => (j.id === job.id ? job : j)));
+				notify("Failed to update favorite", "error");
+			}
+		},
+		[notify],
+	);
 
 	// Count of active filters shown in the Filters popover badge
 	const activeFilterCount =
@@ -591,25 +579,7 @@ export default function JobManagementPage() {
 				onCancel={() => setPendingTerminalChange(null)}
 			/>
 
-			<Snackbar
-				open={snack.open}
-				autoHideDuration={3000}
-				onClose={() => setSnack((s) => ({ ...s, open: false }))}
-				anchorOrigin={{ horizontal: "center", vertical: "bottom" }}
-			>
-				<Alert
-					severity={snack.severity}
-					variant="filled"
-					sx={{ width: "100%" }}
-				>
-					{snack.message.includes("\n")
-						? snack.message
-								.split("\n")
-								// eslint-disable-next-line react/no-array-index-key
-								.map((line, i) => <div key={i}>{line}</div>)
-						: snack.message}
-				</Alert>
-			</Snackbar>
+			{snackbarNode}
 		</>
 	);
 }
