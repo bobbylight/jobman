@@ -1,5 +1,11 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import AppShell from "./AppShell";
 import JobManagementPage from "./JobManagementPage";
@@ -388,6 +394,21 @@ describe(JobManagementPage, () => {
 		document.body.removeChild(otherInput);
 	});
 
+	it("does not focus the search field when a key other than '/' is pressed", async () => {
+		mockGetJobs.mockResolvedValue([]);
+		renderPage();
+		await waitFor(() => {
+			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+		});
+
+		const searchInput = screen.getByPlaceholderText(/Search company or role/);
+		expect(searchInput).not.toHaveFocus();
+
+		fireEvent.keyDown(document, { key: "a" });
+
+		expect(searchInput).not.toHaveFocus();
+	});
+
 	it("opens the add job dialog when 'Add Job' is clicked", async () => {
 		mockGetJobs.mockResolvedValue([]);
 		renderPage();
@@ -399,6 +420,170 @@ describe(JobManagementPage, () => {
 		expect(
 			screen.getByRole("heading", { name: "Add Job" }),
 		).toBeInTheDocument();
+	});
+
+	describe("CRUD operations via dialog", () => {
+		it("edits an existing job and shows 'Job updated' toast", async () => {
+			const job = makeJob({ id: 42, company: "Acme" });
+			mockGetJobs.mockResolvedValue([job]);
+			mockGetJob.mockResolvedValue(job);
+			vi.mocked(api.updateJob).mockResolvedValue({
+				...job,
+				company: "Acme Updated",
+			});
+
+			MockKanbanBoard.mockImplementation(({ jobs, onCardClick }) => (
+				<>
+					{jobs.map((j) => (
+						<button key={j.id} onClick={() => onCardClick(j)}>
+							{j.company}
+						</button>
+					))}
+				</>
+			));
+
+			renderPage();
+			await waitFor(() => expect(screen.getByText("Acme")).toBeInTheDocument());
+
+			fireEvent.click(screen.getByText("Acme"));
+
+			await waitFor(() =>
+				expect(
+					screen.getByRole("heading", { name: "Acme - Engineer" }),
+				).toBeInTheDocument(),
+			);
+
+			fireEvent.change(screen.getByLabelText(/Company/), {
+				target: { value: "Acme Updated" },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+			await waitFor(() =>
+				expect(vi.mocked(api.updateJob)).toHaveBeenCalledWith(
+					42,
+					expect.objectContaining({ company: "Acme Updated" }),
+				),
+			);
+			await waitFor(() =>
+				expect(screen.getByText("Job updated")).toBeInTheDocument(),
+			);
+		});
+
+		it("adds a new job via the form and shows 'Job added' toast", async () => {
+			const newJob = makeJob({ id: 99, company: "New Co", role: "Dev" });
+			mockGetJobs.mockResolvedValue([]);
+			vi.mocked(api.createJob).mockResolvedValue(newJob);
+
+			renderPage();
+			await waitFor(() =>
+				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+			);
+
+			fireEvent.click(screen.getByRole("button", { name: /Add Job/ }));
+			await waitFor(() =>
+				expect(
+					screen.getByRole("heading", { name: "Add Job" }),
+				).toBeInTheDocument(),
+			);
+
+			fireEvent.change(screen.getByLabelText(/Company/), {
+				target: { value: "New Co" },
+			});
+			fireEvent.change(screen.getByLabelText(/Role/), {
+				target: { value: "Dev" },
+			});
+			fireEvent.change(screen.getByLabelText(/Link/), {
+				target: { value: "https://newco.com/job" },
+			});
+
+			const dialog = screen.getByRole("dialog");
+			fireEvent.click(within(dialog).getByRole("button", { name: "Add Job" }));
+
+			await waitFor(() =>
+				expect(vi.mocked(api.createJob)).toHaveBeenCalledWith(
+					expect.objectContaining({ company: "New Co", role: "Dev" }),
+				),
+			);
+			await waitFor(() =>
+				expect(screen.getByText("Job added")).toBeInTheDocument(),
+			);
+		});
+
+		it("deletes a job via the edit dialog and shows 'Job deleted' toast", async () => {
+			const job = makeJob({ id: 42, company: "Acme" });
+			mockGetJobs.mockResolvedValue([job]);
+			mockGetJob.mockResolvedValue(job);
+			vi.mocked(api.deleteJob).mockResolvedValue(undefined as any);
+
+			MockKanbanBoard.mockImplementation(({ jobs, onCardClick }) => (
+				<>
+					{jobs.map((j) => (
+						<button key={j.id} onClick={() => onCardClick(j)}>
+							{j.company}
+						</button>
+					))}
+				</>
+			));
+
+			renderPage();
+			await waitFor(() => expect(screen.getByText("Acme")).toBeInTheDocument());
+
+			fireEvent.click(screen.getByText("Acme"));
+
+			await waitFor(() =>
+				expect(
+					screen.getByRole("heading", { name: "Acme - Engineer" }),
+				).toBeInTheDocument(),
+			);
+
+			fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+			const confirmDialog = screen
+				.getByText("Delete job?")
+				.closest('[role="dialog"]') as HTMLElement;
+			fireEvent.click(
+				within(confirmDialog).getByRole("button", { name: "Delete" }),
+			);
+
+			await waitFor(() =>
+				expect(vi.mocked(api.deleteJob)).toHaveBeenCalledWith(42),
+			);
+			await waitFor(() =>
+				expect(screen.getByText("Job deleted")).toBeInTheDocument(),
+			);
+		});
+
+		it("calls updateJob with toggled favorite when the star button is clicked", async () => {
+			const job = makeJob({ id: 1, company: "Acme", favorite: false });
+			mockGetJobs.mockResolvedValue([job]);
+			vi.mocked(api.updateJob).mockResolvedValue({ ...job, favorite: true });
+
+			MockKanbanBoard.mockImplementation(({ jobs, onToggleFavorite }) => (
+				<>
+					{jobs.map((j) => (
+						<button
+							key={j.id}
+							aria-label={`Star ${j.company}`}
+							onClick={() => onToggleFavorite(j)}
+						>
+							{j.company}
+						</button>
+					))}
+				</>
+			));
+
+			renderPage();
+			await waitFor(() => expect(screen.getByText("Acme")).toBeInTheDocument());
+
+			fireEvent.click(screen.getByRole("button", { name: "Star Acme" }));
+
+			await waitFor(() =>
+				expect(vi.mocked(api.updateJob)).toHaveBeenCalledWith(
+					1,
+					expect.objectContaining({ favorite: true }),
+				),
+			);
+		});
 	});
 
 	describe("URL-based edit dialog", () => {
