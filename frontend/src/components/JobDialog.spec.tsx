@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react";
 import JobDialog from "./JobDialog";
 import type { EndingSubstatus, Interview, Job, JobStatus } from "../types";
+import { makeJob } from "../testUtils";
 import { api } from "../api";
 
 vi.mock(import("../api"));
@@ -22,28 +23,17 @@ vi.mock(import("./CompanyLogo"), () => ({
 	),
 }));
 
-const BASE_JOB: Job = {
-	company: "Acme Corp",
-	created_at: "2024-01-01T00:00:00.000Z",
-	date_applied: "2024-03-01",
-	date_last_onsite: null,
-	date_offer_extended: null,
-	date_phone_screen: null,
-	ending_substatus: null,
-	favorite: false,
-	fit_score: "High",
+const BASE_JOB = makeJob({
 	id: 42,
-	job_description: null,
-	link: "https://acme.example.com/job",
+	role: "Engineer",
+	date_applied: "2024-03-01",
+	fit_score: "High",
 	notes: "Great team",
 	recruiter: "Jane",
 	referred_by: "Alice",
-	role: "Engineer",
 	salary: "$120k",
 	status: "Applied",
-	tags: [],
-	updated_at: "2024-01-01T00:00:00.000Z",
-};
+});
 
 const MOCK_INTERVIEW: Interview = {
 	id: 1,

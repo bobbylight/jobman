@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import KanbanColumn from "./KanbanColumn";
-import type { Job } from "../types";
+import { makeJob } from "../testUtils";
 
 vi.mock(
 	import("@dnd-kit/core"),
@@ -25,30 +25,6 @@ vi.mock(
 			CSS: { Translate: { toString: () => "" } },
 		}) as any,
 );
-
-const makeJob = (
-	overrides: Partial<Job> & Pick<Job, "id" | "status">,
-): Job => ({
-	company: "Acme",
-	created_at: "2024-01-01T00:00:00.000Z",
-	date_applied: null,
-	date_last_onsite: null,
-	date_offer_extended: null,
-	date_phone_screen: null,
-	ending_substatus: null,
-	favorite: false,
-	fit_score: null,
-	job_description: null,
-	link: "https://acme.com",
-	notes: null,
-	recruiter: null,
-	referred_by: null,
-	role: "Engineer",
-	salary: null,
-	tags: [],
-	updated_at: "2024-01-01T00:00:00.000Z",
-	...overrides,
-});
 
 const DEFAULT_PROPS = {
 	onCardClick: vi.fn(),
