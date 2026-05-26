@@ -11,7 +11,6 @@ import {
 	Box,
 	Button,
 	Chip,
-	CircularProgress,
 	Divider,
 	FormControlLabel,
 	IconButton,
@@ -49,6 +48,7 @@ import {
 	tagChipProps,
 } from "../constants";
 import KanbanBoard from "./KanbanBoard";
+import PageSpinner from "./PageSpinner";
 import JobDialog from "./JobDialog";
 import EndingStatusDialog from "./EndingStatusDialog";
 
@@ -549,9 +549,7 @@ export default function JobManagementPage() {
 
 			{/* Board content */}
 			{loading ? (
-				<Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-					<CircularProgress />
-				</Box>
+				<PageSpinner />
 			) : (
 				<Box sx={{ pt: 3 }}>
 					<KanbanBoard

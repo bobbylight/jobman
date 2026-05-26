@@ -3,7 +3,6 @@ import {
 	Box,
 	Button,
 	Chip,
-	CircularProgress,
 	Collapse,
 	FormControlLabel,
 	Link,
@@ -20,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import type { RadarEntry, RadarPatch, RadarResponse } from "../types";
 import CompanyLogo from "./CompanyLogo";
+import PageSpinner from "./PageSpinner";
 
 type TabValue = "all" | "eligible" | "active" | "cooling_down";
 
@@ -636,11 +636,7 @@ export default function RadarPage() {
 				</Typography>
 			)}
 
-			{loading ? (
-				<Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-					<CircularProgress />
-				</Box>
-			) : null}
+			{loading ? <PageSpinner /> : null}
 
 			{!loading && data && (
 				<>

@@ -19,6 +19,7 @@ import { useSnackbar } from "../useSnackbar";
 import { formatTime } from "../jobUtils";
 import MarkdownSnippet from "./MarkdownSnippet";
 import CompanyLogo from "./CompanyLogo";
+import PageSpinner from "./PageSpinner";
 import type { EnrichedInterview, InterviewVibe } from "../types";
 
 const PAGE_SIZE = 10;
@@ -290,11 +291,7 @@ export default function InterviewsPage() {
 					</Typography>
 				)}
 
-				{loading ? (
-					<Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-						<CircularProgress />
-					</Box>
-				) : null}
+				{loading ? <PageSpinner /> : null}
 				{!loading && grouped.length === 0 && (
 					<Typography
 						variant="body2"

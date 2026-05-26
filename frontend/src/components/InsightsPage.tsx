@@ -1,12 +1,8 @@
 import React, { useEffect, useState } from "react";
-import {
-	Box,
-	Card,
-	CardContent,
-	CircularProgress,
-	Typography,
-} from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { api } from "../api";
+import ChartCard from "./ChartCard";
+import PageSpinner from "./PageSpinner";
 import type { InterviewInsightsResponse, StatsWindow } from "../types";
 import StatCard from "./stats/StatCard";
 import LookbackToggle from "./stats/LookbackToggle";
@@ -58,11 +54,7 @@ export default function InsightsPage() {
 				</Typography>
 			)}
 
-			{loading ? (
-				<Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-					<CircularProgress />
-				</Box>
-			) : null}
+			{loading ? <PageSpinner /> : null}
 
 			{!loading && data && (
 				<>
@@ -104,48 +96,19 @@ export default function InsightsPage() {
 							mb: 2,
 						}}
 					>
-						<Card sx={{ flex: "1 1 340px" }}>
-							<CardContent>
-								<Typography
-									variant="subtitle2"
-									color="text.secondary"
-									gutterBottom
-								>
-									Interview Types
-								</Typography>
-								<TypeDonutChart byType={data.byType} />
-							</CardContent>
-						</Card>
-						<Card sx={{ flex: "1 1 340px" }}>
-							<CardContent>
-								<Typography
-									variant="subtitle2"
-									color="text.secondary"
-									gutterBottom
-								>
-									Pass Rate by Type
-								</Typography>
-								<PassRateByTypeChart byType={data.byType} />
-							</CardContent>
-						</Card>
+						<ChartCard title="Interview Types" sx={{ flex: "1 1 340px" }}>
+							<TypeDonutChart byType={data.byType} />
+						</ChartCard>
+						<ChartCard title="Pass Rate by Type" sx={{ flex: "1 1 340px" }}>
+							<PassRateByTypeChart byType={data.byType} />
+						</ChartCard>
 					</Box>
 
 					{/* Row 3: Feeling calibration (full width) */}
 					<Box sx={{ mb: 2 }}>
-						<Card>
-							<CardContent>
-								<Typography
-									variant="subtitle2"
-									color="text.secondary"
-									gutterBottom
-								>
-									How Well Does Your Gut Predict Outcome?
-								</Typography>
-								<FeelingCalibrationChart
-									feelingVsResult={data.feelingVsResult}
-								/>
-							</CardContent>
-						</Card>
+						<ChartCard title="How Well Does Your Gut Predict Outcome?">
+							<FeelingCalibrationChart feelingVsResult={data.feelingVsResult} />
+						</ChartCard>
 					</Box>
 
 					{/* Row 4: Question insights */}
@@ -158,47 +121,23 @@ export default function InsightsPage() {
 							mb: 2,
 						}}
 					>
-						<Card sx={{ flex: "1 1 340px" }}>
-							<CardContent>
-								<Typography
-									variant="subtitle2"
-									color="text.secondary"
-									gutterBottom
-								>
-									Questions by Type
-								</Typography>
-								<QuestionsByTypeChart questionsByType={data.questionsByType} />
-							</CardContent>
-						</Card>
-						<Card sx={{ flex: "1 1 340px" }}>
-							<CardContent>
-								<Typography
-									variant="subtitle2"
-									color="text.secondary"
-									gutterBottom
-								>
-									Question Difficulty by Interview Outcome
-								</Typography>
-								<DifficultyDistributionChart
-									difficultyDistribution={data.difficultyDistribution}
-								/>
-							</CardContent>
-						</Card>
+						<ChartCard title="Questions by Type" sx={{ flex: "1 1 340px" }}>
+							<QuestionsByTypeChart questionsByType={data.questionsByType} />
+						</ChartCard>
+						<ChartCard
+							title="Question Difficulty by Interview Outcome"
+							sx={{ flex: "1 1 340px" }}
+						>
+							<DifficultyDistributionChart
+								difficultyDistribution={data.difficultyDistribution}
+							/>
+						</ChartCard>
 					</Box>
 
 					{/* Row 5: Question bank (full width) */}
-					<Card>
-						<CardContent>
-							<Typography
-								variant="subtitle2"
-								color="text.secondary"
-								gutterBottom
-							>
-								Question Bank
-							</Typography>
-							<QuestionBankTable recentQuestions={data.recentQuestions} />
-						</CardContent>
-					</Card>
+					<ChartCard title="Question Bank">
+						<QuestionBankTable recentQuestions={data.recentQuestions} />
+					</ChartCard>
 				</>
 			)}
 		</Box>
