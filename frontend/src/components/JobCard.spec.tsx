@@ -2,7 +2,7 @@ import React from "react";
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import JobCard from "./JobCard";
-import type { Job } from "../types";
+import { BASE_JOB } from "../testUtils";
 vi.mock(
 	import("../useCompanyLogo"),
 	() =>
@@ -32,29 +32,6 @@ vi.mock(
 			CSS: { Translate: { toString: () => "" } },
 		}) as any,
 );
-
-const BASE_JOB: Job = {
-	company: "Acme Corp",
-	created_at: "2024-01-01T00:00:00.000Z",
-	date_applied: null,
-	date_last_onsite: null,
-	date_offer_extended: null,
-	date_phone_screen: null,
-	ending_substatus: null,
-	favorite: false,
-	fit_score: null,
-	id: 1,
-	job_description: null,
-	link: "https://acme.example.com/job",
-	notes: null,
-	recruiter: null,
-	referred_by: null,
-	role: "Software Engineer",
-	salary: null,
-	status: "Not started",
-	tags: [],
-	updated_at: "2024-01-01T00:00:00.000Z",
-};
 
 describe(JobCard, () => {
 	beforeEach(() => {

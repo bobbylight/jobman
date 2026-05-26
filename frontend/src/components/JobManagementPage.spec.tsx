@@ -13,6 +13,7 @@ import StatsPage from "./StatsPage";
 import KanbanBoard from "./KanbanBoard";
 import { api } from "../api";
 import type { Job, User } from "../types";
+import { makeJob } from "../testUtils";
 
 vi.mock(
 	import("../api"),
@@ -93,29 +94,6 @@ const MOCK_USER: User = {
 };
 
 const MOCK_ON_LOGOUT = vi.fn();
-
-const makeJob = (overrides: Partial<Job> & Pick<Job, "id">): Job => ({
-	company: "Acme",
-	created_at: "2024-01-01T00:00:00.000Z",
-	date_applied: null,
-	date_last_onsite: null,
-	date_offer_extended: null,
-	date_phone_screen: null,
-	ending_substatus: null,
-	favorite: false,
-	fit_score: null,
-	job_description: null,
-	link: "https://acme.com",
-	notes: null,
-	recruiter: null,
-	referred_by: null,
-	role: "Engineer",
-	salary: null,
-	status: "Not started",
-	tags: [],
-	updated_at: "2024-01-01T00:00:00.000Z",
-	...overrides,
-});
 
 /** Renders JobManagementPage inside AppShell with the same route structure as App.tsx. */
 function renderPage(initialPath = "/jobs", onLogout = MOCK_ON_LOGOUT) {
@@ -449,7 +427,7 @@ describe(JobManagementPage, () => {
 
 			await waitFor(() =>
 				expect(
-					screen.getByRole("heading", { name: "Acme - Engineer" }),
+					screen.getByRole("heading", { name: "Acme - Software Engineer" }),
 				).toBeInTheDocument(),
 			);
 
@@ -532,7 +510,7 @@ describe(JobManagementPage, () => {
 
 			await waitFor(() =>
 				expect(
-					screen.getByRole("heading", { name: "Acme - Engineer" }),
+					screen.getByRole("heading", { name: "Acme - Software Engineer" }),
 				).toBeInTheDocument(),
 			);
 
@@ -596,7 +574,9 @@ describe(JobManagementPage, () => {
 
 			await waitFor(() =>
 				expect(
-					screen.getByRole("heading", { name: "DeepLink Co - Engineer" }),
+					screen.getByRole("heading", {
+						name: "DeepLink Co - Software Engineer",
+					}),
 				).toBeInTheDocument(),
 			);
 		});

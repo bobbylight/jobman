@@ -1,32 +1,9 @@
 import { formatTime, isPossiblyGhosted } from "./jobUtils";
-import type { Job } from "./types";
+import { BASE_JOB } from "./testUtils";
 
 // 2026-01-31 — all "old" dates in these tests are Jan 1 (30 days prior, not ghosted)
 // Or Dec 31 (31 days prior, ghosted). Recent dates use Feb 1 (future = 0 days ago).
 const NOW = new Date("2026-01-31T00:00:00.000Z").getTime();
-
-const BASE_JOB: Job = {
-	id: 1,
-	company: "Acme",
-	role: "Engineer",
-	link: "https://example.com",
-	status: "Applied",
-	fit_score: null,
-	salary: null,
-	date_applied: null,
-	date_offer_extended: null,
-	date_phone_screen: null,
-	date_last_onsite: null,
-	referred_by: null,
-	recruiter: null,
-	notes: null,
-	job_description: null,
-	ending_substatus: null,
-	favorite: false,
-	tags: [],
-	created_at: "2025-01-01T00:00:00.000Z",
-	updated_at: "2025-01-01T00:00:00.000Z",
-};
 
 describe(isPossiblyGhosted, () => {
 	beforeEach(() => {

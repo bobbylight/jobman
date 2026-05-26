@@ -42,29 +42,13 @@ export default function App() {
 		setCurrentUser(null);
 	}, []);
 
-	// Auth check still in progress
+	let content: React.ReactNode;
 	if (currentUser === undefined) {
-		return (
-			<ThemeProvider theme={theme}>
-				<CssBaseline />
-				<PageSpinner />
-			</ThemeProvider>
-		);
-	}
-
-	// Not authenticated
-	if (currentUser === null) {
-		return (
-			<ThemeProvider theme={theme}>
-				<CssBaseline />
-				<LoginPage />
-			</ThemeProvider>
-		);
-	}
-
-	return (
-		<ThemeProvider theme={theme}>
-			<CssBaseline />
+		content = <PageSpinner />;
+	} else if (currentUser === null) {
+		content = <LoginPage />;
+	} else {
+		content = (
 			<BrowserRouter>
 				<Routes>
 					<Route
@@ -83,6 +67,13 @@ export default function App() {
 					</Route>
 				</Routes>
 			</BrowserRouter>
+		);
+	}
+
+	return (
+		<ThemeProvider theme={theme}>
+			<CssBaseline />
+			{content}
 		</ThemeProvider>
 	);
 }

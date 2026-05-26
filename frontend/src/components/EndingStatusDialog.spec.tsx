@@ -1,30 +1,12 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import EndingStatusDialog from "./EndingStatusDialog";
-import type { Job } from "../types";
+import { makeJob } from "../testUtils";
 
-const BASE_JOB: Job = {
-	company: "Acme Corp",
-	created_at: "2024-01-01T00:00:00.000Z",
-	date_applied: null,
-	date_last_onsite: null,
-	date_offer_extended: null,
-	date_phone_screen: null,
-	ending_substatus: null,
-	favorite: false,
-	fit_score: null,
-	id: 1,
-	job_description: null,
-	link: "https://acme.example.com/job",
-	notes: "Some existing notes",
-	recruiter: null,
-	referred_by: null,
-	role: "Engineer",
-	salary: null,
+const BASE_JOB = makeJob({
 	status: "Interviewing",
-	tags: [],
-	updated_at: "2024-01-01T00:00:00.000Z",
-};
+	notes: "Some existing notes",
+});
 
 function changeSelect(labelText: RegExp | string, optionName: string) {
 	fireEvent.mouseDown(screen.getByLabelText(labelText));

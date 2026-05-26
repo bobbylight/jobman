@@ -160,9 +160,8 @@ export default function InterviewsPage() {
 	const [loadingMore, setLoadingMore] = useState(false);
 	const [reachedEnd, setReachedEnd] = useState(false);
 	const [notify, snackbarNode] = useSnackbar();
-	const defaults = getDefaultDateRange();
-	const [from, setFrom] = useState(defaults.from);
-	const [to, setTo] = useState(defaults.to);
+	const [from, setFrom] = useState(() => getDefaultDateRange().from);
+	const [to, setTo] = useState(() => getDefaultDateRange().to);
 
 	// When Load More advances `to`, we suppress the re-fetch that would otherwise
 	// Be triggered by the date change (the list is already up to date).
@@ -235,6 +234,8 @@ export default function InterviewsPage() {
 		</Button>
 	);
 
+	const defaultRange = getDefaultDateRange();
+
 	return (
 		<>
 			<Box sx={{ maxWidth: 860, mx: "auto", px: 3, py: 4 }}>
@@ -270,13 +271,13 @@ export default function InterviewsPage() {
 							slotProps={{ inputLabel: { shrink: true } }}
 							sx={{ width: 160 }}
 						/>
-						{(from !== defaults.from || to !== defaults.to) && (
+						{(from !== defaultRange.from || to !== defaultRange.to) && (
 							<Button
 								size="small"
 								variant="text"
 								onClick={() => {
-									setFrom(defaults.from);
-									setTo(defaults.to);
+									setFrom(defaultRange.from);
+									setTo(defaultRange.to);
 								}}
 							>
 								Reset
