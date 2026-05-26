@@ -1,12 +1,8 @@
 import React, { useEffect, useState } from "react";
-import {
-	Box,
-	Card,
-	CardContent,
-	CircularProgress,
-	Typography,
-} from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { api } from "../api";
+import ChartCard from "./ChartCard";
+import PageSpinner from "./PageSpinner";
 import type { StatsResponse, StatsWindow } from "../types";
 import StatCard from "./stats/StatCard";
 import StatusDonutChart from "./stats/StatusDonutChart";
@@ -64,11 +60,7 @@ export default function StatsPage() {
 				</Typography>
 			)}
 
-			{loading ? (
-				<Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-					<CircularProgress />
-				</Box>
-			) : null}
+			{loading ? <PageSpinner /> : null}
 			{!loading && data && (
 				<>
 					{/* Metric cards row 1 */}
@@ -121,21 +113,12 @@ export default function StatsPage() {
 
 					{/* Charts row 1: Funnel (full width) */}
 					<Box sx={{ mb: 2 }}>
-						<Card>
-							<CardContent>
-								<Typography
-									variant="subtitle2"
-									color="text.secondary"
-									gutterBottom
-								>
-									Pipeline Funnel
-								</Typography>
-								<PipelineFunnelChart
-									transitions={data.transitions}
-									onLinkClick={(from, to) => setLinkClick({ from, to })}
-								/>
-							</CardContent>
-						</Card>
+						<ChartCard title="Pipeline Funnel">
+							<PipelineFunnelChart
+								transitions={data.transitions}
+								onLinkClick={(from, to) => setLinkClick({ from, to })}
+							/>
+						</ChartCard>
 					</Box>
 
 					{/* Charts row 2: Donut + Avg Days Per Stage + Applications Over Time */}
@@ -147,60 +130,27 @@ export default function StatsPage() {
 							alignItems: "flex-start",
 						}}
 					>
-						<Card sx={{ flex: "1 1 340px" }}>
-							<CardContent>
-								<Typography
-									variant="subtitle2"
-									color="text.secondary"
-									gutterBottom
-								>
-									Status Breakdown
-								</Typography>
-								<StatusDonutChart byStatus={data.byStatus} />
-							</CardContent>
-						</Card>
-						<Card sx={{ flex: "1 1 340px" }}>
-							<CardContent>
-								<Typography
-									variant="subtitle2"
-									color="text.secondary"
-									gutterBottom
-								>
-									Avg. Days Per Stage
-								</Typography>
-								<AvgDaysChart avgDaysPerStage={data.avgDaysPerStage} />
-							</CardContent>
-						</Card>
+						<ChartCard title="Status Breakdown" sx={{ flex: "1 1 340px" }}>
+							<StatusDonutChart byStatus={data.byStatus} />
+						</ChartCard>
+						<ChartCard title="Avg. Days Per Stage" sx={{ flex: "1 1 340px" }}>
+							<AvgDaysChart avgDaysPerStage={data.avgDaysPerStage} />
+						</ChartCard>
 						{window !== "30" && (
-							<Card sx={{ flex: "1 1 340px" }}>
-								<CardContent>
-									<Typography
-										variant="subtitle2"
-										color="text.secondary"
-										gutterBottom
-									>
-										Applications per Week
-									</Typography>
-									<ApplicationsOverTime
-										applicationsByWeek={data.applicationsByWeek}
-									/>
-								</CardContent>
-							</Card>
-						)}
-						<Card sx={{ flex: "1 1 340px" }}>
-							<CardContent>
-								<Typography
-									variant="subtitle2"
-									color="text.secondary"
-									gutterBottom
-								>
-									Interviews per Week
-								</Typography>
-								<InterviewsPerWeekChart
-									interviewsByWeek={data.interviewsByWeek}
+							<ChartCard
+								title="Applications per Week"
+								sx={{ flex: "1 1 340px" }}
+							>
+								<ApplicationsOverTime
+									applicationsByWeek={data.applicationsByWeek}
 								/>
-							</CardContent>
-						</Card>
+							</ChartCard>
+						)}
+						<ChartCard title="Interviews per Week" sx={{ flex: "1 1 340px" }}>
+							<InterviewsPerWeekChart
+								interviewsByWeek={data.interviewsByWeek}
+							/>
+						</ChartCard>
 					</Box>
 					{/* Charts row 3: Pipeline Over Time + Top Companies */}
 					<Box
@@ -212,30 +162,15 @@ export default function StatsPage() {
 							mt: 2,
 						}}
 					>
-						<Card sx={{ flex: "1 1 340px" }}>
-							<CardContent>
-								<Typography
-									variant="subtitle2"
-									color="text.secondary"
-									gutterBottom
-								>
-									Pipeline Over Time
-								</Typography>
-								<PipelineOverTimeChart statusOverTime={data.statusOverTime} />
-							</CardContent>
-						</Card>
-						<Card sx={{ flex: "1 1 340px" }}>
-							<CardContent>
-								<Typography
-									variant="subtitle2"
-									color="text.secondary"
-									gutterBottom
-								>
-									Top Companies (all time)
-								</Typography>
-								<TopCompaniesTable topCompanies={data.topCompanies} />
-							</CardContent>
-						</Card>
+						<ChartCard title="Pipeline Over Time" sx={{ flex: "1 1 340px" }}>
+							<PipelineOverTimeChart statusOverTime={data.statusOverTime} />
+						</ChartCard>
+						<ChartCard
+							title="Top Companies (all time)"
+							sx={{ flex: "1 1 340px" }}
+						>
+							<TopCompaniesTable topCompanies={data.topCompanies} />
+						</ChartCard>
 					</Box>
 				</>
 			)}

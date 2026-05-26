@@ -1,15 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
-import {
-	Box,
-	CircularProgress,
-	CssBaseline,
-	ThemeProvider,
-} from "@mui/material";
+import { CssBaseline, ThemeProvider } from "@mui/material";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import theme from "./theme";
 import { api, setUnauthorizedHandler } from "./api";
 import type { User } from "./types";
 import LoginPage from "./components/LoginPage";
+import PageSpinner from "./components/PageSpinner";
 import AppShell from "./components/AppShell";
 import InsightsPage from "./components/InsightsPage";
 import JobManagementPage from "./components/JobManagementPage";
@@ -51,9 +47,7 @@ export default function App() {
 		return (
 			<ThemeProvider theme={theme}>
 				<CssBaseline />
-				<Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-					<CircularProgress />
-				</Box>
+				<PageSpinner />
 			</ThemeProvider>
 		);
 	}
