@@ -364,7 +364,7 @@ export default function JobDialog({
 						disabled={formDisabled}
 						sx={{ border: "none", m: 0, minWidth: 0, p: 0 }}
 					>
-						<Box sx={{ display: activeTab === 0 ? "block" : "none" }}>
+						{activeTab === 0 && (
 							<Grid container spacing={2} sx={{ pt: 0.5 }}>
 								<Grid size={{ sm: 6, xs: 12 }}>
 									<TextField
@@ -696,7 +696,7 @@ export default function JobDialog({
 									/>
 								</Grid>
 							</Grid>
-						</Box>
+						)}
 						{isEdit && activeTab === 1 && (
 							<InterviewsTab
 								jobId={jobId!}
