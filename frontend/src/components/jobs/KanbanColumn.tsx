@@ -1,8 +1,8 @@
 import React, { memo } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { Box, Chip, Typography } from "@mui/material";
-import { STATUS_COLORS } from "../constants";
-import type { Job, JobStatus } from "../types";
+import { STATUS_COLORS } from "../../constants";
+import type { Job, JobStatus } from "../../types";
 import JobCard from "./JobCard";
 
 interface Props {

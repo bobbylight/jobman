@@ -30,8 +30,8 @@ import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import TuneIcon from "@mui/icons-material/Tune";
 import { useNavigate, useParams } from "react-router-dom";
-import { api } from "../api";
-import { useSnackbar } from "../useSnackbar";
+import { api } from "../../api";
+import { useSnackbar } from "../../useSnackbar";
 import type {
 	EndingSubstatus,
 	FitScore,
@@ -39,16 +39,16 @@ import type {
 	JobFormData,
 	JobStatus,
 	JobTag,
-} from "../types";
+} from "../../types";
 import {
 	FIT_SCORES,
 	JOB_TAGS,
 	TAG_LABELS,
 	TERMINAL_STATUSES,
 	tagChipProps,
-} from "../constants";
+} from "../../constants";
 import KanbanBoard from "./KanbanBoard";
-import PageSpinner from "./PageSpinner";
+import PageSpinner from "../shared/PageSpinner";
 import JobDialog from "./JobDialog";
 import EndingStatusDialog from "./EndingStatusDialog";
 

@@ -7,8 +7,8 @@ import {
 	type DragStartEvent,
 } from "@dnd-kit/core";
 import { Box } from "@mui/material";
-import { STATUSES } from "../constants";
-import type { Job, JobStatus } from "../types";
+import { STATUSES } from "../../constants";
+import type { Job, JobStatus } from "../../types";
 import KanbanColumn from "./KanbanColumn";
 import JobCard from "./JobCard";
 

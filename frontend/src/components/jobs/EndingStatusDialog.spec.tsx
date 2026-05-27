@@ -1,7 +1,7 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import EndingStatusDialog from "./EndingStatusDialog";
-import { makeJob } from "../testUtils";
+import { makeJob } from "../../testUtils";
 
 const BASE_JOB = makeJob({
 	status: "Interviewing",

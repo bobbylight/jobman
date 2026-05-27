@@ -20,7 +20,7 @@ import {
 } from "@mui/material";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
-import InterviewsTab from "./InterviewsTab";
+import InterviewsTab from "./interviews/InterviewsTab";
 import EditIcon from "@mui/icons-material/Edit";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
@@ -37,10 +37,10 @@ import {
 	TAG_LABELS,
 	TERMINAL_STATUSES,
 	tagChipProps,
-} from "../constants";
-import CompanyLogo from "./CompanyLogo";
-import MarkdownField from "./MarkdownField";
-import { api } from "../api";
+} from "../../constants";
+import CompanyLogo from "../shared/CompanyLogo";
+import MarkdownField from "../shared/MarkdownField";
+import { api } from "../../api";
 import type {
 	EndingSubstatus,
 	FitScore,
@@ -48,7 +48,7 @@ import type {
 	JobFormData,
 	JobStatus,
 	JobTag,
-} from "../types";
+} from "../../types";
 
 const EMPTY: JobFormData = {
 	company: "",

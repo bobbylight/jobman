@@ -1,11 +1,11 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import InsightsPage from "./InsightsPage";
-import { api } from "../api";
-import type { InterviewInsightsResponse } from "../types";
+import { api } from "../../api";
+import type { InterviewInsightsResponse } from "../../types";
 
 vi.mock(
-	import("../api"),
+	import("../../api"),
 	() =>
 		({
 			api: { getInterviewInsights: vi.fn() },
@@ -13,35 +13,35 @@ vi.mock(
 );
 
 vi.mock(
-	import("./insights/TypeDonutChart"),
+	import("./TypeDonutChart"),
 	() => ({ default: () => <div data-testid="type-donut-chart" /> }) as any,
 );
 vi.mock(
-	import("./insights/PassRateByTypeChart"),
+	import("./PassRateByTypeChart"),
 	() =>
 		({ default: () => <div data-testid="pass-rate-by-type-chart" /> }) as any,
 );
 vi.mock(
-	import("./insights/FeelingCalibrationChart"),
+	import("./FeelingCalibrationChart"),
 	() =>
 		({
 			default: () => <div data-testid="feeling-calibration-chart" />,
 		}) as any,
 );
 vi.mock(
-	import("./insights/QuestionsByTypeChart"),
+	import("./QuestionsByTypeChart"),
 	() =>
 		({ default: () => <div data-testid="questions-by-type-chart" /> }) as any,
 );
 vi.mock(
-	import("./insights/DifficultyDistributionChart"),
+	import("./DifficultyDistributionChart"),
 	() =>
 		({
 			default: () => <div data-testid="difficulty-distribution-chart" />,
 		}) as any,
 );
 vi.mock(
-	import("./insights/QuestionBankTable"),
+	import("./QuestionBankTable"),
 	() => ({ default: () => <div data-testid="question-bank-table" /> }) as any,
 );
 

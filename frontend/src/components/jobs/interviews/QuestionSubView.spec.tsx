@@ -7,10 +7,10 @@ import {
 	within,
 } from "@testing-library/react";
 import QuestionSubView from "./QuestionSubView";
-import { api } from "../api";
-import type { Interview, InterviewQuestion } from "../types";
+import { api } from "../../../api";
+import type { Interview, InterviewQuestion } from "../../../types";
 
-vi.mock(import("../api"));
+vi.mock(import("../../../api"));
 
 const BASE_INTERVIEW: Interview = {
 	id: 10,

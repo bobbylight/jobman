@@ -1,6 +1,6 @@
 import React from "react";
 import { Avatar } from "@mui/material";
-import { useCompanyLogo } from "../useCompanyLogo";
+import { useCompanyLogo } from "../../useCompanyLogo";
 
 interface Props {
 	company: string;

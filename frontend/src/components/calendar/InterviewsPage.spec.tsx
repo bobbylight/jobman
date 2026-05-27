@@ -2,11 +2,11 @@ import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import InterviewsPage, { getDefaultDateRange } from "./InterviewsPage";
-import { api } from "../api";
-import type { EnrichedInterview } from "../types";
+import { api } from "../../api";
+import type { EnrichedInterview } from "../../types";
 
 vi.mock(
-	import("../api"),
+	import("../../api"),
 	() =>
 		({
 			api: { loadMoreInterviews: vi.fn(), searchInterviews: vi.fn() },
@@ -14,7 +14,7 @@ vi.mock(
 );
 
 vi.mock(
-	import("../useCompanyLogo"),
+	import("../../useCompanyLogo"),
 	() => ({ useCompanyLogo: vi.fn(() => null) }) as any,
 );
 

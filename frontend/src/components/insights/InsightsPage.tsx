@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { Box, Typography } from "@mui/material";
-import { api } from "../api";
-import ChartCard from "./ChartCard";
-import PageSpinner from "./PageSpinner";
-import type { InterviewInsightsResponse, StatsWindow } from "../types";
-import StatCard from "./stats/StatCard";
-import LookbackToggle from "./stats/LookbackToggle";
-import TypeDonutChart from "./insights/TypeDonutChart";
-import PassRateByTypeChart from "./insights/PassRateByTypeChart";
-import FeelingCalibrationChart from "./insights/FeelingCalibrationChart";
-import QuestionsByTypeChart from "./insights/QuestionsByTypeChart";
-import DifficultyDistributionChart from "./insights/DifficultyDistributionChart";
-import QuestionBankTable from "./insights/QuestionBankTable";
+import { api } from "../../api";
+import ChartCard from "../shared/ChartCard";
+import PageSpinner from "../shared/PageSpinner";
+import type { InterviewInsightsResponse, StatsWindow } from "../../types";
+import StatCard from "../shared/StatCard";
+import LookbackToggle from "../shared/LookbackToggle";
+import TypeDonutChart from "./TypeDonutChart";
+import PassRateByTypeChart from "./PassRateByTypeChart";
+import FeelingCalibrationChart from "./FeelingCalibrationChart";
+import QuestionsByTypeChart from "./QuestionsByTypeChart";
+import DifficultyDistributionChart from "./DifficultyDistributionChart";
+import QuestionBankTable from "./QuestionBankTable";
 
 export default function InsightsPage() {
 	const [window, setWindow] = useState<StatsWindow>("all");

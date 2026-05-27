@@ -7,10 +7,10 @@ import {
 	within,
 } from "@testing-library/react";
 import InterviewsTab from "./InterviewsTab";
-import { api } from "../api";
-import type { Interview } from "../types";
+import { api } from "../../../api";
+import type { Interview } from "../../../types";
 
-vi.mock(import("../api"));
+vi.mock(import("../../../api"));
 
 const makeInterview = (overrides: Partial<Interview> = {}): Interview => ({
 	id: 1,

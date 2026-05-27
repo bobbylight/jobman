@@ -5,13 +5,13 @@ import theme from "./theme";
 import { api, setUnauthorizedHandler } from "./api";
 import type { User } from "./types";
 import LoginPage from "./components/LoginPage";
-import PageSpinner from "./components/PageSpinner";
-import AppShell from "./components/AppShell";
-import InsightsPage from "./components/InsightsPage";
-import JobManagementPage from "./components/JobManagementPage";
-import InterviewsPage from "./components/InterviewsPage";
-import RadarPage from "./components/RadarPage";
-import StatsPage from "./components/StatsPage";
+import PageSpinner from "./components/shared/PageSpinner";
+import AppShell from "./components/shared/AppShell";
+import InsightsPage from "./components/insights/InsightsPage";
+import JobManagementPage from "./components/jobs/JobManagementPage";
+import InterviewsPage from "./components/calendar/InterviewsPage";
+import RadarPage from "./components/radar/RadarPage";
+import StatsPage from "./components/stats/StatsPage";
 
 export default function App() {
 	// Undefined = auth check in progress, null = unauthenticated, User = authenticated

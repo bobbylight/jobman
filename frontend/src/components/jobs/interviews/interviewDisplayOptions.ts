@@ -1,4 +1,4 @@
-import type { InterviewFeeling, InterviewVibe } from "../../types";
+import type { InterviewFeeling, InterviewVibe } from "../../../types";
 
 interface DisplayOption<T> {
 	value: T;
