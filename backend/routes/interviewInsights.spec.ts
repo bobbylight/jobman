@@ -135,7 +135,7 @@ afterEach(() => {
 	testDb.exec("DELETE FROM jobs");
 });
 
-describe("GET /api/interview-insights", () => {
+describe("gET /api/interview-insights", () => {
 	it("returns 401 when the request is not authenticated", async () => {
 		const res = await request(app).get("/api/interview-insights");
 		expect(res.status).toBe(401);

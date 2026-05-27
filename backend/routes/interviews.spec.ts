@@ -148,7 +148,7 @@ async function createJobInterviewAndQuestion() {
 
 // --- Interview routes ---
 
-describe("GET /api/jobs/:jobId/interviews", () => {
+describe("gET /api/jobs/:jobId/interviews", () => {
 	it("returns 200 with the job's interviews", async () => {
 		const jobId = await createJob();
 		await req("post", `/api/jobs/${jobId}/interviews`).send(BASE_INTERVIEW);
@@ -166,7 +166,7 @@ describe("GET /api/jobs/:jobId/interviews", () => {
 	});
 });
 
-describe("POST /api/jobs/:jobId/interviews", () => {
+describe("pOST /api/jobs/:jobId/interviews", () => {
 	it("creates an interview and returns 201 with the record", async () => {
 		const jobId = await createJob();
 		const res = await req("post", `/api/jobs/${jobId}/interviews`).send({
@@ -308,7 +308,7 @@ describe("POST /api/jobs/:jobId/interviews", () => {
 	});
 });
 
-describe("PUT /api/jobs/:jobId/interviews/:interviewId", () => {
+describe("pUT /api/jobs/:jobId/interviews/:interviewId", () => {
 	it("updates an interview and returns 200 with the updated record", async () => {
 		const { jobId, interviewId } = await createJobAndInterview();
 		const res = await req("put", `/api/jobs/${jobId}/interviews/${interviewId}`).send({
@@ -378,7 +378,7 @@ describe("PUT /api/jobs/:jobId/interviews/:interviewId", () => {
 	});
 });
 
-describe("DELETE /api/jobs/:jobId/interviews/:interviewId", () => {
+describe("dELETE /api/jobs/:jobId/interviews/:interviewId", () => {
 	it("deletes an interview and returns success", async () => {
 		const { jobId, interviewId } = await createJobAndInterview();
 		const res = await req("delete", `/api/jobs/${jobId}/interviews/${interviewId}`);
@@ -401,7 +401,7 @@ describe("DELETE /api/jobs/:jobId/interviews/:interviewId", () => {
 
 // --- Question routes ---
 
-describe("GET /api/jobs/:jobId/interviews/:interviewId/questions", () => {
+describe("gET /api/jobs/:jobId/interviews/:interviewId/questions", () => {
 	it("returns 200 with the interview's questions", async () => {
 		const { jobId, interviewId } = await createJobAndInterview();
 		await req("post", `/api/jobs/${jobId}/interviews/${interviewId}/questions`).send(BASE_QUESTION);
@@ -425,7 +425,7 @@ describe("GET /api/jobs/:jobId/interviews/:interviewId/questions", () => {
 	});
 });
 
-describe("GET /api/jobs/:jobId/interviews/:interviewId/questions/:questionId", () => {
+describe("gET /api/jobs/:jobId/interviews/:interviewId/questions/:questionId", () => {
 	it("returns a single question by id", async () => {
 		const { jobId, interviewId } = await createJobAndInterview();
 		const createRes = await req(
@@ -466,7 +466,7 @@ describe("GET /api/jobs/:jobId/interviews/:interviewId/questions/:questionId", (
 	});
 });
 
-describe("POST /api/jobs/:jobId/interviews/:interviewId/questions", () => {
+describe("pOST /api/jobs/:jobId/interviews/:interviewId/questions", () => {
 	it("creates a question and returns 201 with the record", async () => {
 		const { jobId, interviewId } = await createJobAndInterview();
 		const res = await req(
@@ -583,7 +583,7 @@ describe("POST /api/jobs/:jobId/interviews/:interviewId/questions", () => {
 	});
 });
 
-describe("PUT /api/jobs/:jobId/interviews/:interviewId/questions/:questionId", () => {
+describe("pUT /api/jobs/:jobId/interviews/:interviewId/questions/:questionId", () => {
 	it("updates a question and returns 200 with the updated record", async () => {
 		const { jobId, interviewId } = await createJobAndInterview();
 		const createRes = await req(
@@ -650,7 +650,7 @@ describe("PUT /api/jobs/:jobId/interviews/:interviewId/questions/:questionId", (
 	});
 });
 
-describe("DELETE /api/jobs/:jobId/interviews/:interviewId/questions/:questionId", () => {
+describe("dELETE /api/jobs/:jobId/interviews/:interviewId/questions/:questionId", () => {
 	it("deletes a question and returns success", async () => {
 		const { jobId, interviewId } = await createJobAndInterview();
 		const createRes = await req(
@@ -694,11 +694,11 @@ describe("DELETE /api/jobs/:jobId/interviews/:interviewId/questions/:questionId"
 
 // --- GET /api/interviews (cross-job interview search) ---
 
-describe("GET /api/interviews", () => {
+describe("gET /api/interviews", () => {
 	it("returns 200 with an empty array when there are no interviews", async () => {
 		const res = await req("get", "/api/interviews");
 		expect(res.status).toBe(200);
-		expect(res.body).toEqual([]);
+		expect(res.body).toStrictEqual([]);
 	});
 
 	it("returns enriched interviews with a nested job object", async () => {
@@ -842,7 +842,7 @@ describe("GET /api/interviews", () => {
 	});
 });
 
-describe("GET /api/interviews — cursor pagination (?after + ?limit)", () => {
+describe("gET /api/interviews — cursor pagination (?after + ?limit)", () => {
 	it("returns interviews strictly after ?after", async () => {
 		const jobId = await createJob();
 		await req("post", `/api/jobs/${jobId}/interviews`).send({ ...BASE_INTERVIEW, interview_dttm: "2026-04-01T10:00" });
@@ -902,7 +902,7 @@ describe("GET /api/interviews — cursor pagination (?after + ?limit)", () => {
 
 		const res = await req("get", "/api/interviews?after=2026-12-31T23:59:59");
 		expect(res.status).toBe(200);
-		expect(res.body).toEqual([]);
+		expect(res.body).toStrictEqual([]);
 	});
 
 	it("returns 400 for an invalid ?after value", async () => {
@@ -959,7 +959,7 @@ describe("interview field length validation", () => {
 	][];
 
 	it.each(LENGTH_CASES)(
-		"POST returns 422 when %s exceeds %d characters",
+		"pOST returns 422 when %s exceeds %d characters",
 		async (field, max) => {
 			const jobId = await createJob();
 			const res = await req("post", `/api/jobs/${jobId}/interviews`).send({
@@ -972,7 +972,7 @@ describe("interview field length validation", () => {
 	);
 
 	it.each(LENGTH_CASES)(
-		"POST accepts %s at exactly %d characters",
+		"pOST accepts %s at exactly %d characters",
 		async (field, max) => {
 			const jobId = await createJob();
 			const res = await req("post", `/api/jobs/${jobId}/interviews`).send({
@@ -984,7 +984,7 @@ describe("interview field length validation", () => {
 	);
 
 	it.each(LENGTH_CASES)(
-		"PUT returns 422 when %s exceeds %d characters",
+		"pUT returns 422 when %s exceeds %d characters",
 		async (field, max) => {
 			const { jobId, interviewId } = await createJobAndInterview();
 			const res = await req(
@@ -1007,7 +1007,7 @@ describe("question field length validation", () => {
 	][];
 
 	it.each(LENGTH_CASES)(
-		"POST returns 422 when %s exceeds %d characters",
+		"pOST returns 422 when %s exceeds %d characters",
 		async (field, max) => {
 			const { jobId, interviewId } = await createJobAndInterview();
 			const res = await req(
@@ -1023,7 +1023,7 @@ describe("question field length validation", () => {
 	);
 
 	it.each(LENGTH_CASES)(
-		"POST accepts %s at exactly %d characters",
+		"pOST accepts %s at exactly %d characters",
 		async (field, max) => {
 			const { jobId, interviewId } = await createJobAndInterview();
 			const res = await req(
@@ -1038,7 +1038,7 @@ describe("question field length validation", () => {
 	);
 
 	it.each(LENGTH_CASES)(
-		"PUT returns 422 when %s exceeds %d characters",
+		"pUT returns 422 when %s exceeds %d characters",
 		async (field, max) => {
 			const { jobId, interviewId, questionId } =
 				await createJobInterviewAndQuestion();

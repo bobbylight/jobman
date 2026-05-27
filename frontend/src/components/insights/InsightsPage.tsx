@@ -42,7 +42,7 @@ export default function InsightsPage() {
 					mb: 3,
 				}}
 			>
-				<Typography variant="h5" fontWeight={700}>
+				<Typography variant="h5" sx={{ fontWeight: 700 }}>
 					Interview Insights
 				</Typography>
 				<LookbackToggle value={window} onChange={setWindow} />

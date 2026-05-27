@@ -44,7 +44,7 @@ const MOCK_USER = {
 	id: 1,
 };
 
-describe("API module", () => {
+describe("aPI module", () => {
 	let mockFetch: ReturnType<typeof vi.fn>;
 
 	beforeEach(() => {
@@ -68,7 +68,7 @@ describe("API module", () => {
 				"/api/auth/me",
 				expect.objectContaining({ credentials: "include" }),
 			);
-			expect(result).toEqual(MOCK_USER);
+			expect(result).toStrictEqual(MOCK_USER);
 		});
 
 		it("returns null when the response is 401 (not authenticated)", async () => {
@@ -92,7 +92,7 @@ describe("API module", () => {
 	});
 
 	describe("logout", () => {
-		it("POSTs to /api/auth/logout and returns success", async () => {
+		it("pOSTs to /api/auth/logout and returns success", async () => {
 			mockFetch.mockResolvedValue(makeResponse({ success: true }));
 			const result = await api.logout();
 			expect(mockFetch).toHaveBeenCalledWith(
@@ -103,7 +103,7 @@ describe("API module", () => {
 		});
 	});
 
-	describe(setUnauthorizedHandler, () => {
+	describe("setUnauthorizedHandler", () => {
 		afterEach(() => {
 			// Reset so the handler doesn't leak into other tests
 			setUnauthorizedHandler(() => {});
@@ -142,7 +142,7 @@ describe("API module", () => {
 					headers: { "Content-Type": "application/json" },
 				}),
 			);
-			expect(result).toEqual([MOCK_JOB]);
+			expect(result).toStrictEqual([MOCK_JOB]);
 		});
 
 		it("throws when the response is not ok", async () => {
@@ -154,7 +154,7 @@ describe("API module", () => {
 	});
 
 	describe("createJob", () => {
-		it("POSTs to /api/jobs with JSON body and returns the created job", async () => {
+		it("pOSTs to /api/jobs with JSON body and returns the created job", async () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_JOB));
 			const formData: JobFormData = {
 				company: "Acme",
@@ -184,12 +184,12 @@ describe("API module", () => {
 					method: "POST",
 				}),
 			);
-			expect(result).toEqual(MOCK_JOB);
+			expect(result).toStrictEqual(MOCK_JOB);
 		});
 	});
 
 	describe("updateJob", () => {
-		it("PUTs to /api/jobs/:id with JSON body and returns the updated job", async () => {
+		it("pUTs to /api/jobs/:id with JSON body and returns the updated job", async () => {
 			const updated = { ...MOCK_JOB, company: "Updated" };
 			mockFetch.mockResolvedValue(makeResponse(updated));
 			const result = await api.updateJob(1, { company: "Updated" });
@@ -205,7 +205,7 @@ describe("API module", () => {
 	});
 
 	describe("deleteJob", () => {
-		it("DELETEs /api/jobs/:id and returns success", async () => {
+		it("dELETEs /api/jobs/:id and returns success", async () => {
 			mockFetch.mockResolvedValue(makeResponse({ success: true }));
 			const result = await api.deleteJob(1);
 			expect(mockFetch).toHaveBeenCalledWith(
@@ -222,7 +222,7 @@ describe("API module", () => {
 	});
 
 	describe("getInterviews", () => {
-		it("GETs /api/jobs/:jobId/interviews and returns the list", async () => {
+		it("gETs /api/jobs/:jobId/interviews and returns the list", async () => {
 			const mockInterviews = [
 				{
 					id: 1,
@@ -242,7 +242,7 @@ describe("API module", () => {
 					headers: { "Content-Type": "application/json" },
 				}),
 			);
-			expect(result).toEqual(mockInterviews);
+			expect(result).toStrictEqual(mockInterviews);
 		});
 
 		it("throws when the response is not ok", async () => {
@@ -252,7 +252,7 @@ describe("API module", () => {
 	});
 
 	describe("createInterview", () => {
-		it("POSTs to /api/jobs/:jobId/interviews with JSON body and returns the created interview", async () => {
+		it("pOSTs to /api/jobs/:jobId/interviews with JSON body and returns the created interview", async () => {
 			const formData = {
 				interview_dttm: "2024-03-19T10:00",
 				interview_interviewers: "Alice",
@@ -273,12 +273,12 @@ describe("API module", () => {
 					method: "POST",
 				}),
 			);
-			expect(result).toEqual(created);
+			expect(result).toStrictEqual(created);
 		});
 	});
 
 	describe("updateInterview", () => {
-		it("PUTs to /api/jobs/:jobId/interviews/:interviewId and returns the updated interview", async () => {
+		it("pUTs to /api/jobs/:jobId/interviews/:interviewId and returns the updated interview", async () => {
 			const formData = {
 				interview_dttm: "2024-03-19T10:00",
 				interview_interviewers: "Bob",
@@ -299,12 +299,12 @@ describe("API module", () => {
 					method: "PUT",
 				}),
 			);
-			expect(result).toEqual(updated);
+			expect(result).toStrictEqual(updated);
 		});
 	});
 
 	describe("deleteInterview", () => {
-		it("DELETEs /api/jobs/:jobId/interviews/:interviewId and returns success", async () => {
+		it("dELETEs /api/jobs/:jobId/interviews/:interviewId and returns success", async () => {
 			mockFetch.mockResolvedValue(makeResponse({ success: true }));
 			const result = await api.deleteInterview(1, 5);
 			expect(mockFetch).toHaveBeenCalledWith(
@@ -330,7 +330,7 @@ describe("API module", () => {
 	};
 
 	describe("getQuestions", () => {
-		it("GETs /api/jobs/:jobId/interviews/:interviewId/questions and returns the list", async () => {
+		it("gETs /api/jobs/:jobId/interviews/:interviewId/questions and returns the list", async () => {
 			mockFetch.mockResolvedValue(makeResponse([MOCK_QUESTION]));
 			const result = await api.getQuestions(1, 10);
 			expect(mockFetch).toHaveBeenCalledWith(
@@ -339,7 +339,7 @@ describe("API module", () => {
 					headers: { "Content-Type": "application/json" },
 				}),
 			);
-			expect(result).toEqual([MOCK_QUESTION]);
+			expect(result).toStrictEqual([MOCK_QUESTION]);
 		});
 
 		it("throws when the response is not ok", async () => {
@@ -349,7 +349,7 @@ describe("API module", () => {
 	});
 
 	describe("createQuestion", () => {
-		it("POSTs to /api/jobs/:jobId/interviews/:interviewId/questions with JSON body and returns the created question", async () => {
+		it("pOSTs to /api/jobs/:jobId/interviews/:interviewId/questions with JSON body and returns the created question", async () => {
 			const formData: InterviewQuestionFormData = {
 				difficulty: 4,
 				question_notes: null,
@@ -366,12 +366,12 @@ describe("API module", () => {
 					method: "POST",
 				}),
 			);
-			expect(result).toEqual(created);
+			expect(result).toStrictEqual(created);
 		});
 	});
 
 	describe("updateQuestion", () => {
-		it("PUTs to /api/jobs/:jobId/interviews/:interviewId/questions/:questionId and returns the updated question", async () => {
+		it("pUTs to /api/jobs/:jobId/interviews/:interviewId/questions/:questionId and returns the updated question", async () => {
 			const formData: InterviewQuestionFormData = {
 				difficulty: 2,
 				question_notes: "Some notes",
@@ -388,12 +388,12 @@ describe("API module", () => {
 					method: "PUT",
 				}),
 			);
-			expect(result).toEqual(updated);
+			expect(result).toStrictEqual(updated);
 		});
 	});
 
 	describe("deleteQuestion", () => {
-		it("DELETEs /api/jobs/:jobId/interviews/:interviewId/questions/:questionId and returns success", async () => {
+		it("dELETEs /api/jobs/:jobId/interviews/:interviewId/questions/:questionId and returns success", async () => {
 			mockFetch.mockResolvedValue(makeResponse({ success: true }));
 			const result = await api.deleteQuestion(1, 10, 1);
 			expect(mockFetch).toHaveBeenCalledWith(
@@ -430,14 +430,14 @@ describe("API module", () => {
 			},
 		];
 
-		it("GETs /api/interviews?after=<dttm>&limit=10 by default", async () => {
+		it("gETs /api/interviews?after=<dttm>&limit=10 by default", async () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_ENRICHED));
 			const result = await api.loadMoreInterviews("2026-04-15T10:00:00Z");
 			expect(mockFetch).toHaveBeenCalledWith(
 				"/api/interviews?after=2026-04-15T10%3A00%3A00Z&limit=10",
 				expect.any(Object),
 			);
-			expect(result).toEqual(MOCK_ENRICHED);
+			expect(result).toStrictEqual(MOCK_ENRICHED);
 		});
 
 		it("includes the specified limit when provided", async () => {
@@ -478,7 +478,7 @@ describe("API module", () => {
 			},
 		];
 
-		it("GETs /api/interviews with no params when no dates provided", async () => {
+		it("gETs /api/interviews with no params when no dates provided", async () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_ENRICHED));
 			const result = await api.searchInterviews();
 			expect(mockFetch).toHaveBeenCalledWith(
@@ -487,7 +487,7 @@ describe("API module", () => {
 					headers: { "Content-Type": "application/json" },
 				}),
 			);
-			expect(result).toEqual(MOCK_ENRICHED);
+			expect(result).toStrictEqual(MOCK_ENRICHED);
 		});
 
 		it("includes ?from param when from is provided", async () => {
@@ -543,7 +543,7 @@ describe("API module", () => {
 			transitions: [],
 		};
 
-		it("GETs /api/stats?window=all and returns the stats", async () => {
+		it("gETs /api/stats?window=all and returns the stats", async () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_STATS));
 			const result = await api.getStats("all");
 			expect(mockFetch).toHaveBeenCalledWith(
@@ -552,10 +552,10 @@ describe("API module", () => {
 					headers: { "Content-Type": "application/json" },
 				}),
 			);
-			expect(result).toEqual(MOCK_STATS);
+			expect(result).toStrictEqual(MOCK_STATS);
 		});
 
-		it("GETs /api/stats?window=30 when window is '30'", async () => {
+		it("gETs /api/stats?window=30 when window is '30'", async () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_STATS));
 			await api.getStats("30");
 			expect(mockFetch).toHaveBeenCalledWith(
@@ -564,7 +564,7 @@ describe("API module", () => {
 			);
 		});
 
-		it("GETs /api/stats?window=90 when window is '90'", async () => {
+		it("gETs /api/stats?window=90 when window is '90'", async () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_STATS));
 			await api.getStats("90");
 			expect(mockFetch).toHaveBeenCalledWith(
@@ -594,7 +594,7 @@ describe("API module", () => {
 			},
 		];
 
-		it("GETs /api/stats/link-jobs with encoded from, to, and window params", async () => {
+		it("gETs /api/stats/link-jobs with encoded from, to, and window params", async () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_LINK_JOBS));
 			const result = await api.getLinkJobs("Applied", "Phone screen", "all");
 			expect(mockFetch).toHaveBeenCalledWith(
@@ -603,10 +603,10 @@ describe("API module", () => {
 					headers: { "Content-Type": "application/json" },
 				}),
 			);
-			expect(result).toEqual(MOCK_LINK_JOBS);
+			expect(result).toStrictEqual(MOCK_LINK_JOBS);
 		});
 
-		it("URL-encodes special characters in from and to params", async () => {
+		it("uRL-encodes special characters in from and to params", async () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_LINK_JOBS));
 			await api.getLinkJobs("Rejected/Withdrawn", "Offer!", "30");
 			expect(mockFetch).toHaveBeenCalledWith(
@@ -631,7 +631,7 @@ describe("API module", () => {
 			generated_at: "2026-01-01T00:00:00.000Z",
 		};
 
-		it("GETs /api/radar when includeHidden is false (default)", async () => {
+		it("gETs /api/radar when includeHidden is false (default)", async () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_RADAR));
 			const result = await api.getRadar();
 			expect(mockFetch).toHaveBeenCalledWith(
@@ -640,10 +640,10 @@ describe("API module", () => {
 					headers: { "Content-Type": "application/json" },
 				}),
 			);
-			expect(result).toEqual(MOCK_RADAR);
+			expect(result).toStrictEqual(MOCK_RADAR);
 		});
 
-		it("GETs /api/radar?includeHidden=true when includeHidden is true", async () => {
+		it("gETs /api/radar?includeHidden=true when includeHidden is true", async () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_RADAR));
 			await api.getRadar(true);
 			expect(mockFetch).toHaveBeenCalledWith(
@@ -661,7 +661,7 @@ describe("API module", () => {
 	});
 
 	describe("patchRadarEntry", () => {
-		it("PATCHes /api/radar/:id with JSON body and returns success", async () => {
+		it("pATCHes /api/radar/:id with JSON body and returns success", async () => {
 			mockFetch.mockResolvedValue(makeResponse({ success: true }));
 			const result = await api.patchRadarEntry(7, { hidden: 1 });
 			expect(mockFetch).toHaveBeenCalledWith(
@@ -697,7 +697,7 @@ describe("API module", () => {
 			vibeVsResult: [],
 		};
 
-		it("GETs /api/interview-insights?window=all by default", async () => {
+		it("gETs /api/interview-insights?window=all by default", async () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_INSIGHTS));
 			const result = await api.getInterviewInsights();
 			expect(mockFetch).toHaveBeenCalledWith(
@@ -706,10 +706,10 @@ describe("API module", () => {
 					headers: { "Content-Type": "application/json" },
 				}),
 			);
-			expect(result).toEqual(MOCK_INSIGHTS);
+			expect(result).toStrictEqual(MOCK_INSIGHTS);
 		});
 
-		it("GETs /api/interview-insights?window=30 when window is '30'", async () => {
+		it("gETs /api/interview-insights?window=30 when window is '30'", async () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_INSIGHTS));
 			await api.getInterviewInsights("30");
 			expect(mockFetch).toHaveBeenCalledWith(

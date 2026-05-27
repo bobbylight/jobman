@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 
 import PageSpinner from "./PageSpinner";
 
-describe(PageSpinner, () => {
+describe("pageSpinner", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("renders a circular progress indicator", () => {

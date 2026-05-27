@@ -102,7 +102,7 @@ afterEach(() => {
 	testDb.exec("DELETE FROM jobs");
 });
 
-describe("GET /api/stats", () => {
+describe("gET /api/stats", () => {
 	it("returns 401 when the request is not authenticated", async () => {
 		const res = await request(app).get("/api/stats");
 		expect(res.status).toBe(401);
@@ -224,7 +224,7 @@ describe("GET /api/stats", () => {
 	});
 });
 
-describe("GET /api/stats/link-jobs", () => {
+describe("gET /api/stats/link-jobs", () => {
 	afterEach(() => {
 		testDb.exec("DELETE FROM jobs");
 	});
@@ -257,7 +257,7 @@ describe("GET /api/stats/link-jobs", () => {
 	it("returns 200 with an empty array when no jobs match the link", async () => {
 		const res = await req("/api/stats/link-jobs?from=Direct&to=Applied");
 		expect(res.status).toBe(200);
-		expect(res.body).toEqual([]);
+		expect(res.body).toStrictEqual([]);
 	});
 
 	it("returns 200 with matching jobs and correct fields", async () => {
@@ -288,6 +288,6 @@ describe("GET /api/stats/link-jobs", () => {
 	it("treats an unrecognised window value as 'all'", async () => {
 		const res = await req("/api/stats/link-jobs?from=Direct&to=Applied&window=bogus");
 		expect(res.status).toBe(200);
-		expect(res.body).toEqual([]);
+		expect(res.body).toStrictEqual([]);
 	});
 });

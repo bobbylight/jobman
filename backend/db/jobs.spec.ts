@@ -81,9 +81,9 @@ describe("jobs db", () => {
 		db.prepare("INSERT INTO users (id, email) VALUES (?, ?)").run(OTHER_USER_ID, "other@example.com");
 	});
 
-	describe(listJobs, () => {
+	describe("listJobs", () => {
 		it("returns empty array when user has no jobs", () => {
-			expect(listJobs(db, USER_ID)).toEqual([]);
+			expect(listJobs(db, USER_ID)).toStrictEqual([]);
 		});
 
 		it("returns jobs for the given user", () => {
@@ -105,7 +105,7 @@ describe("jobs db", () => {
 		});
 	});
 
-	describe(findJob, () => {
+	describe("findJob", () => {
 		it("returns undefined for non-existent job", () => {
 			expect(findJob(db, 999, USER_ID)).toBeUndefined();
 		});
@@ -123,7 +123,7 @@ describe("jobs db", () => {
 		});
 	});
 
-	describe(jobExists, () => {
+	describe("jobExists", () => {
 		it("returns false when job does not exist", () => {
 			expect(jobExists(db, "Acme Corp", "https://acme.example.com/jobs/1", USER_ID)).toBeFalsy();
 		});
@@ -139,7 +139,7 @@ describe("jobs db", () => {
 		});
 	});
 
-	describe(createJob, () => {
+	describe("createJob", () => {
 		it("inserts a job and returns it", () => {
 			const job = createJob(db, { ...BASE_JOB, role: "Backend Dev", user_id: USER_ID });
 			expect(job.id).toBeGreaterThan(0);
@@ -174,7 +174,7 @@ describe("jobs db", () => {
 		});
 	});
 
-	describe(updateJob, () => {
+	describe("updateJob", () => {
 		it("updates a job and returns it", () => {
 			const created = createJob(db, { ...BASE_JOB, user_id: USER_ID });
 			const updated = updateJob(db, created.id, USER_ID, {
@@ -218,7 +218,7 @@ describe("jobs db", () => {
 		});
 	});
 
-	describe(deleteJob, () => {
+	describe("deleteJob", () => {
 		it("deletes an existing job and returns true", () => {
 			const created = createJob(db, { ...BASE_JOB, user_id: USER_ID });
 			expect(deleteJob(db, created.id, USER_ID)).toBeTruthy();
@@ -238,37 +238,37 @@ describe("jobs db", () => {
 	describe("tags", () => {
 		it("returns empty tags array when no tags are set", () => {
 			const job = createJob(db, { ...BASE_JOB, user_id: USER_ID });
-			expect(job.tags).toEqual([]);
+			expect(job.tags).toStrictEqual([]);
 		});
 
 		it("stores and returns tags on create", () => {
 			const job = createJob(db, { ...BASE_JOB, tags: ["remote", "faang"], user_id: USER_ID });
-			expect(job.tags).toEqual(expect.arrayContaining(["remote", "faang"]));
+			expect(job.tags).toStrictEqual(expect.arrayContaining(["remote", "faang"]));
 			expect(job.tags).toHaveLength(2);
 		});
 
 		it("includes tags when listing jobs", () => {
 			createJob(db, { ...BASE_JOB, tags: ["startup"], user_id: USER_ID });
 			const jobs = listJobs(db, USER_ID);
-			expect(jobs[0]?.tags).toEqual(["startup"]);
+			expect(jobs[0]?.tags).toStrictEqual(["startup"]);
 		});
 
 		it("includes tags when finding a job", () => {
 			const created = createJob(db, { ...BASE_JOB, tags: ["hybrid"], user_id: USER_ID });
 			const found = findJob(db, created.id, USER_ID);
-			expect(found?.tags).toEqual(["hybrid"]);
+			expect(found?.tags).toStrictEqual(["hybrid"]);
 		});
 
 		it("replaces tags on update", () => {
 			const created = createJob(db, { ...BASE_JOB, tags: ["remote", "faang"], user_id: USER_ID });
 			const updated = updateJob(db, created.id, USER_ID, { ...BASE_JOB, tags: ["startup"] });
-			expect(updated?.tags).toEqual(["startup"]);
+			expect(updated?.tags).toStrictEqual(["startup"]);
 		});
 
 		it("clears tags when updated with empty array", () => {
 			const created = createJob(db, { ...BASE_JOB, tags: ["remote"], user_id: USER_ID });
 			const updated = updateJob(db, created.id, USER_ID, { ...BASE_JOB, tags: [] });
-			expect(updated?.tags).toEqual([]);
+			expect(updated?.tags).toStrictEqual([]);
 		});
 
 		it("deletes tags when job is deleted", () => {

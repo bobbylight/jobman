@@ -48,7 +48,7 @@ const MOCK_USER: User = {
 	id: 1,
 };
 
-describe(App, () => {
+describe("app", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		capturedUnauthorizedHandler = null;

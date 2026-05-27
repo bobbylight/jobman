@@ -62,7 +62,7 @@ const ALL_NO_RESULT = [
 	{ feeling: "meh", failed: 0, noResult: 3, passed: 0 },
 ];
 
-describe(FeelingCalibrationChart, () => {
+describe("feelingCalibrationChart", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("shows empty state when feelingVsResult is empty", () => {

@@ -25,13 +25,14 @@ describe("logoCache", () => {
 	beforeEach(async () => {
 		vi.resetModules();
 		vi.stubGlobal("fetch", vi.fn());
-		URL.createObjectURL = vi.fn().mockReturnValue("blob:mock-url");
+		vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:mock-url");
 		const mod = await import("./logoCache");
 		({ getCachedLogo } = mod);
 		({ fetchLogo } = mod);
 	});
 
 	afterEach(() => {
+		vi.restoreAllMocks();
 		vi.unstubAllGlobals();
 	});
 
@@ -49,7 +50,7 @@ describe("logoCache", () => {
 		it("returns the cached entry after a successful fetch", async () => {
 			mockFetchOk();
 			await fetchLogo("Acme");
-			expect(getCachedLogo("Acme")).toEqual({
+			expect(getCachedLogo("Acme")).toStrictEqual({
 				src: "blob:mock-url",
 				status: "resolved",
 			});
@@ -58,7 +59,7 @@ describe("logoCache", () => {
 		it("returns the cached entry after a failed fetch", async () => {
 			mockFetchNotFound();
 			await fetchLogo("Acme");
-			expect(getCachedLogo("Acme")).toEqual({ status: "not-found" });
+			expect(getCachedLogo("Acme")).toStrictEqual({ status: "not-found" });
 		});
 	});
 
@@ -71,7 +72,7 @@ describe("logoCache", () => {
 			);
 		});
 
-		it("URL-encodes special characters in the company name", async () => {
+		it("uRL-encodes special characters in the company name", async () => {
 			mockFetchOk();
 			await fetchLogo("AT&T");
 			expect(fetch).toHaveBeenCalledWith(expect.stringContaining("AT%26T"));
@@ -81,20 +82,20 @@ describe("logoCache", () => {
 			mockFetchOk();
 			const entry = await fetchLogo("Acme");
 			expect(URL.createObjectURL).toHaveBeenCalledOnce();
-			expect(entry).toEqual({ src: "blob:mock-url", status: "resolved" });
+			expect(entry).toStrictEqual({ src: "blob:mock-url", status: "resolved" });
 		});
 
 		it("returns a not-found entry when the response is not ok", async () => {
 			mockFetchNotFound();
 			const entry = await fetchLogo("Acme");
 			expect(URL.createObjectURL).not.toHaveBeenCalled();
-			expect(entry).toEqual({ status: "not-found" });
+			expect(entry).toStrictEqual({ status: "not-found" });
 		});
 
 		it("returns a not-found entry when fetch throws", async () => {
 			vi.mocked(fetch).mockRejectedValue(new Error("network error"));
 			const entry = await fetchLogo("Acme");
-			expect(entry).toEqual({ status: "not-found" });
+			expect(entry).toStrictEqual({ status: "not-found" });
 		});
 
 		it("only fetches once for the same company on repeated calls", async () => {

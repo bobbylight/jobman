@@ -26,7 +26,7 @@ const WEEKLY_DATA = [
 	{ count: 2, week: "2025-W12" },
 ];
 
-describe(ApplicationsOverTime, () => {
+describe("applicationsOverTime", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});

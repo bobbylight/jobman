@@ -14,7 +14,7 @@ const TRANSITIONS = [
 	{ count: 2, from: "Interviewing", to: "Rejected/Withdrawn" },
 ];
 
-describe(PipelineFunnelChart, () => {
+describe("pipelineFunnelChart", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		// Jsdom does not implement ResizeObserver

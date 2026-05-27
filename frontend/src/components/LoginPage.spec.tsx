@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import LoginPage from "./LoginPage";
 
-describe(LoginPage, () => {
+describe("loginPage", () => {
 	it("renders the app name", () => {
 		render(<LoginPage />);
 		expect(screen.getByText("JobMan")).toBeInTheDocument();

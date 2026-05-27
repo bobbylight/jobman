@@ -27,7 +27,7 @@ const STAGE_DATA = [
 	{ avgDays: 14, stage: "Interviewing" },
 ];
 
-describe(AvgDaysChart, () => {
+describe("avgDaysChart", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});

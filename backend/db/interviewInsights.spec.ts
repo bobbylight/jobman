@@ -100,7 +100,7 @@ function insertQuestion(
 	);
 }
 
-describe(getInterviewInsights, () => {
+describe("getInterviewInsights", () => {
 	let db: Database.Database;
 	const USER_ID = 1;
 	const OTHER_USER_ID = 2;
@@ -213,7 +213,7 @@ describe(getInterviewInsights, () => {
 		it("returns an empty array when no interviews have a type", () => {
 			const jobId = insertJob(db, USER_ID);
 			insertInterview(db, jobId, { type: null });
-			expect(getInterviewInsights(db, USER_ID, "all").byType).toEqual([]);
+			expect(getInterviewInsights(db, USER_ID, "all").byType).toStrictEqual([]);
 		});
 
 		it("groups interviews by type and records pass/fail counts", () => {
@@ -237,7 +237,7 @@ describe(getInterviewInsights, () => {
 			insertInterview(db, jobId);
 			expect(
 				getInterviewInsights(db, USER_ID, "all").feelingVsResult,
-			).toEqual([]);
+			).toStrictEqual([]);
 		});
 
 		it("returns rows in canonical feeling order", () => {
@@ -251,7 +251,7 @@ describe(getInterviewInsights, () => {
 				USER_ID,
 				"all",
 			).feelingVsResult.map((r) => r.feeling);
-			expect(feelings).toEqual(["aced", "meh", "flunked"]);
+			expect(feelings).toStrictEqual(["aced", "meh", "flunked"]);
 		});
 
 		it("counts noResult separately from passed and failed", () => {
@@ -270,7 +270,7 @@ describe(getInterviewInsights, () => {
 			insertInterview(db, jobId);
 			expect(
 				getInterviewInsights(db, USER_ID, "all").difficultyDistribution,
-			).toEqual([]);
+			).toStrictEqual([]);
 		});
 
 		it("groups questions by difficulty with interview pass/fail counts", () => {

@@ -218,7 +218,7 @@ function RadarRow({
 						flexShrink: 0,
 					}}
 				>
-					<Typography variant="body2" fontWeight={600} noWrap>
+					<Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
 						{entry.name}
 					</Typography>
 					<Chip
@@ -285,7 +285,11 @@ function RadarRow({
 					}}
 				>
 					{/* Policy details */}
-					<Typography variant="caption" fontWeight={600} color="text.secondary">
+					<Typography
+						variant="caption"
+						color="text.secondary"
+						sx={{ fontWeight: 600 }}
+					>
 						Cooldown Policy
 					</Typography>
 					{hasCooldownData ? (
@@ -303,11 +307,11 @@ function RadarRow({
 									<Typography
 										variant="caption"
 										color="text.disabled"
-										display="block"
+										sx={{ display: "block" }}
 									>
 										After application
 									</Typography>
-									<Typography variant="body2" fontWeight={500}>
+									<Typography variant="body2" sx={{ fontWeight: 500 }}>
 										{formatDays(policy.application_cooldown_days)}
 									</Typography>
 								</Box>
@@ -317,11 +321,11 @@ function RadarRow({
 									<Typography
 										variant="caption"
 										color="text.disabled"
-										display="block"
+										sx={{ display: "block" }}
 									>
 										After phone screen rejection
 									</Typography>
-									<Typography variant="body2" fontWeight={500}>
+									<Typography variant="body2" sx={{ fontWeight: 500 }}>
 										{formatDays(policy.phone_screen_cooldown_days)}
 									</Typography>
 								</Box>
@@ -331,11 +335,11 @@ function RadarRow({
 									<Typography
 										variant="caption"
 										color="text.disabled"
-										display="block"
+										sx={{ display: "block" }}
 									>
 										After onsite rejection
 									</Typography>
-									<Typography variant="body2" fontWeight={500}>
+									<Typography variant="body2" sx={{ fontWeight: 500 }}>
 										{formatDays(policy.onsite_cooldown_days)}
 									</Typography>
 								</Box>
@@ -346,11 +350,11 @@ function RadarRow({
 										<Typography
 											variant="caption"
 											color="text.disabled"
-											display="block"
+											sx={{ display: "block" }}
 										>
 											Application limit
 										</Typography>
-										<Typography variant="body2" fontWeight={500}>
+										<Typography variant="body2" sx={{ fontWeight: 500 }}>
 											{policy.max_apps_per_period} per{" "}
 											{formatDays(policy.apps_period_days)}
 										</Typography>
@@ -413,8 +417,8 @@ function RadarRow({
 						<Box sx={{ mt: 1.5 }}>
 							<Typography
 								variant="caption"
-								fontWeight={600}
 								color="text.secondary"
+								sx={{ fontWeight: 600 }}
 							>
 								Application History
 							</Typography>
@@ -607,7 +611,7 @@ export default function RadarPage() {
 					mb: 1,
 				}}
 			>
-				<Typography variant="h5" fontWeight={700}>
+				<Typography variant="h5" sx={{ fontWeight: 700 }}>
 					FAANG Radar
 				</Typography>
 				<FormControlLabel
@@ -755,8 +759,12 @@ export default function RadarPage() {
 									<Typography
 										variant="caption"
 										color="text.disabled"
-										fontWeight={600}
-										sx={{ display: "block", mb: 1, textTransform: "uppercase" }}
+										sx={{
+											display: "block",
+											fontWeight: 600,
+											mb: 1,
+											textTransform: "uppercase",
+										}}
 									>
 										Hidden ({hiddenEntries.length})
 									</Typography>

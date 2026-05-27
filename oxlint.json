@@ -10,6 +10,7 @@
   },
   "rules": {
     "react/react-in-jsx-scope": "off",
+    "react/no-unstable-nested-components": ["error", { "allowAsProps": true }],
     "no-console": "warn",
     "vitest/require-mock-type-parameters": "off",
     "import/no-unassigned-import": ["error", { "allow": ["@testing-library/jest-dom"] }],
@@ -27,19 +28,30 @@
     "max-params": "off",
     "react/jsx-max-depth": "off",
     "react/jsx-props-no-spreading": "off",
-    "import/no-named-export": "off",
-    "import/group-exports": "off",
+    "import/consistent-type-specifier-style": "off",
+    "typescript/consistent-type-imports": "off",
     "import/exports-last": "off",
-    "import/prefer-default-export": "off",
+    "import/group-exports": "off",
+    "import/no-named-export": "off",
     "import/no-namespace": "off",
     "import/no-nodejs-modules": "off",
-    "unicorn/no-null": "off",
+    "import/prefer-default-export": "off",
+    "unicorn/consistent-function-scoping": "off", // TODO: Remove me
     "unicorn/filename-case": "off",
-    "vitest/prefer-importing-vitest-globals": "off",
+    "unicorn/no-null": "off",
     "vitest/consistent-test-filename": "off",
-    "import/consistent-type-specifier-style": "off",
-    "vitest/prefer-strict-boolean-matchers": "off",
+    // Fires as false positives on production files (db.ts, main.tsx) and is the same
+    // module-level setup pattern across all route spec files — too much churn to fix now
+    "vitest/require-hook": "off",
+    // Top-level afterEach in all route spec files follows the same pattern; revisit with require-hook
+    "vitest/require-top-level-describe": "off",
+    "vitest/max-expects": [ "error", { "max": 8 } ], // TODO: Remove me
+    "vitest/no-hooks": "off",
     "vitest/prefer-called-times": "off",
+    "vitest/prefer-expect-assertions": "off", // TODO: Remove me
+    "vitest/prefer-importing-vitest-globals": "off",
+    "vitest/prefer-describe-function-title": "off",
+    "vitest/prefer-strict-boolean-matchers": "off",
     "new-cap": "off"
   },
   "categories": {

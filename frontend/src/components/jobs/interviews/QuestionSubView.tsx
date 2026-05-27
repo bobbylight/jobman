@@ -222,7 +222,7 @@ export default function QuestionSubView({ jobId, interview }: Props) {
 				<TypeIcon
 					sx={{ color: "text.secondary", flexShrink: 0, fontSize: 16 }}
 				/>
-				<Typography variant="body2" fontWeight={600}>
+				<Typography variant="body2" sx={{ fontWeight: 600 }}>
 					{typeLabel}
 				</Typography>
 				<Typography variant="body2" color="text.secondary">

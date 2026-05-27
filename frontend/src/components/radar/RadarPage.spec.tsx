@@ -68,7 +68,7 @@ function renderPage() {
 	);
 }
 
-describe(RadarPage, () => {
+describe("radarPage", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockPatch.mockResolvedValue({ success: true });
@@ -210,7 +210,7 @@ describe(RadarPage, () => {
 			}),
 		]);
 
-		it("All tab (default) renders every entry", async () => {
+		it("all tab (default) renders every entry", async () => {
 			mockGetRadar.mockResolvedValue(MULTI_ENTRY_RESPONSE);
 			renderPage();
 			await waitFor(() =>
@@ -222,7 +222,7 @@ describe(RadarPage, () => {
 			expect(screen.getByText("Netflix")).toBeInTheDocument();
 		});
 
-		it("Eligible Now tab shows only clear and no_history entries", async () => {
+		it("eligible Now tab shows only clear and no_history entries", async () => {
 			mockGetRadar.mockResolvedValue(MULTI_ENTRY_RESPONSE);
 			renderPage();
 			await waitFor(() => screen.getByText("Google"));
@@ -236,7 +236,7 @@ describe(RadarPage, () => {
 			expect(screen.queryByText("Netflix")).not.toBeInTheDocument();
 		});
 
-		it("Active tab shows only active and limit_reached entries", async () => {
+		it("active tab shows only active and limit_reached entries", async () => {
 			mockGetRadar.mockResolvedValue(MULTI_ENTRY_RESPONSE);
 			renderPage();
 			await waitFor(() => screen.getByText("Google"));
@@ -250,7 +250,7 @@ describe(RadarPage, () => {
 			expect(screen.queryByText("Amazon")).not.toBeInTheDocument();
 		});
 
-		it("On Cooldown tab shows only cooling_down entries", async () => {
+		it("on Cooldown tab shows only cooling_down entries", async () => {
 			mockGetRadar.mockResolvedValue(MULTI_ENTRY_RESPONSE);
 			renderPage();
 			await waitFor(() => screen.getByText("Google"));

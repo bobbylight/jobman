@@ -105,7 +105,7 @@ afterEach(() => {
 	testDb.exec("DELETE FROM jobs; DELETE FROM target_companies;");
 });
 
-describe("GET /api/radar", () => {
+describe("gET /api/radar", () => {
 	it("returns 401 when not authenticated", async () => {
 		const res = await request(app).get("/api/radar");
 		expect(res.status).toBe(401);
@@ -140,7 +140,7 @@ describe("GET /api/radar", () => {
 	});
 });
 
-describe("PATCH /api/radar/:id", () => {
+describe("pATCH /api/radar/:id", () => {
 	it("returns 401 when not authenticated", async () => {
 		const id = insertCompany();
 		const res = await request(app).patch(`/api/radar/${id}`).send({ hidden: 1 });

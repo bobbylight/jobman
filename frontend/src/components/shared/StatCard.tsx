@@ -48,7 +48,7 @@ export default function StatCard({ label, value, suffix, subtitle }: Props) {
 					{label}
 				</Typography>
 				<Box sx={{ alignItems: "baseline", display: "flex", gap: 1 }}>
-					<Typography variant="h4" fontWeight={700} lineHeight={1}>
+					<Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1 }}>
 						{value === null ? "—" : `${displayed}${suffix ?? ""}`}
 					</Typography>
 				</Box>

@@ -11,7 +11,7 @@ function getDots(): Element[] {
 	return [...dotsContainer.children];
 }
 
-describe(DifficultySelector, () => {
+describe("difficultySelector", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});

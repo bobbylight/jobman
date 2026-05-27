@@ -250,7 +250,7 @@ export default function InterviewsPage() {
 						mb: 3,
 					}}
 				>
-					<Typography variant="h5" fontWeight={700} sx={{ flex: 1 }}>
+					<Typography variant="h5" sx={{ flex: 1, fontWeight: 700 }}>
 						Upcoming Interviews
 					</Typography>
 					<Box sx={{ alignItems: "center", display: "flex", gap: 1.5 }}>
@@ -422,7 +422,7 @@ function InterviewRow({
 						gap: 1,
 					}}
 				>
-					<Typography variant="body2" fontWeight={600}>
+					<Typography variant="body2" sx={{ fontWeight: 600 }}>
 						{typeLabel}
 					</Typography>
 					<Typography variant="body2" color="text.secondary">

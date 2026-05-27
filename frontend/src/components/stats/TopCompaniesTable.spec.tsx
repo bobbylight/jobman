@@ -23,7 +23,7 @@ const TOP_COMPANIES = [
 	},
 ];
 
-describe(TopCompaniesTable, () => {
+describe("topCompaniesTable", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("shows empty state when topCompanies is empty", () => {

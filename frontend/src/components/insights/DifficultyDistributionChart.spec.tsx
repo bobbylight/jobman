@@ -41,7 +41,7 @@ const DIFFICULTY_DISTRIBUTION = [
 	{ count: 3, difficulty: 5, failed: 2, passed: 1 },
 ];
 
-describe(DifficultyDistributionChart, () => {
+describe("difficultyDistributionChart", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("shows empty state when difficultyDistribution is empty", () => {

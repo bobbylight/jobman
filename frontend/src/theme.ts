@@ -13,11 +13,18 @@ const theme = createTheme({
 		},
 		MuiButton: {
 			styleOverrides: {
-				containedPrimary: {
-					"&:hover": { boxShadow: "none" },
-					borderRadius: 20,
-					boxShadow: "none",
-					fontWeight: 600,
+				root: {
+					variants: [
+						{
+							props: { variant: "contained", color: "primary" },
+							style: {
+								"&:hover": { boxShadow: "none" },
+								borderRadius: 20,
+								boxShadow: "none",
+								fontWeight: 600,
+							},
+						},
+					],
 				},
 			},
 		},

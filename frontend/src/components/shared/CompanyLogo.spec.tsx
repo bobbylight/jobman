@@ -7,7 +7,7 @@ vi.mock(import("../../useCompanyLogo"), () => ({
 	useCompanyLogo: vi.fn(() => null),
 }));
 
-describe(CompanyLogo, () => {
+describe("companyLogo", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});

@@ -58,7 +58,7 @@ export default function TopCompaniesTable({ topCompanies }: Props) {
 						<TableCell>
 							<Box sx={{ alignItems: "center", display: "flex", gap: 1 }}>
 								<CompanyLogo company={row.company} />
-								<Typography variant="body2" fontWeight={500}>
+								<Typography variant="body2" sx={{ fontWeight: 500 }}>
 									{row.company}
 								</Typography>
 							</Box>

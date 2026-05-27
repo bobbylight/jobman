@@ -19,85 +19,82 @@ interface Props {
 	onToggleFavorite: (job: Job) => void;
 }
 
-export default memo(function KanbanBoard({
-	jobs,
-	onStatusChange,
-	onCardClick,
-	onToggleFavorite,
-}: Props) {
-	const [activeJob, setActiveJob] = useState<Job | null>(null);
+export default memo(
+	({ jobs, onStatusChange, onCardClick, onToggleFavorite }: Props) => {
+		const [activeJob, setActiveJob] = useState<Job | null>(null);
 
-	const byStatus = useMemo(
-		() =>
-			STATUSES.reduce<Record<JobStatus, Job[]>>(
-				(acc, s) => {
-					acc[s] = jobs.filter((j) => j.status === s);
-					return acc;
-				},
-				{} as Record<JobStatus, Job[]>,
-			),
-		[jobs],
-	);
-
-	function handleDragStart({ active }: DragStartEvent) {
-		setActiveJob(
-			(active.data.current as { job: Job } | undefined)?.job ?? null,
+		const byStatus = useMemo(
+			() =>
+				STATUSES.reduce<Record<JobStatus, Job[]>>(
+					(acc, s) => {
+						acc[s] = jobs.filter((j) => j.status === s);
+						return acc;
+					},
+					{} as Record<JobStatus, Job[]>,
+				),
+			[jobs],
 		);
-	}
 
-	function handleDragEnd({ active, over }: DragEndEvent) {
-		setActiveJob(null);
-		if (!over) {
-			return;
+		function handleDragStart({ active }: DragStartEvent) {
+			setActiveJob(
+				(active.data.current as { job: Job } | undefined)?.job ?? null,
+			);
 		}
-		const job = (active.data.current as { job: Job } | undefined)?.job;
-		if (!job) {
-			return;
-		}
-		const newStatus = over.id as JobStatus;
-		if (newStatus === job.status) {
-			return;
-		}
-		onStatusChange(job, newStatus);
-	}
 
-	return (
-		<DndContext
-			collisionDetection={pointerWithin}
-			onDragStart={handleDragStart}
-			onDragEnd={handleDragEnd}
-		>
-			<Box
-				sx={{
-					alignItems: "stretch",
-					display: "flex",
-					gap: 0,
-					minHeight: "calc(100vh - 80px)",
-					overflowX: "auto",
-					pb: 2,
-					px: 3,
-				}}
+		function handleDragEnd({ active, over }: DragEndEvent) {
+			setActiveJob(null);
+			if (!over) {
+				return;
+			}
+			const job = (active.data.current as { job: Job } | undefined)?.job;
+			if (!job) {
+				return;
+			}
+			const newStatus = over.id as JobStatus;
+			if (newStatus === job.status) {
+				return;
+			}
+			onStatusChange(job, newStatus);
+		}
+
+		return (
+			<DndContext
+				collisionDetection={pointerWithin}
+				onDragStart={handleDragStart}
+				onDragEnd={handleDragEnd}
 			>
-				{STATUSES.map((status) => (
-					<KanbanColumn
-						key={status}
-						status={status}
-						jobs={byStatus[status]}
-						onCardClick={onCardClick}
-						onToggleFavorite={onToggleFavorite}
-					/>
-				))}
-			</Box>
+				<Box
+					sx={{
+						alignItems: "stretch",
+						display: "flex",
+						gap: 0,
+						minHeight: "calc(100vh - 80px)",
+						overflowX: "auto",
+						pb: 2,
+						px: 3,
+					}}
+				>
+					{STATUSES.map((status) => (
+						<KanbanColumn
+							key={status}
+							status={status}
+							jobs={byStatus[status]}
+							onCardClick={onCardClick}
+							onToggleFavorite={onToggleFavorite}
+						/>
+					))}
+				</Box>
 
-			<DragOverlay dropAnimation={null}>
-				{activeJob ? (
-					<JobCard
-						job={activeJob}
-						onCardClick={() => {}}
-						onToggleFavorite={() => {}}
-					/>
-				) : null}
-			</DragOverlay>
-		</DndContext>
-	);
-});
+				<DragOverlay dropAnimation={null}>
+					{activeJob ? (
+						<JobCard
+							job={activeJob}
+							onCardClick={() => {}}
+							onToggleFavorite={() => {}}
+						/>
+					) : null}
+				</DragOverlay>
+			</DndContext>
+		);
+	},
+);
