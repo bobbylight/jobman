@@ -1,9 +1,9 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import CompanyLogo from "./CompanyLogo";
-import { useCompanyLogo } from "../useCompanyLogo";
+import { useCompanyLogo } from "../../useCompanyLogo";
 
-vi.mock(import("../useCompanyLogo"), () => ({
+vi.mock(import("../../useCompanyLogo"), () => ({
 	useCompanyLogo: vi.fn(() => null),
 }));
 

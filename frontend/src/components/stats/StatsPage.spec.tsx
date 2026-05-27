@@ -1,11 +1,11 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import StatsPage from "./StatsPage";
-import { api } from "../api";
-import type { StatsResponse } from "../types";
+import { api } from "../../api";
+import type { StatsResponse } from "../../types";
 
 vi.mock(
-	import("../api"),
+	import("../../api"),
 	() =>
 		({
 			api: { getStats: vi.fn() },
@@ -14,21 +14,21 @@ vi.mock(
 
 // Keep chart components out of these tests — recharts isn't layout-capable in jsdom.
 vi.mock(
-	import("./stats/StatusDonutChart"),
+	import("./StatusDonutChart"),
 	() =>
 		({
 			default: () => <div data-testid="status-donut-chart" />,
 		}) as any,
 );
 vi.mock(
-	import("./stats/PipelineFunnelChart"),
+	import("./PipelineFunnelChart"),
 	() =>
 		({
 			default: () => <div data-testid="pipeline-funnel-chart" />,
 		}) as any,
 );
 vi.mock(
-	import("./stats/ApplicationsOverTime"),
+	import("./ApplicationsOverTime"),
 	() =>
 		({
 			default: () => <div data-testid="applications-over-time" />,

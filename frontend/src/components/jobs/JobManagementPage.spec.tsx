@@ -7,16 +7,16 @@ import {
 	within,
 } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import AppShell from "./AppShell";
+import AppShell from "../shared/AppShell";
 import JobManagementPage from "./JobManagementPage";
-import StatsPage from "./StatsPage";
+import StatsPage from "../stats/StatsPage";
 import KanbanBoard from "./KanbanBoard";
-import { api } from "../api";
-import type { Job, User } from "../types";
-import { makeJob } from "../testUtils";
+import { api } from "../../api";
+import type { Job, User } from "../../types";
+import { makeJob } from "../../testUtils";
 
 vi.mock(
-	import("../api"),
+	import("../../api"),
 	() =>
 		({
 			api: {
@@ -34,7 +34,7 @@ vi.mock(
 
 vi.mock(import("./KanbanBoard"), () => ({ default: vi.fn() }) as any);
 vi.mock(
-	import("./CompanyLogo"),
+	import("../shared/CompanyLogo"),
 	() =>
 		({
 			default: ({ company }: { company: string }) => (
@@ -47,7 +47,7 @@ vi.mock(
 		}) as any,
 );
 vi.mock(
-	import("./StatsPage"),
+	import("../stats/StatsPage"),
 	() =>
 		({
 			default: vi.fn(() => <div data-testid="stats-page" />),

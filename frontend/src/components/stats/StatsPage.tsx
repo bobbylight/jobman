@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { Box, Typography } from "@mui/material";
-import { api } from "../api";
-import ChartCard from "./ChartCard";
-import PageSpinner from "./PageSpinner";
-import type { StatsResponse, StatsWindow } from "../types";
-import StatCard from "./stats/StatCard";
-import StatusDonutChart from "./stats/StatusDonutChart";
-import PipelineFunnelChart from "./stats/PipelineFunnelChart";
-import TransitionJobsDialog from "./stats/TransitionJobsDialog";
-import ApplicationsOverTime from "./stats/ApplicationsOverTime";
-import LookbackToggle from "./stats/LookbackToggle";
-import AvgDaysChart from "./stats/AvgDaysChart";
-import PipelineOverTimeChart from "./stats/PipelineOverTimeChart";
-import TopCompaniesTable from "./stats/TopCompaniesTable";
-import InterviewsPerWeekChart from "./stats/InterviewsPerWeekChart";
+import { api } from "../../api";
+import ChartCard from "../shared/ChartCard";
+import PageSpinner from "../shared/PageSpinner";
+import type { StatsResponse, StatsWindow } from "../../types";
+import StatCard from "../shared/StatCard";
+import StatusDonutChart from "./StatusDonutChart";
+import PipelineFunnelChart from "./PipelineFunnelChart";
+import TransitionJobsDialog from "./TransitionJobsDialog";
+import ApplicationsOverTime from "./ApplicationsOverTime";
+import LookbackToggle from "../shared/LookbackToggle";
+import AvgDaysChart from "./AvgDaysChart";
+import PipelineOverTimeChart from "./PipelineOverTimeChart";
+import TopCompaniesTable from "./TopCompaniesTable";
+import InterviewsPerWeekChart from "./InterviewsPerWeekChart";
 
 export default function StatsPage() {
 	const [window, setWindow] = useState<StatsWindow>("all");

@@ -13,15 +13,15 @@ import BusinessIcon from "@mui/icons-material/Business";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PhoneIcon from "@mui/icons-material/Phone";
 import { useNavigate } from "react-router-dom";
-import { api } from "../api";
-import { INTERVIEW_STAGE_LABELS, INTERVIEW_TYPE_LABELS } from "../constants";
-import { useSnackbar } from "../useSnackbar";
-import { formatTime } from "../jobUtils";
-import MarkdownSnippet from "./MarkdownSnippet";
-import CompanyLogo from "./CompanyLogo";
-import DayTimeline from "./DayTimeline";
-import PageSpinner from "./PageSpinner";
-import type { EnrichedInterview, InterviewVibe } from "../types";
+import { api } from "../../api";
+import { INTERVIEW_STAGE_LABELS, INTERVIEW_TYPE_LABELS } from "../../constants";
+import { useSnackbar } from "../../useSnackbar";
+import { formatTime } from "../../jobUtils";
+import MarkdownSnippet from "../shared/MarkdownSnippet";
+import CompanyLogo from "../shared/CompanyLogo";
+import DayTimeline from "../shared/DayTimeline";
+import PageSpinner from "../shared/PageSpinner";
+import type { EnrichedInterview, InterviewVibe } from "../../types";
 
 const PAGE_SIZE = 10;
 

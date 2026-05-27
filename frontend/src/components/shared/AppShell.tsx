@@ -21,7 +21,7 @@ import RadarIcon from "@mui/icons-material/Radar";
 import ViewKanbanOutlinedIcon from "@mui/icons-material/ViewKanbanOutlined";
 import Tooltip from "@mui/material/Tooltip";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import type { User } from "../types";
+import type { User } from "../../types";
 import Footer from "./Footer";
 
 const NAV_ITEMS = [

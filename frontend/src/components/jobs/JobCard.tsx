@@ -11,15 +11,15 @@ import {
 	Tooltip,
 	Typography,
 } from "@mui/material";
-import CompanyLogo from "./CompanyLogo";
+import CompanyLogo from "../shared/CompanyLogo";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PeopleIcon from "@mui/icons-material/People";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
-import type { FitScore, Job, JobStatus } from "../types";
-import { STATUS_COLORS, TAG_LABELS, tagChipProps } from "../constants";
-import { isPossiblyGhosted } from "../jobUtils";
+import type { FitScore, Job, JobStatus } from "../../types";
+import { STATUS_COLORS, TAG_LABELS, tagChipProps } from "../../constants";
+import { isPossiblyGhosted } from "../../jobUtils";
 
 function formatDate(dateStr: string | null): string | null {
 	if (!dateStr) {

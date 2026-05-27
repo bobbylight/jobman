@@ -12,10 +12,13 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import PhoneIcon from "@mui/icons-material/Phone";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
-import { INTERVIEW_STAGE_LABELS, INTERVIEW_TYPE_LABELS } from "../../constants";
-import type { Interview, InterviewResult } from "../../types";
-import MarkdownSnippet from "../MarkdownSnippet";
-import { formatTime } from "../../jobUtils";
+import {
+	INTERVIEW_STAGE_LABELS,
+	INTERVIEW_TYPE_LABELS,
+} from "../../../constants";
+import type { Interview, InterviewResult } from "../../../types";
+import MarkdownSnippet from "../../shared/MarkdownSnippet";
+import { formatTime } from "../../../jobUtils";
 import { FEELING_OPTIONS, VIBE_OPTIONS } from "./interviewDisplayOptions";
 
 const RESULT_CHIP_SX: Record<InterviewResult, object> = {

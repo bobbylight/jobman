@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Box, Button, CircularProgress, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import { api } from "../api";
-import { INTERVIEW_MAX_LENGTHS } from "../constants";
-import type { Interview, InterviewFormData, JobStatus } from "../types";
+import { api } from "../../../api";
+import { INTERVIEW_MAX_LENGTHS } from "../../../constants";
+import type { Interview, InterviewFormData, JobStatus } from "../../../types";
 import QuestionSubView from "./QuestionSubView";
-import DayTimeline from "./DayTimeline";
-import InterviewCard from "./interviews/InterviewCard";
-import InterviewForm, { makeEmptyForm } from "./interviews/InterviewForm";
+import DayTimeline from "../../shared/DayTimeline";
+import InterviewCard from "./InterviewCard";
+import InterviewForm, { makeEmptyForm } from "./InterviewForm";
 
 type Mode = "list" | "add" | { editId: number } | { confirmDeleteId: number };
 

@@ -16,10 +16,10 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { useNavigate } from "react-router-dom";
-import { api } from "../api";
-import type { RadarEntry, RadarPatch, RadarResponse } from "../types";
-import CompanyLogo from "./CompanyLogo";
-import PageSpinner from "./PageSpinner";
+import { api } from "../../api";
+import type { RadarEntry, RadarPatch, RadarResponse } from "../../types";
+import CompanyLogo from "../shared/CompanyLogo";
+import PageSpinner from "../shared/PageSpinner";
 
 type TabValue = "all" | "eligible" | "active" | "cooling_down";
 

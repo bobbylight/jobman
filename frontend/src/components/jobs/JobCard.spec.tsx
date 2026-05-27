@@ -2,9 +2,9 @@ import React from "react";
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import JobCard from "./JobCard";
-import { BASE_JOB } from "../testUtils";
+import { BASE_JOB } from "../../testUtils";
 vi.mock(
-	import("../useCompanyLogo"),
+	import("../../useCompanyLogo"),
 	() =>
 		({
 			useCompanyLogo: vi.fn(() => null),

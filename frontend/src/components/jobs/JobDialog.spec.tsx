@@ -7,13 +7,13 @@ import {
 	within,
 } from "@testing-library/react";
 import JobDialog from "./JobDialog";
-import type { EndingSubstatus, Interview, Job, JobStatus } from "../types";
-import { makeJob } from "../testUtils";
-import { api } from "../api";
+import type { EndingSubstatus, Interview, Job, JobStatus } from "../../types";
+import { makeJob } from "../../testUtils";
+import { api } from "../../api";
 
-vi.mock(import("../api"));
+vi.mock(import("../../api"));
 
-vi.mock(import("./CompanyLogo"), () => ({
+vi.mock(import("../shared/CompanyLogo"), () => ({
 	default: ({ company }: { company: string }) => (
 		<span
 			data-testid="company-logo"

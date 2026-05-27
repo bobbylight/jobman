@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import { STATUS_COLORS } from "../../constants";
 import type { JobStatus } from "../../types";
-import CompanyLogo from "../CompanyLogo";
+import CompanyLogo from "../shared/CompanyLogo";
 
 interface TopCompany {
 	company: string;

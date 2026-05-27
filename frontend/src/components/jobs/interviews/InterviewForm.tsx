@@ -13,7 +13,7 @@ import {
 	INTERVIEW_MAX_LENGTHS,
 	INTERVIEW_STAGE_LABELS,
 	INTERVIEW_TYPE_LABELS,
-} from "../../constants";
+} from "../../../constants";
 import type {
 	InterviewFeeling,
 	InterviewFormData,
@@ -22,8 +22,8 @@ import type {
 	InterviewType,
 	InterviewVibe,
 	JobStatus,
-} from "../../types";
-import MarkdownField from "../MarkdownField";
+} from "../../../types";
+import MarkdownField from "../../shared/MarkdownField";
 import { FEELING_OPTIONS, VIBE_OPTIONS } from "./interviewDisplayOptions";
 
 export function makeEmptyForm(jobStatus: JobStatus): InterviewFormData {

@@ -1,9 +1,9 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import KanbanBoard from "./KanbanBoard";
-import type { Job } from "../types";
-import { STATUSES } from "../constants";
-import { makeJob } from "../testUtils";
+import type { Job } from "../../types";
+import { STATUSES } from "../../constants";
+import { makeJob } from "../../testUtils";
 
 vi.mock(
 	import("@dnd-kit/core"),

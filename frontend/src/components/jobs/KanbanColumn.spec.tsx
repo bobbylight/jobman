@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import KanbanColumn from "./KanbanColumn";
-import { makeJob } from "../testUtils";
+import { makeJob } from "../../testUtils";
 
 vi.mock(
 	import("@dnd-kit/core"),

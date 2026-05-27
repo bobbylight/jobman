@@ -22,7 +22,7 @@ vi.mock(
 );
 
 vi.mock(
-	import("./components/AppShell"),
+	import("./components/shared/AppShell"),
 	() =>
 		({
 			default: ({

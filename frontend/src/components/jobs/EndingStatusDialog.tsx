@@ -9,8 +9,8 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
-import { OFFER_SUBSTATUSES, REJECTED_SUBSTATUSES } from "../constants";
-import type { EndingSubstatus, Job, JobStatus } from "../types";
+import { OFFER_SUBSTATUSES, REJECTED_SUBSTATUSES } from "../../constants";
+import type { EndingSubstatus, Job, JobStatus } from "../../types";
 
 interface Props {
 	open: boolean;

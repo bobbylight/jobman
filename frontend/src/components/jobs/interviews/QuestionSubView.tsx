@@ -17,16 +17,16 @@ import BusinessIcon from "@mui/icons-material/Business";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import PhoneIcon from "@mui/icons-material/Phone";
-import { api } from "../api";
-import { QUESTION_MAX_LENGTHS } from "../constants";
+import { api } from "../../../api";
+import { QUESTION_MAX_LENGTHS } from "../../../constants";
 import type {
 	Interview,
 	InterviewQuestion,
 	InterviewQuestionFormData,
 	QuestionType,
-} from "../types";
-import MarkdownField from "./MarkdownField";
-import DifficultySelector from "./DifficultySelector";
+} from "../../../types";
+import MarkdownField from "../../shared/MarkdownField";
+import DifficultySelector from "../../shared/DifficultySelector";
 
 const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
 	behavioral: "Behavioral",
