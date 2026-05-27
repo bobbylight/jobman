@@ -75,7 +75,7 @@ async function renderEditMode(job: Job = BASE_JOB) {
 	return utils;
 }
 
-describe(JobDialog, () => {
+describe("jobDialog", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.mocked(api.getJob).mockResolvedValue(BASE_JOB);
@@ -517,7 +517,7 @@ describe(JobDialog, () => {
 		});
 	});
 
-	describe("Final Resolution field (ending_substatus)", () => {
+	describe("final Resolution field (ending_substatus)", () => {
 		describe("disabled state", () => {
 			it("is disabled for a new job (non-terminal default status)", () => {
 				render(<JobDialog {...DEFAULT_PROPS} jobId={null} />);
@@ -864,7 +864,7 @@ describe(JobDialog, () => {
 		});
 	});
 
-	describe("Offer Date field", () => {
+	describe("offer Date field", () => {
 		it("does not show Offer Date in add mode", () => {
 			render(<JobDialog {...DEFAULT_PROPS} jobId={null} />);
 			expect(screen.queryByLabelText(/Offer Date/i)).not.toBeInTheDocument();
@@ -1135,7 +1135,7 @@ describe(JobDialog, () => {
 			render(<JobDialog {...DEFAULT_PROPS} jobId={null} />);
 			fillRequiredFields();
 			clickSave();
-			expect(DEFAULT_PROPS.onSave).toHaveBeenCalled();
+			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(expect.any(Object));
 		});
 	});
 });

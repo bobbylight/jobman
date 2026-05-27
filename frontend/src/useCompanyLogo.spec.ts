@@ -7,7 +7,7 @@ vi.mock(import("./logoCache"), () => ({
 	getCachedLogo: vi.fn(),
 }));
 
-describe(useCompanyLogo, () => {
+describe("useCompanyLogo", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -59,7 +59,9 @@ describe(useCompanyLogo, () => {
 
 		const { result } = renderHook(() => useCompanyLogo("Acme"));
 
-		await waitFor(() => expect(logoCache.fetchLogo).toHaveBeenCalled());
+		await waitFor(() =>
+			expect(logoCache.fetchLogo).toHaveBeenCalledWith("Acme"),
+		);
 		expect(result.current).toBeNull();
 	});
 

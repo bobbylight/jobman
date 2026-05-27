@@ -48,7 +48,7 @@ export default function StatsPage() {
 					mb: 3,
 				}}
 			>
-				<Typography variant="h5" fontWeight={700}>
+				<Typography variant="h5" sx={{ fontWeight: 700 }}>
 					Job Search Stats
 				</Typography>
 				<LookbackToggle value={window} onChange={setWindow} />

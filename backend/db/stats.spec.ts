@@ -108,7 +108,7 @@ function lastJobId(conn: Database.Database): number {
 	return (conn.prepare("SELECT last_insert_rowid() as id").get() as { id: number }).id;
 }
 
-describe(getStats, () => {
+describe("getStats", () => {
 	let db: Database.Database;
 	const USER_ID = 1;
 	const OTHER_USER_ID = 2;
@@ -255,7 +255,7 @@ describe(getStats, () => {
 
 	describe("byStatus", () => {
 		it("returns an empty array when there are no jobs", () => {
-			expect(getStats(db, USER_ID, "all").byStatus).toEqual([]);
+			expect(getStats(db, USER_ID, "all").byStatus).toStrictEqual([]);
 		});
 
 		it("returns one entry per occupied status", () => {
@@ -281,7 +281,7 @@ describe(getStats, () => {
 
 	describe("applicationsByWeek", () => {
 		it("returns an empty array when there are no jobs", () => {
-			expect(getStats(db, USER_ID, "all").applicationsByWeek).toEqual([]);
+			expect(getStats(db, USER_ID, "all").applicationsByWeek).toStrictEqual([]);
 		});
 
 		it("groups jobs by the ISO week of date_applied", () => {
@@ -305,7 +305,7 @@ describe(getStats, () => {
 	describe("transitions", () => {
 		it("returns an empty array when there is no status history", () => {
 			insertJob(db, { status: "Not started", user_id: USER_ID });
-			expect(getStats(db, USER_ID, "all").transitions).toEqual([]);
+			expect(getStats(db, USER_ID, "all").transitions).toStrictEqual([]);
 		});
 
 		it("counts distinct jobs per stage boundary, not hops", () => {
@@ -317,7 +317,7 @@ describe(getStats, () => {
 			]);
 
 			const { transitions } = getStats(db, USER_ID, "all");
-			expect(transitions).toEqual(
+			expect(transitions).toStrictEqual(
 				expect.arrayContaining([
 					{ count: 1, from: "Direct", to: "Applied" },
 					{ count: 1, from: "Applied", to: "Phone screen" },
@@ -337,7 +337,7 @@ describe(getStats, () => {
 				{ entered_at: "2025-01-02T00:00:00Z", status: "Applied" },
 			]);
 
-			expect(getStats(db, USER_ID, "all").transitions).toEqual([]);
+			expect(getStats(db, USER_ID, "all").transitions).toStrictEqual([]);
 		});
 
 		it("routes terminated jobs directly from their last active stage to their substatus", () => {
@@ -351,7 +351,7 @@ describe(getStats, () => {
 			]);
 
 			const { transitions } = getStats(db, USER_ID, "all");
-			expect(transitions).toEqual(
+			expect(transitions).toStrictEqual(
 				expect.arrayContaining([
 					{ count: 1, from: "Direct", to: "Applied" },
 					{ count: 1, from: "Applied", to: "Ghosted" },
@@ -398,7 +398,7 @@ describe(getStats, () => {
 
 			const { transitions } = getStats(db, USER_ID, "all");
 			// Only the source → Applied link; no outgoing from Applied
-			expect(transitions).toEqual([{ count: 1, from: "Direct", to: "Applied" }]);
+			expect(transitions).toStrictEqual([{ count: 1, from: "Direct", to: "Applied" }]);
 		});
 
 		it("splits source → Applied counts correctly across Direct/Recruited/Referred", () => {
@@ -419,7 +419,7 @@ describe(getStats, () => {
 			]);
 
 			const { transitions } = getStats(db, USER_ID, "all");
-			expect(transitions).toEqual(
+			expect(transitions).toStrictEqual(
 				expect.arrayContaining([
 					{ count: 1, from: "Direct", to: "Applied" },
 					{ count: 1, from: "Recruited", to: "Applied" },
@@ -481,7 +481,7 @@ describe(getStats, () => {
 	});
 });
 
-describe(getJobsForLink, () => {
+describe("getJobsForLink", () => {
 	let db: Database.Database;
 	const USER_ID = 1;
 	const OTHER_USER_ID = 2;

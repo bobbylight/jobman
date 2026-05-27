@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 
 import ChartCard from "./ChartCard";
 
-describe(ChartCard, () => {
+describe("chartCard", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("renders the title", () => {

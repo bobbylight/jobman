@@ -67,7 +67,7 @@ function renderPage() {
 	);
 }
 
-describe(getDefaultDateRange, () => {
+describe("getDefaultDateRange", () => {
 	beforeEach(() => vi.useFakeTimers({ toFake: ["Date"] }));
 	afterEach(() => vi.useRealTimers());
 
@@ -100,7 +100,7 @@ describe(getDefaultDateRange, () => {
 	});
 });
 
-describe(InterviewsPage, () => {
+describe("interviewsPage", () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ toFake: ["Date"] });
 		vi.setSystemTime(FIXED_NOW);
@@ -577,7 +577,7 @@ describe(InterviewsPage, () => {
 			),
 		);
 		// SearchInterviews must not have been called again
-		expect(mockSearchInterviews.mock.calls.length).toBe(callsBefore);
+		expect(mockSearchInterviews).toHaveBeenCalledTimes(callsBefore);
 	});
 
 	it("uses plural 'interviews' in Snackbar when loading more than one", async () => {

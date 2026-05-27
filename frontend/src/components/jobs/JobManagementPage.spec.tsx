@@ -112,7 +112,7 @@ function renderPage(initialPath = "/jobs", onLogout = MOCK_ON_LOGOUT) {
 	);
 }
 
-describe(JobManagementPage, () => {
+describe("jobManagementPage", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.mocked(api.getInterviews).mockResolvedValue([]);
@@ -138,7 +138,7 @@ describe(JobManagementPage, () => {
 		await waitFor(() => {
 			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
 		});
-		expect(MockKanbanBoard).toHaveBeenCalled();
+		expect(MockKanbanBoard).toHaveBeenCalledWith(expect.any(Object), undefined);
 	});
 
 	it("shows an error snackbar when loading jobs fails", async () => {
@@ -400,7 +400,7 @@ describe(JobManagementPage, () => {
 		).toBeInTheDocument();
 	});
 
-	describe("CRUD operations via dialog", () => {
+	describe("cRUD operations via dialog", () => {
 		it("edits an existing job and shows 'Job updated' toast", async () => {
 			const job = makeJob({ id: 42, company: "Acme" });
 			mockGetJobs.mockResolvedValue([job]);
@@ -564,7 +564,7 @@ describe(JobManagementPage, () => {
 		});
 	});
 
-	describe("URL-based edit dialog", () => {
+	describe("uRL-based edit dialog", () => {
 		it("opens the edit dialog when navigated to /jobs/:jobId", async () => {
 			const job = makeJob({ company: "DeepLink Co", id: 42 });
 			mockGetJobs.mockResolvedValue([job]);
@@ -612,7 +612,12 @@ describe(JobManagementPage, () => {
 			});
 
 			renderPage();
-			await waitFor(() => expect(MockKanbanBoard).toHaveBeenCalled());
+			await waitFor(() =>
+				expect(MockKanbanBoard).toHaveBeenCalledWith(
+					expect.any(Object),
+					undefined,
+				),
+			);
 
 			const [{ onStatusChange }] = MockKanbanBoard.mock.lastCall!;
 			onStatusChange(job, "Applied");
@@ -774,7 +779,12 @@ describe(JobManagementPage, () => {
 
 			fireEvent.click(screen.getByRole("button", { name: "change status" }));
 
-			await waitFor(() => expect(vi.mocked(api.updateJob)).toHaveBeenCalled());
+			await waitFor(() =>
+				expect(vi.mocked(api.updateJob)).toHaveBeenCalledWith(
+					expect.any(Number),
+					expect.any(Object),
+				),
+			);
 
 			// State should not carry notes/job_description — board only needs summary fields
 			expect(boardJobs[0]).not.toHaveProperty("notes");

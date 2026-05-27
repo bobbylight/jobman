@@ -36,7 +36,7 @@ function renderAppShell(props = DEFAULT_PROPS, initialPath = "/jobs") {
 	);
 }
 
-describe(AppShell, () => {
+describe("appShell", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("renders the logo", () => {

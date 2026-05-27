@@ -26,7 +26,7 @@ const WEEKLY_DATA = [
 	{ count: 1, week: "2025-W12" },
 ];
 
-describe(InterviewsPerWeekChart, () => {
+describe("interviewsPerWeekChart", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});

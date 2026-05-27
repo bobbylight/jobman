@@ -47,7 +47,7 @@ const AUTH_COOKIE = signSession("test-session-auth");
 
 const app = createApp(testDb);
 
-describe("GET /api/auth/me", () => {
+describe("gET /api/auth/me", () => {
 	it("returns 401 when no session cookie is present", async () => {
 		const res = await request(app).get("/api/auth/me");
 		expect(res.status).toBe(401);
@@ -64,7 +64,7 @@ describe("GET /api/auth/me", () => {
 	it("returns user info for an authenticated session", async () => {
 		const res = await request(app).get("/api/auth/me").set("Cookie", AUTH_COOKIE);
 		expect(res.status).toBe(200);
-		expect(res.body).toEqual({
+		expect(res.body).toStrictEqual({
 			avatarUrl: "https://example.com/avatar.jpg",
 			displayName: "Test User",
 			email: "user@example.com",
@@ -82,7 +82,7 @@ describe("GET /api/auth/me", () => {
 	});
 });
 
-describe("POST /api/auth/logout", () => {
+describe("pOST /api/auth/logout", () => {
 	it("returns success when called without a session", async () => {
 		const res = await request(app).post("/api/auth/logout");
 		expect(res.status).toBe(200);

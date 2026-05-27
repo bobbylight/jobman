@@ -54,7 +54,7 @@ const BASE_STATS: StatsResponse = {
 	transitions: [],
 };
 
-describe(StatsPage, () => {
+describe("statsPage", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});

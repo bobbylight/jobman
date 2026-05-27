@@ -56,7 +56,7 @@ const DEFAULT_PROPS = {
 	jobId: 42,
 };
 
-describe(QuestionSubView, () => {
+describe("questionSubView", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.mocked(api.getQuestions).mockResolvedValue([]);
@@ -204,7 +204,7 @@ describe(QuestionSubView, () => {
 		});
 	});
 
-	describe("Add Question", () => {
+	describe("add Question", () => {
 		beforeEach(() => {
 			vi.mocked(api.getQuestions).mockResolvedValue([QUESTION_A]);
 		});
@@ -315,7 +315,7 @@ describe(QuestionSubView, () => {
 		});
 	});
 
-	describe("Edit Question", () => {
+	describe("edit Question", () => {
 		beforeEach(() => {
 			vi.mocked(api.getQuestions).mockResolvedValue([QUESTION_A]);
 		});
@@ -369,7 +369,7 @@ describe(QuestionSubView, () => {
 		});
 	});
 
-	describe("Delete Question", () => {
+	describe("delete Question", () => {
 		beforeEach(() => {
 			vi.mocked(api.getQuestions).mockResolvedValue([QUESTION_A]);
 		});
@@ -461,7 +461,11 @@ describe(QuestionSubView, () => {
 			});
 			fireEvent.click(screen.getByRole("button", { name: "Save Question" }));
 			await waitFor(() => {
-				expect(api.createQuestion).toHaveBeenCalled();
+				expect(api.createQuestion).toHaveBeenCalledWith(
+					expect.any(Number),
+					expect.any(Number),
+					expect.any(Object),
+				);
 			});
 		});
 	});

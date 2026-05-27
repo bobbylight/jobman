@@ -87,7 +87,7 @@ describe("interviews db", () => {
 		otherJobId = Number(j2.lastInsertRowid);
 	});
 
-	describe(jobBelongsToUser, () => {
+	describe("jobBelongsToUser", () => {
 		it("returns true when the job belongs to the user", () => {
 			expect(jobBelongsToUser(db, jobId, USER_ID)).toBeTruthy();
 		});
@@ -101,9 +101,9 @@ describe("interviews db", () => {
 		});
 	});
 
-	describe(listInterviews, () => {
+	describe("listInterviews", () => {
 		it("returns empty array when no interviews exist", () => {
-			expect(listInterviews(db, jobId)).toEqual([]);
+			expect(listInterviews(db, jobId)).toStrictEqual([]);
 		});
 
 		it("returns all interviews for the given job", () => {
@@ -118,7 +118,7 @@ describe("interviews db", () => {
 		});
 	});
 
-	describe(findInterview, () => {
+	describe("findInterview", () => {
 		it("returns undefined for non-existent interview", () => {
 			expect(findInterview(db, 999, jobId)).toBeUndefined();
 		});
@@ -136,7 +136,7 @@ describe("interviews db", () => {
 		});
 	});
 
-	describe(createInterview, () => {
+	describe("createInterview", () => {
 		it("inserts and returns the new interview", () => {
 			const interview = createInterview(db, { ...BASE_INTERVIEW, job_id: jobId });
 			expect(interview.id).toBeGreaterThan(0);
@@ -174,7 +174,7 @@ describe("interviews db", () => {
 		});
 	});
 
-	describe(updateInterview, () => {
+	describe("updateInterview", () => {
 		it("updates the interview and returns it", () => {
 			const created = createInterview(db, { ...BASE_INTERVIEW, job_id: jobId });
 			const updated = updateInterview(db, created.id, jobId, {
@@ -196,7 +196,7 @@ describe("interviews db", () => {
 		});
 	});
 
-	describe(deleteInterview, () => {
+	describe("deleteInterview", () => {
 		it("deletes an existing interview and returns true", () => {
 			const created = createInterview(db, { ...BASE_INTERVIEW, job_id: jobId });
 			expect(deleteInterview(db, created.id, jobId)).toBeTruthy();
@@ -213,7 +213,7 @@ describe("interviews db", () => {
 		});
 	});
 
-	describe(listQuestions, () => {
+	describe("listQuestions", () => {
 		let interviewId: number;
 
 		beforeEach(() => {
@@ -221,7 +221,7 @@ describe("interviews db", () => {
 		});
 
 		it("returns empty array when no questions exist", () => {
-			expect(listQuestions(db, interviewId)).toEqual([]);
+			expect(listQuestions(db, interviewId)).toStrictEqual([]);
 		});
 
 		it("returns all questions for the interview", () => {
@@ -237,7 +237,7 @@ describe("interviews db", () => {
 		});
 	});
 
-	describe(findQuestion, () => {
+	describe("findQuestion", () => {
 		let interviewId: number;
 
 		beforeEach(() => {
@@ -262,7 +262,7 @@ describe("interviews db", () => {
 		});
 	});
 
-	describe(createQuestion, () => {
+	describe("createQuestion", () => {
 		let interviewId: number;
 
 		beforeEach(() => {
@@ -283,7 +283,7 @@ describe("interviews db", () => {
 		});
 	});
 
-	describe(updateQuestion, () => {
+	describe("updateQuestion", () => {
 		let interviewId: number;
 
 		beforeEach(() => {
@@ -312,7 +312,7 @@ describe("interviews db", () => {
 		});
 	});
 
-	describe(deleteQuestion, () => {
+	describe("deleteQuestion", () => {
 		let interviewId: number;
 
 		beforeEach(() => {

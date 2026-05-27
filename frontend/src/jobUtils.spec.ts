@@ -5,7 +5,7 @@ import { BASE_JOB } from "./testUtils";
 // Or Dec 31 (31 days prior, ghosted). Recent dates use Feb 1 (future = 0 days ago).
 const NOW = new Date("2026-01-31T00:00:00.000Z").getTime();
 
-describe(isPossiblyGhosted, () => {
+describe("isPossiblyGhosted", () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 		vi.setSystemTime(NOW);
@@ -114,7 +114,7 @@ describe(isPossiblyGhosted, () => {
 	});
 });
 
-describe(formatTime, () => {
+describe("formatTime", () => {
 	beforeEach(() => {
 		// No mocks needed; tests use explicit datetime strings
 	});

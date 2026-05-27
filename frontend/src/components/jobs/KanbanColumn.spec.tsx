@@ -32,7 +32,7 @@ const DEFAULT_PROPS = {
 	status: "Not started" as const,
 };
 
-describe(KanbanColumn, () => {
+describe("kanbanColumn", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});

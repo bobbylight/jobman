@@ -28,9 +28,8 @@ export default function DayTimeline({ dateStr, children }: Props) {
 			>
 				<Typography
 					variant="caption"
-					fontWeight={600}
 					color={isToday ? "primary.main" : "text.secondary"}
-					sx={{ display: "block", lineHeight: 1.3 }}
+					sx={{ display: "block", fontWeight: 600, lineHeight: 1.3 }}
 				>
 					{weekday}
 				</Typography>

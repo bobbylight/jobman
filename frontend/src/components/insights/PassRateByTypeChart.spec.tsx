@@ -34,7 +34,7 @@ const BY_TYPE_NO_RESULTS = [
 	{ count: 2, failed: 0, passed: 0, type: "behavioral" },
 ];
 
-describe(PassRateByTypeChart, () => {
+describe("passRateByTypeChart", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("shows empty state when byType is empty", () => {

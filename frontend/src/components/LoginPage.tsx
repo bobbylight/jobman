@@ -27,10 +27,14 @@ export default function LoginPage() {
 						alt="JobMan"
 						sx={{ height: 72, mb: 1 }}
 					/>
-					<Typography variant="h5" fontWeight={600}>
+					<Typography variant="h5" sx={{ fontWeight: 600 }}>
 						JobMan
 					</Typography>
-					<Typography variant="body2" color="text.secondary" textAlign="center">
+					<Typography
+						variant="body2"
+						color="text.secondary"
+						sx={{ textAlign: "center" }}
+					>
 						Track your job applications across every stage of your search.
 					</Typography>
 					<Button

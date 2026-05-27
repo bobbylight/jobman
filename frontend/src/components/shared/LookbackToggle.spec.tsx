@@ -2,7 +2,7 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import LookbackToggle from "./LookbackToggle";
 
-describe(LookbackToggle, () => {
+describe("lookbackToggle", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});

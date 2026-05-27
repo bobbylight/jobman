@@ -42,7 +42,7 @@ const DEFAULT_PROPS = {
 	window: "all" as const,
 };
 
-describe(TransitionJobsDialog, () => {
+describe("transitionJobsDialog", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("shows the from → to transition in the title", async () => {

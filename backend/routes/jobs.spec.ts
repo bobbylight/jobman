@@ -114,7 +114,7 @@ const BASE_JOB = {
 	status: "Not started",
 };
 
-describe("GET /api/jobs", () => {
+describe("gET /api/jobs", () => {
 	it("returns 200 with a list of jobs", async () => {
 		await req("post", "/api/jobs").send(BASE_JOB);
 		const res = await req("get", "/api/jobs");
@@ -172,7 +172,7 @@ describe("GET /api/jobs", () => {
 	});
 });
 
-describe("GET /api/jobs/:jobId", () => {
+describe("gET /api/jobs/:jobId", () => {
 	it("returns a single job by id", async () => {
 		const createRes = await req("post", "/api/jobs").send(BASE_JOB);
 		const {id} = createRes.body;
@@ -190,7 +190,7 @@ describe("GET /api/jobs/:jobId", () => {
 	});
 });
 
-describe("POST /api/jobs", () => {
+describe("pOST /api/jobs", () => {
 	it("creates a job and returns 201 with the created record", async () => {
 		const res = await req("post", "/api/jobs").send({
 			...BASE_JOB,
@@ -226,7 +226,7 @@ describe("POST /api/jobs", () => {
 		await req("post", "/api/jobs").send(BASE_JOB);
 		const second = await req("post", "/api/jobs").send(BASE_JOB);
 		expect(second.status).toBe(409);
-		expect(second.body).toEqual({ error: "Job already exists" });
+		expect(second.body).toStrictEqual({ error: "Job already exists" });
 	});
 
 	it("allows the same company with a different link", async () => {
@@ -248,7 +248,7 @@ describe("POST /api/jobs", () => {
 	});
 });
 
-describe("PUT /api/jobs/:id", () => {
+describe("pUT /api/jobs/:id", () => {
 	it("updates an existing job and returns 200 with the updated record", async () => {
 		const createRes = await req("post", "/api/jobs").send(BASE_JOB);
 		const {id} = createRes.body;
@@ -307,7 +307,7 @@ describe("PUT /api/jobs/:id", () => {
 	});
 });
 
-describe("DELETE /api/jobs/:id", () => {
+describe("dELETE /api/jobs/:id", () => {
 	it("deletes a job and returns success", async () => {
 		const createRes = await req("post", "/api/jobs").send(BASE_JOB);
 		const {id} = createRes.body;
@@ -332,7 +332,7 @@ describe("ending_substatus validation", () => {
 		"Interviewing",
 	] as const;
 
-	describe("POST /api/jobs", () => {
+	describe("pOST /api/jobs", () => {
 		it.each([...TERMINAL_STATUSES])(
 			'returns 422 when status is "%s" and ending_substatus is absent',
 			async (status) => {
@@ -419,7 +419,7 @@ describe("ending_substatus validation", () => {
 		});
 	});
 
-	describe("PUT /api/jobs/:id", () => {
+	describe("pUT /api/jobs/:id", () => {
 		it("returns 422 when updating to terminal status without ending_substatus", async () => {
 			const createRes = await req("post", "/api/jobs").send(BASE_JOB);
 			const {id} = createRes.body;
@@ -529,7 +529,7 @@ describe("date_offer_extended validation", () => {
 		status: "Offer!",
 	};
 
-	describe("POST /api/jobs", () => {
+	describe("pOST /api/jobs", () => {
 		it("returns 422 when status is Offer! and date_offer_extended is absent", async () => {
 			const res = await req("post", "/api/jobs").send(OFFER_BASE);
 			expect(res.status).toBe(422);
@@ -556,7 +556,7 @@ describe("date_offer_extended validation", () => {
 		});
 	});
 
-	describe("PUT /api/jobs/:id", () => {
+	describe("pUT /api/jobs/:id", () => {
 		it("returns 422 when updating to Offer! without date_offer_extended", async () => {
 			const createRes = await req("post", "/api/jobs").send(BASE_JOB);
 			const {id} = createRes.body;
@@ -616,7 +616,7 @@ describe("field length validation", () => {
 		number,
 	][];
 
-	describe("POST /api/jobs", () => {
+	describe("pOST /api/jobs", () => {
 		it.each(LENGTH_CASES)(
 			"returns 422 when %s exceeds %d characters",
 			async (field, max) => {
@@ -641,7 +641,7 @@ describe("field length validation", () => {
 		);
 	});
 
-	describe("PUT /api/jobs/:id", () => {
+	describe("pUT /api/jobs/:id", () => {
 		it.each(LENGTH_CASES)(
 			"returns 422 when %s exceeds %d characters",
 			async (field, max) => {

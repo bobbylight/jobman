@@ -47,7 +47,7 @@ function changeSelect(optionText: string) {
 	fireEvent.click(option);
 }
 
-describe(QuestionBankTable, () => {
+describe("questionBankTable", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("shows empty state when recentQuestions is empty", () => {

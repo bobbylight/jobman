@@ -29,7 +29,7 @@ const QUESTIONS_BY_TYPE = [
 	{ avgDifficulty: 4.2, count: 6, passRate: null, type: "system_design" },
 ];
 
-describe(QuestionsByTypeChart, () => {
+describe("questionsByTypeChart", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("shows empty state when questionsByType is empty", () => {

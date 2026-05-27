@@ -347,8 +347,8 @@ export default function JobDialog({
 				<DialogContent dividers>
 					{loadingJob && (
 						<Box
+							component="output"
 							sx={{ display: "flex", justifyContent: "center", py: 4 }}
-							role="status"
 							aria-label="Loading job"
 						>
 							<CircularProgress />
@@ -609,13 +609,13 @@ export default function JobDialog({
 										getOptionLabel={(tag) => TAG_LABELS[tag as JobTag] ?? tag}
 										value={form.tags as JobTag[]}
 										onChange={(_, newValue) => set("tags", newValue)}
-										renderTags={(value, getTagProps) =>
-											value.map((tag, index) => (
+										renderValue={(value, getItemProps) =>
+											(value as JobTag[]).map((tag, index) => (
 												<Chip
-													{...getTagProps({ index })}
-													{...tagChipProps(tag as JobTag, true)}
+													{...getItemProps({ index })}
+													{...tagChipProps(tag, true)}
 													key={tag}
-													label={TAG_LABELS[tag as JobTag] ?? tag}
+													label={TAG_LABELS[tag] ?? tag}
 													size="small"
 												/>
 											))

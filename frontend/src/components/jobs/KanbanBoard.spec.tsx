@@ -39,7 +39,7 @@ const DEFAULT_PROPS = {
 	onToggleFavorite: vi.fn(),
 };
 
-describe(KanbanBoard, () => {
+describe("kanbanBoard", () => {
 	it("renders all 6 status columns", () => {
 		render(<KanbanBoard {...DEFAULT_PROPS} jobs={[]} />);
 		for (const status of STATUSES) {

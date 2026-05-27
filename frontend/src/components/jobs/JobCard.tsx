@@ -121,11 +121,7 @@ interface Props {
 	onToggleFavorite: (job: Job) => void;
 }
 
-const JobCard = React.memo(function JobCard({
-	job,
-	onCardClick,
-	onToggleFavorite,
-}: Props) {
+const JobCard = React.memo(({ job, onCardClick, onToggleFavorite }: Props) => {
 	const { attributes, listeners, setNodeRef, transform, isDragging } =
 		useDraggable({
 			data: { job },
@@ -181,9 +177,8 @@ const JobCard = React.memo(function JobCard({
 				<CompanyLogo company={job.company} />
 				<Typography
 					variant="subtitle2"
-					fontWeight={700}
 					noWrap
-					sx={{ flex: 1, minWidth: 0 }}
+					sx={{ flex: 1, fontWeight: 700, minWidth: 0 }}
 				>
 					{job.company}
 				</Typography>

@@ -63,7 +63,7 @@ const BASE_INSIGHTS: InterviewInsightsResponse = {
 	vibeVsResult: [{ count: 3, failed: 1, passed: 2, vibe: "casual" }],
 };
 
-describe(InsightsPage, () => {
+describe("insightsPage", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});

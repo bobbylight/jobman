@@ -23,7 +23,7 @@ function Controlled({ initialValue }: { initialValue: string | null }) {
 	);
 }
 
-describe(MarkdownField, () => {
+describe("markdownField", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		Object.defineProperty(navigator, "clipboard", {

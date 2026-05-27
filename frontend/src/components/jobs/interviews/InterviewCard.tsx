@@ -83,7 +83,7 @@ export default function InterviewCard({
 							gap: 1,
 						}}
 					>
-						<Typography variant="body2" fontWeight={600}>
+						<Typography variant="body2" sx={{ fontWeight: 600 }}>
 							{typeLabel}
 						</Typography>
 						<Typography variant="body2" color="text.secondary">

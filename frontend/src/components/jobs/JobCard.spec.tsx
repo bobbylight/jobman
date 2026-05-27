@@ -3,6 +3,7 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import JobCard from "./JobCard";
 import { BASE_JOB } from "../../testUtils";
+
 vi.mock(
 	import("../../useCompanyLogo"),
 	() =>
@@ -33,7 +34,7 @@ vi.mock(
 		}) as any,
 );
 
-describe(JobCard, () => {
+describe("jobCard", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -342,7 +343,7 @@ describe(JobCard, () => {
 		});
 	});
 
-	describe("Rejected/Withdrawn date label", () => {
+	describe("rejected/Withdrawn date label", () => {
 		it("displays 'Last updated' with the formatted updated_at date", () => {
 			render(
 				<JobCard
@@ -371,7 +372,7 @@ describe(JobCard, () => {
 		});
 	});
 
-	describe("Offer! date label", () => {
+	describe("offer! date label", () => {
 		it("displays 'Offer received' with the formatted date_offer_extended", () => {
 			render(
 				<JobCard

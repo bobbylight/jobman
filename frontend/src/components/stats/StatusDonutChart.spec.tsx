@@ -25,7 +25,7 @@ vi.mock(
 		}) as any,
 );
 
-describe(StatusDonutChart, () => {
+describe("statusDonutChart", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});

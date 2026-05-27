@@ -22,7 +22,7 @@ const DEFAULT_PROPS = {
 	open: true,
 };
 
-describe(EndingStatusDialog, () => {
+describe("endingStatusDialog", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("renders the job name and destination status", () => {
@@ -82,7 +82,7 @@ describe(EndingStatusDialog, () => {
 	it("calls onCancel when Cancel is clicked", () => {
 		render(<EndingStatusDialog {...DEFAULT_PROPS} />);
 		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-		expect(DEFAULT_PROPS.onCancel).toHaveBeenCalled();
+		expect(DEFAULT_PROPS.onCancel).toHaveBeenCalledWith(expect.anything());
 		expect(DEFAULT_PROPS.onConfirm).not.toHaveBeenCalled();
 	});
 
@@ -99,7 +99,7 @@ describe(EndingStatusDialog, () => {
 		expect(screen.queryByText("Update Final Status")).not.toBeInTheDocument();
 	});
 
-	describe("Offer! destination", () => {
+	describe("offer! destination", () => {
 		const FIXED_TODAY = "2026-05-24";
 		const OFFER_PROPS = { ...DEFAULT_PROPS, newStatus: "Offer!" as const };
 
@@ -204,7 +204,7 @@ describe(EndingStatusDialog, () => {
 		});
 	});
 
-	describe("Rejected/Withdrawn destination", () => {
+	describe("rejected/Withdrawn destination", () => {
 		it("only shows rejection substatuses in the dropdown", () => {
 			render(<EndingStatusDialog {...DEFAULT_PROPS} />);
 			fireEvent.mouseDown(screen.getByLabelText(/Final Resolution/i));

@@ -32,7 +32,7 @@ const BY_TYPE = [
 	{ count: 5, failed: 3, passed: 1, type: "system_design" },
 ];
 
-describe(TypeDonutChart, () => {
+describe("typeDonutChart", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("shows empty state when byType is empty", () => {

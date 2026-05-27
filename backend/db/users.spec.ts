@@ -48,7 +48,7 @@ describe("users db", () => {
 		db = makeDb();
 	});
 
-	describe(findUserById, () => {
+	describe("findUserById", () => {
 		it("returns undefined for non-existent user", () => {
 			expect(findUserById(db, 999)).toBeUndefined();
 		});
@@ -70,7 +70,7 @@ describe("users db", () => {
 		});
 	});
 
-	describe(findUserByGoogleId, () => {
+	describe("findUserByGoogleId", () => {
 		it("returns undefined for unknown google id", () => {
 			expect(findUserByGoogleId(db, "unknown-google-id")).toBeUndefined();
 		});
@@ -88,7 +88,7 @@ describe("users db", () => {
 		});
 	});
 
-	describe(updateGoogleTokens, () => {
+	describe("updateGoogleTokens", () => {
 		it("updates access and refresh tokens for the given google id", () => {
 			createUserWithGoogleIdentity(db, GOOGLE_PARAMS);
 			updateGoogleTokens(db, "google-uid-123", "new-access-token", "new-refresh-token");
@@ -120,7 +120,7 @@ describe("users db", () => {
 		});
 	});
 
-	describe(createUserWithGoogleIdentity, () => {
+	describe("createUserWithGoogleIdentity", () => {
 		it("returns the created user with correct fields", () => {
 			const user = createUserWithGoogleIdentity(db, GOOGLE_PARAMS);
 			expect(user.id).toBeGreaterThan(0);

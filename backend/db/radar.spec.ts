@@ -111,7 +111,7 @@ function insertJob(db: Database.Database, overrides: JobOverrides = {}) {
 	return Number(result.lastInsertRowid);
 }
 
-describe(getRadar, () => {
+describe("getRadar", () => {
 	it("returns empty entries when there are no target companies", () => {
 		const db = makeDb();
 		const result = getRadar(db, USER_ID);
@@ -336,7 +336,7 @@ describe(getRadar, () => {
 	});
 });
 
-describe(patchRadarEntry, () => {
+describe("patchRadarEntry", () => {
 	it("updates allowed fields and returns true", () => {
 		const db = makeDb();
 		const id = insertCompany(db, { name: "Acme" });

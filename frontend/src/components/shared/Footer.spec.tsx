@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import Footer from "./Footer";
 
-describe(Footer, () => {
+describe("footer", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("renders the copyright notice with the current year", () => {
@@ -19,7 +19,7 @@ describe(Footer, () => {
 		).toBeInTheDocument();
 	});
 
-	it("MIT License link points to the correct URL", () => {
+	it("mIT License link points to the correct URL", () => {
 		render(<Footer />);
 		expect(screen.getByRole("link", { name: "MIT License" })).toHaveAttribute(
 			"href",
@@ -27,7 +27,7 @@ describe(Footer, () => {
 		);
 	});
 
-	it("MIT License link opens in a new tab", () => {
+	it("mIT License link opens in a new tab", () => {
 		render(<Footer />);
 		expect(screen.getByRole("link", { name: "MIT License" })).toHaveAttribute(
 			"target",
@@ -35,7 +35,7 @@ describe(Footer, () => {
 		);
 	});
 
-	it("MIT License link has noopener noreferrer rel", () => {
+	it("mIT License link has noopener noreferrer rel", () => {
 		render(<Footer />);
 		expect(screen.getByRole("link", { name: "MIT License" })).toHaveAttribute(
 			"rel",
@@ -48,7 +48,7 @@ describe(Footer, () => {
 		expect(screen.getByRole("link", { name: /github/i })).toBeInTheDocument();
 	});
 
-	it("GitHub link points to the correct URL", () => {
+	it("gitHub link points to the correct URL", () => {
 		render(<Footer />);
 		expect(screen.getByRole("link", { name: /github/i })).toHaveAttribute(
 			"href",
@@ -56,7 +56,7 @@ describe(Footer, () => {
 		);
 	});
 
-	it("GitHub link opens in a new tab", () => {
+	it("gitHub link opens in a new tab", () => {
 		render(<Footer />);
 		expect(screen.getByRole("link", { name: /github/i })).toHaveAttribute(
 			"target",
@@ -64,7 +64,7 @@ describe(Footer, () => {
 		);
 	});
 
-	it("GitHub link has noopener noreferrer rel", () => {
+	it("gitHub link has noopener noreferrer rel", () => {
 		render(<Footer />);
 		expect(screen.getByRole("link", { name: /github/i })).toHaveAttribute(
 			"rel",

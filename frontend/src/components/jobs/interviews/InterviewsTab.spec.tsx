@@ -52,7 +52,7 @@ const DEFAULT_PROPS = {
 	viewingQuestionsFor: null,
 };
 
-describe(InterviewsTab, () => {
+describe("interviewsTab", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.mocked(api.getInterviews).mockResolvedValue([]);
@@ -165,7 +165,7 @@ describe(InterviewsTab, () => {
 		});
 	});
 
-	describe("Add Interview", () => {
+	describe("add Interview", () => {
 		it("shows an Add Interview button when in list mode", async () => {
 			render(<InterviewsTab {...DEFAULT_PROPS} />);
 			await waitFor(() => {
@@ -299,7 +299,12 @@ describe(InterviewsTab, () => {
 				target: { value: "2026-04-01T10:00" },
 			});
 			fireEvent.click(screen.getByRole("button", { name: "Save Interview" }));
-			await waitFor(() => expect(api.createInterview).toHaveBeenCalled());
+			await waitFor(() =>
+				expect(api.createInterview).toHaveBeenCalledWith(
+					expect.any(Number),
+					expect.any(Object),
+				),
+			);
 		}
 
 		it("defaults stage to phone_screen and type to recruiter_call for Not started", async () => {
@@ -347,7 +352,7 @@ describe(InterviewsTab, () => {
 		});
 	});
 
-	describe("Edit Interview", () => {
+	describe("edit Interview", () => {
 		beforeEach(() => {
 			vi.mocked(api.getInterviews).mockResolvedValue([INTERVIEW_A]);
 		});
@@ -403,7 +408,7 @@ describe(InterviewsTab, () => {
 		});
 	});
 
-	describe("Delete Interview", () => {
+	describe("delete Interview", () => {
 		beforeEach(() => {
 			vi.mocked(api.getInterviews).mockResolvedValue([INTERVIEW_A]);
 		});
@@ -512,7 +517,7 @@ describe(InterviewsTab, () => {
 		});
 	});
 
-	describe("After the interview controls", () => {
+	describe("after the interview controls", () => {
 		it("shows vibe chip with emoji on a past interview card", async () => {
 			vi.mocked(api.getInterviews).mockResolvedValue([
 				makeInterview({
@@ -651,7 +656,10 @@ describe(InterviewsTab, () => {
 			});
 			fireEvent.click(screen.getByRole("button", { name: "Save Interview" }));
 			await waitFor(() => {
-				expect(api.createInterview).toHaveBeenCalled();
+				expect(api.createInterview).toHaveBeenCalledWith(
+					expect.any(Number),
+					expect.any(Object),
+				);
 			});
 		});
 	});

@@ -30,7 +30,7 @@ const STATUS_OVER_TIME = [
 	{ count: 1, status: "Interviewing", week: "2026-03-08" },
 ];
 
-describe(PipelineOverTimeChart, () => {
+describe("pipelineOverTimeChart", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("shows empty state when statusOverTime is empty", () => {

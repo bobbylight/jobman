@@ -5,8 +5,8 @@ import {
 	VALID_REJECTED_SUBSTATUSES,
 } from "./validators.js";
 
-describe(validateEndingSubstatus, () => {
-	describe("Offer! status", () => {
+describe("validateEndingSubstatus", () => {
+	describe("offer! status", () => {
 		it("accepts 'Offer accepted'", () => {
 			expect(validateEndingSubstatus("Offer!", "Offer accepted")).toBeNull();
 		});
@@ -36,7 +36,7 @@ describe(validateEndingSubstatus, () => {
 		});
 	});
 
-	describe("Rejected/Withdrawn status", () => {
+	describe("rejected/Withdrawn status", () => {
 		it.each([...VALID_REJECTED_SUBSTATUSES])("accepts '%s'", (substatus) => {
 			expect(
 				validateEndingSubstatus("Rejected/Withdrawn", substatus),
@@ -90,8 +90,8 @@ describe(validateEndingSubstatus, () => {
 	});
 });
 
-describe(validateOfferDate, () => {
-	describe("Offer! status", () => {
+describe("validateOfferDate", () => {
+	describe("offer! status", () => {
 		it("accepts a valid date string", () => {
 			expect(validateOfferDate("Offer!", "2026-05-15")).toBeNull();
 		});
