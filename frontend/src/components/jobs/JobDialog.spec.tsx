@@ -365,6 +365,7 @@ describe("jobDialog", () => {
 
 		it("shows a Delete button", async () => {
 			// Delete button is rendered immediately (disabled until load), then enabled
+			vi.mocked(api.getJob).mockReturnValue(new Promise(() => {}));
 			render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 			expect(
 				screen.getByRole("button", { name: "Delete" }),
@@ -372,6 +373,7 @@ describe("jobDialog", () => {
 		});
 
 		it('shows "Save" as the submit button label', async () => {
+			vi.mocked(api.getJob).mockReturnValue(new Promise(() => {}));
 			render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 			expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
 		});

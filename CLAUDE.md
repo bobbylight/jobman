@@ -165,3 +165,5 @@ interface Job {
 - `makeJob(overrides)` factory pattern for per-test job variants; always include all required `Job` fields
 - `beforeEach(() => vi.clearAllMocks())` in every top-level `describe`
 - `fireEvent` for interactions; MUI `Select` needs a `changeSelect` helper using `mouseDown` + `click`
+- Wrap `fireEvent` calls that kick off async state updates (e.g. API calls resolved via `.then(() => setState(...))`) in `await act(async () => { ... })` so the promise chain settles inside the act boundary and doesn't trigger "not wrapped in act" warnings
+- For tests that render a component with async data-fetching but only assert the immediate (pre-load) state, mock the fetch as a never-resolving promise (`vi.fn().mockReturnValue(new Promise(() => {}))`) so no state update fires after the synchronous assertion

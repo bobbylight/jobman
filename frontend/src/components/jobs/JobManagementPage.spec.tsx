@@ -1,5 +1,6 @@
 import React from "react";
 import {
+	act,
 	fireEvent,
 	render,
 	screen,
@@ -620,7 +621,9 @@ describe("jobManagementPage", () => {
 			);
 
 			const [{ onStatusChange }] = MockKanbanBoard.mock.lastCall!;
-			onStatusChange(job, "Applied");
+			act(() => {
+				onStatusChange(job, "Applied");
+			});
 
 			await waitFor(() => {
 				expect(vi.mocked(api.updateJob)).toHaveBeenCalledWith(
@@ -692,7 +695,9 @@ describe("jobManagementPage", () => {
 			fireEvent.click(screen.getByRole("button", { name: "Stats" }));
 			expect(screen.getByTestId("stats-page")).toBeInTheDocument();
 
-			fireEvent.click(screen.getByRole("button", { name: "Board" }));
+			await act(async () => {
+				fireEvent.click(screen.getByRole("button", { name: "Board" }));
+			});
 			expect(screen.queryByTestId("stats-page")).not.toBeInTheDocument();
 			expect(
 				screen.getByRole("button", { name: /Add Job/ }),

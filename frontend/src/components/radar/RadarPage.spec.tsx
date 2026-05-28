@@ -1,5 +1,11 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import RadarPage from "./RadarPage";
 import { api } from "../../api";
@@ -318,7 +324,9 @@ describe("radarPage", () => {
 
 			const notesField = screen.getByRole("textbox", { name: /^Notes$/i });
 			fireEvent.change(notesField, { target: { value: "Great company" } });
-			fireEvent.blur(notesField);
+			await act(async () => {
+				fireEvent.blur(notesField);
+			});
 
 			expect(mockPatch).toHaveBeenCalledWith(7, {
 				user_notes: "Great company",
@@ -347,7 +355,9 @@ describe("radarPage", () => {
 			await waitFor(() => screen.getByText("Acme"));
 			fireEvent.click(screen.getByText("Acme"));
 
-			fireEvent.click(screen.getByText("Hide from radar"));
+			await act(async () => {
+				fireEvent.click(screen.getByText("Hide from radar"));
+			});
 
 			expect(mockPatch).toHaveBeenCalledWith(3, { hidden: 1 });
 		});
@@ -364,7 +374,9 @@ describe("radarPage", () => {
 			const [restoreBtn] = screen.getAllByRole("button", {
 				name: /restore to radar/i,
 			});
-			fireEvent.click(restoreBtn!);
+			await act(async () => {
+				fireEvent.click(restoreBtn!);
+			});
 
 			expect(mockPatch).toHaveBeenCalledWith(4, { hidden: 0 });
 		});
