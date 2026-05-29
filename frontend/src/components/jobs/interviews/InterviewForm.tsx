@@ -180,26 +180,28 @@ export default function InterviewForm({
 						>
 							{VIBE_OPTIONS.map((opt) => (
 								<Tooltip key={opt.value} title={opt.label}>
-									<ToggleButton
-										value={opt.value}
-										aria-label={opt.label}
-										sx={{
-											fontSize: "1.3rem",
-											lineHeight: 1,
-											px: 1.25,
-											py: 0.75,
-											"&.Mui-selected": {
-												bgcolor: opt.selectedBg,
-												color: opt.selectedColor,
-												"&:hover": {
+									<span>
+										<ToggleButton
+											value={opt.value}
+											aria-label={opt.label}
+											sx={{
+												fontSize: "1.3rem",
+												lineHeight: 1,
+												px: 1.25,
+												py: 0.75,
+												"&.Mui-selected": {
 													bgcolor: opt.selectedBg,
-													filter: "brightness(0.95)",
+													color: opt.selectedColor,
+													"&:hover": {
+														bgcolor: opt.selectedBg,
+														filter: "brightness(0.95)",
+													},
 												},
-											},
-										}}
-									>
-										{opt.emoji}
-									</ToggleButton>
+											}}
+										>
+											{opt.emoji}
+										</ToggleButton>
+									</span>
 								</Tooltip>
 							))}
 						</ToggleButtonGroup>
@@ -226,26 +228,28 @@ export default function InterviewForm({
 						>
 							{FEELING_OPTIONS.map((opt) => (
 								<Tooltip key={opt.value} title={opt.label}>
-									<ToggleButton
-										value={opt.value}
-										aria-label={opt.label}
-										sx={{
-											fontSize: "1.3rem",
-											lineHeight: 1,
-											px: 1.25,
-											py: 0.75,
-											"&.Mui-selected": {
-												bgcolor: opt.selectedBg,
-												color: opt.selectedColor,
-												"&:hover": {
+									<span>
+										<ToggleButton
+											value={opt.value}
+											aria-label={opt.label}
+											sx={{
+												fontSize: "1.3rem",
+												lineHeight: 1,
+												px: 1.25,
+												py: 0.75,
+												"&.Mui-selected": {
 													bgcolor: opt.selectedBg,
-													filter: "brightness(0.95)",
+													color: opt.selectedColor,
+													"&:hover": {
+														bgcolor: opt.selectedBg,
+														filter: "brightness(0.95)",
+													},
 												},
-											},
-										}}
-									>
-										{opt.emoji}
-									</ToggleButton>
+											}}
+										>
+											{opt.emoji}
+										</ToggleButton>
+									</span>
 								</Tooltip>
 							))}
 						</ToggleButtonGroup>
@@ -271,42 +275,46 @@ export default function InterviewForm({
 							}
 						>
 							<Tooltip title="Passed">
-								<ToggleButton
-									value="passed"
-									aria-label="Passed"
-									sx={{
-										fontSize: "1.3rem",
-										lineHeight: 1,
-										px: 1.25,
-										py: 0.75,
-										"&.Mui-selected": {
-											bgcolor: "#e8f5e9",
-											color: "#2e7d32",
-											"&:hover": { bgcolor: "#c8e6c9" },
-										},
-									}}
-								>
-									✅
-								</ToggleButton>
+								<span>
+									<ToggleButton
+										value="passed"
+										aria-label="Passed"
+										sx={{
+											fontSize: "1.3rem",
+											lineHeight: 1,
+											px: 1.25,
+											py: 0.75,
+											"&.Mui-selected": {
+												bgcolor: "#e8f5e9",
+												color: "#2e7d32",
+												"&:hover": { bgcolor: "#c8e6c9" },
+											},
+										}}
+									>
+										✅
+									</ToggleButton>
+								</span>
 							</Tooltip>
 							<Tooltip title="Failed">
-								<ToggleButton
-									value="failed"
-									aria-label="Failed"
-									sx={{
-										fontSize: "1.3rem",
-										lineHeight: 1,
-										px: 1.25,
-										py: 0.75,
-										"&.Mui-selected": {
-											bgcolor: "#ffebee",
-											color: "#c62828",
-											"&:hover": { bgcolor: "#ffcdd2" },
-										},
-									}}
-								>
-									❌
-								</ToggleButton>
+								<span>
+									<ToggleButton
+										value="failed"
+										aria-label="Failed"
+										sx={{
+											fontSize: "1.3rem",
+											lineHeight: 1,
+											px: 1.25,
+											py: 0.75,
+											"&.Mui-selected": {
+												bgcolor: "#ffebee",
+												color: "#c62828",
+												"&:hover": { bgcolor: "#ffcdd2" },
+											},
+										}}
+									>
+										❌
+									</ToggleButton>
+								</span>
 							</Tooltip>
 						</ToggleButtonGroup>
 						<Typography variant="caption" color="text.secondary">
