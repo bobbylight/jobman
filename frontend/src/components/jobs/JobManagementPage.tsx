@@ -248,7 +248,7 @@ export default function JobManagementPage() {
 			void applyStatusChange(job, newStatus, {
 				ending_substatus: substatus,
 				notes,
-				date_offer_extended: newStatus === "Offer!" ? offerDate : null,
+				date_offer_extended: newStatus === "offer" ? offerDate : null,
 			});
 		},
 		[pendingTerminalChange, applyStatusChange],

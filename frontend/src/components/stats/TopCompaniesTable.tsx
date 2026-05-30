@@ -9,7 +9,7 @@ import {
 	TableRow,
 	Typography,
 } from "@mui/material";
-import { STATUS_COLORS } from "../../constants";
+import { STATUS_COLORS, STATUS_LABELS } from "../../constants";
 import type { JobStatus } from "../../types";
 import CompanyLogo from "../shared/CompanyLogo";
 
@@ -67,7 +67,9 @@ export default function TopCompaniesTable({ topCompanies }: Props) {
 						<TableCell align="center">{row.active}</TableCell>
 						<TableCell>
 							<Chip
-								label={row.bestStage}
+								label={
+									STATUS_LABELS[row.bestStage as JobStatus] ?? row.bestStage
+								}
 								size="small"
 								sx={{
 									backgroundColor:

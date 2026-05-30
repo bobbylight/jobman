@@ -1,9 +1,9 @@
 import type { Job, JobStatus } from "./types";
 
 const GHOSTABLE_STATUSES = new Set<JobStatus>([
-	"Applied",
-	"Phone screen",
-	"Interviewing",
+	"applied",
+	"phone_screen",
+	"interviewing",
 ]);
 const GHOSTED_THRESHOLD_MS = 30 * 24 * 60 * 60 * 1000;
 

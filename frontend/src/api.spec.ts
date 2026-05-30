@@ -32,7 +32,7 @@ const MOCK_JOB: Job = {
 	referred_by: null,
 	role: "Engineer",
 	salary: null,
-	status: "Not started",
+	status: "not_started",
 	tags: [],
 	updated_at: "2024-01-01T00:00:00.000Z",
 };
@@ -172,7 +172,7 @@ describe("aPI module", () => {
 				referred_by: null,
 				role: "Engineer",
 				salary: null,
-				status: "Not started",
+				status: "not_started",
 				tags: [],
 				updated_at: "",
 			};
@@ -530,7 +530,7 @@ describe("aPI module", () => {
 			activePipeline: 2,
 			applicationsByWeek: [],
 			avgDaysPerStage: [],
-			byStatus: [{ status: "Not started", count: 2 }],
+			byStatus: [{ status: "not_started", count: 2 }],
 			companiesApplied: 3,
 			companiesOnSited: 1,
 			companiesPhoneScreened: 2,
@@ -590,15 +590,15 @@ describe("aPI module", () => {
 				id: 1,
 				link: "https://acme.com/job",
 				role: "Engineer",
-				status: "Applied",
+				status: "applied",
 			},
 		];
 
 		it("gETs /api/stats/link-jobs with encoded from, to, and window params", async () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_LINK_JOBS));
-			const result = await api.getLinkJobs("Applied", "Phone screen", "all");
+			const result = await api.getLinkJobs("applied", "phone_screen", "all");
 			expect(mockFetch).toHaveBeenCalledWith(
-				"/api/stats/link-jobs?from=Applied&to=Phone%20screen&window=all",
+				"/api/stats/link-jobs?from=applied&to=phone_screen&window=all",
 				expect.objectContaining({
 					headers: { "Content-Type": "application/json" },
 				}),
@@ -608,9 +608,9 @@ describe("aPI module", () => {
 
 		it("uRL-encodes special characters in from and to params", async () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_LINK_JOBS));
-			await api.getLinkJobs("Rejected/Withdrawn", "Offer!", "30");
+			await api.getLinkJobs("rejected_or_withdrawn", "offer", "30");
 			expect(mockFetch).toHaveBeenCalledWith(
-				"/api/stats/link-jobs?from=Rejected%2FWithdrawn&to=Offer!&window=30",
+				"/api/stats/link-jobs?from=rejected_or_withdrawn&to=offer&window=30",
 				expect.any(Object),
 			);
 		});
@@ -620,7 +620,7 @@ describe("aPI module", () => {
 				makeResponse({ error: "Unauthorized" }, false),
 			);
 			await expect(
-				api.getLinkJobs("Applied", "Phone screen", "all"),
+				api.getLinkJobs("applied", "phone_screen", "all"),
 			).rejects.toThrow("API error 400");
 		});
 	});

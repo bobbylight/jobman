@@ -41,7 +41,7 @@ const BASE_STATS: StatsResponse = {
 	activePipeline: 4,
 	applicationsByWeek: [],
 	avgDaysPerStage: [],
-	byStatus: [{ status: "Not started", count: 4 }],
+	byStatus: [{ status: "not_started", count: 4 }],
 	companiesApplied: 7,
 	companiesOnSited: 2,
 	companiesPhoneScreened: 5,

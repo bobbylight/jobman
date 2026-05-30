@@ -17,7 +17,13 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../api";
-import type { RadarEntry, RadarPatch, RadarResponse } from "../../types";
+import { STATUS_LABELS } from "../../constants";
+import type {
+	JobStatus,
+	RadarEntry,
+	RadarPatch,
+	RadarResponse,
+} from "../../types";
 import CompanyLogo from "../shared/CompanyLogo";
 import PageSpinner from "../shared/PageSpinner";
 
@@ -235,7 +241,10 @@ function RadarRow({
 					sx={{ flex: 1, minWidth: 0 }}
 					noWrap
 				>
-					{entry.latest_active_status ?? "—"}
+					{entry.latest_active_status
+						? (STATUS_LABELS[entry.latest_active_status as JobStatus] ??
+							entry.latest_active_status)
+						: "—"}
 				</Typography>
 
 				{/* Last activity */}
@@ -445,7 +454,7 @@ function RadarRow({
 											{job.role}
 										</Link>
 										<Typography variant="caption" color="text.disabled">
-											· {job.status}
+											· {STATUS_LABELS[job.status as JobStatus] ?? job.status}
 											{job.date_applied
 												? ` · ${job.date_applied.slice(0, 10)}`
 												: ""}

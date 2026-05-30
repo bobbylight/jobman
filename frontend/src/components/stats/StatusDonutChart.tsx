@@ -8,7 +8,7 @@ import {
 	Tooltip,
 } from "recharts";
 import { Box, Typography } from "@mui/material";
-import { STATUSES, STATUS_COLORS } from "../../constants";
+import { STATUSES, STATUS_COLORS, STATUS_LABELS } from "../../constants";
 import type { JobStatus } from "../../types";
 
 interface Props {
@@ -20,7 +20,7 @@ function toChartData(byStatus: { status: string; count: number }[]) {
 	const map = Object.fromEntries(byStatus.map((s) => [s.status, s.count]));
 	return STATUSES.filter((s) => (map[s] ?? 0) > 0).map((s) => ({
 		color: STATUS_COLORS[s as JobStatus],
-		name: s,
+		name: STATUS_LABELS[s as JobStatus],
 		value: map[s],
 	}));
 }

@@ -14,7 +14,8 @@ import {
 	Typography,
 } from "@mui/material";
 import { api } from "../../api";
-import type { LinkJob, StatsWindow } from "../../types";
+import { STATUS_LABELS } from "../../constants";
+import type { JobStatus, LinkJob, StatsWindow } from "../../types";
 
 interface Props {
 	from: string;
@@ -50,7 +51,8 @@ export default function TransitionJobsDialog({
 	return (
 		<Dialog fullWidth maxWidth="sm" onClose={onClose} open={open}>
 			<DialogTitle sx={{ pb: 1 }}>
-				{from} → {to}
+				{STATUS_LABELS[from as JobStatus] ?? from} →{" "}
+				{STATUS_LABELS[to as JobStatus] ?? to}
 				{jobs !== null && (
 					<Typography
 						component="span"

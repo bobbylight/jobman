@@ -46,7 +46,7 @@ const INTERVIEW_B = makeInterview({
 
 const DEFAULT_PROPS = {
 	jobId: 42,
-	jobStatus: "Not started" as const,
+	jobStatus: "not_started" as const,
 	onCountChange: vi.fn(),
 	onViewingQuestionsChange: vi.fn(),
 	viewingQuestionsFor: null,
@@ -288,7 +288,7 @@ describe("interviewsTab", () => {
 			render(
 				<InterviewsTab
 					{...DEFAULT_PROPS}
-					jobStatus={jobStatus as "Not started"}
+					jobStatus={jobStatus as "not_started"}
 				/>,
 			);
 			await waitFor(() =>
@@ -308,7 +308,7 @@ describe("interviewsTab", () => {
 		}
 
 		it("defaults stage to phone_screen and type to recruiter_call for Not started", async () => {
-			await openAddFormWithStatus("Not started");
+			await openAddFormWithStatus("not_started");
 			expect(api.createInterview).toHaveBeenCalledWith(
 				42,
 				expect.objectContaining({
@@ -319,7 +319,7 @@ describe("interviewsTab", () => {
 		});
 
 		it("defaults stage to phone_screen and type to recruiter_call for Applied", async () => {
-			await openAddFormWithStatus("Applied");
+			await openAddFormWithStatus("applied");
 			expect(api.createInterview).toHaveBeenCalledWith(
 				42,
 				expect.objectContaining({
@@ -330,7 +330,7 @@ describe("interviewsTab", () => {
 		});
 
 		it("defaults stage to onsite and type to null for Phone screen", async () => {
-			await openAddFormWithStatus("Phone screen");
+			await openAddFormWithStatus("phone_screen");
 			expect(api.createInterview).toHaveBeenCalledWith(
 				42,
 				expect.objectContaining({
@@ -341,7 +341,7 @@ describe("interviewsTab", () => {
 		});
 
 		it("defaults stage to onsite and type to null for Interviewing", async () => {
-			await openAddFormWithStatus("Interviewing");
+			await openAddFormWithStatus("interviewing");
 			expect(api.createInterview).toHaveBeenCalledWith(
 				42,
 				expect.objectContaining({

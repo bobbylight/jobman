@@ -13,7 +13,7 @@ vi.mock(
 				formatter,
 			}: {
 				formatter: (v: string) => React.ReactNode;
-			}) => <div data-testid="legend">{formatter("Not started")}</div>,
+			}) => <div data-testid="legend">{formatter("not_started")}</div>,
 			Pie: () => <div data-testid="pie" />,
 			PieChart: ({ children }: { children: React.ReactNode }) => (
 				<div data-testid="pie-chart">{children}</div>
@@ -44,8 +44,8 @@ describe("statusDonutChart", () => {
 		render(
 			<StatusDonutChart
 				byStatus={[
-					{ count: 3, status: "Not started" },
-					{ count: 1, status: "Interviewing" },
+					{ count: 3, status: "not_started" },
+					{ count: 1, status: "interviewing" },
 				]}
 			/>,
 		);
@@ -61,8 +61,8 @@ describe("statusDonutChart", () => {
 		render(
 			<StatusDonutChart
 				byStatus={[
-					{ count: 0, status: "Not started" },
-					{ count: 2, status: "Phone screen" },
+					{ count: 0, status: "not_started" },
+					{ count: 2, status: "phone_screen" },
 				]}
 			/>,
 		);
@@ -74,8 +74,8 @@ describe("statusDonutChart", () => {
 		render(
 			<StatusDonutChart
 				byStatus={[
-					{ count: 0, status: "Not started" },
-					{ count: 0, status: "Phone screen" },
+					{ count: 0, status: "not_started" },
+					{ count: 0, status: "phone_screen" },
 				]}
 			/>,
 		);
@@ -84,9 +84,9 @@ describe("statusDonutChart", () => {
 
 	it("renders a legend entry for each status in the data", () => {
 		render(
-			<StatusDonutChart byStatus={[{ count: 5, status: "Not started" }]} />,
+			<StatusDonutChart byStatus={[{ count: 5, status: "not_started" }]} />,
 		);
-		// The mocked Legend calls formatter("Not started") and renders the result
-		expect(screen.getByText("Not started")).toBeInTheDocument();
+		// The mocked Legend calls formatter("not_started") and renders the result
+		expect(screen.getByText("not_started")).toBeInTheDocument();
 	});
 });

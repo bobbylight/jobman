@@ -218,13 +218,13 @@ describe("jobManagementPage", () => {
 				company: "Withdrawn Co",
 				ending_substatus: "Withdrawn",
 				id: 1,
-				status: "Rejected/Withdrawn",
+				status: "rejected_or_withdrawn",
 			}),
 			makeJob({
 				company: "Rejected Co",
 				ending_substatus: "Rejected",
 				id: 2,
-				status: "Rejected/Withdrawn",
+				status: "rejected_or_withdrawn",
 			}),
 		]);
 		renderPage();
@@ -272,7 +272,7 @@ describe("jobManagementPage", () => {
 				company: "Withdrawn Co",
 				ending_substatus: "Withdrawn",
 				id: 1,
-				status: "Rejected/Withdrawn",
+				status: "rejected_or_withdrawn",
 			}),
 			makeJob({ company: "Normal Co", id: 2 }),
 		]);
@@ -603,13 +603,13 @@ describe("jobManagementPage", () => {
 			const job = makeJob({
 				ending_substatus: "Rejected",
 				id: 1,
-				status: "Rejected/Withdrawn",
+				status: "rejected_or_withdrawn",
 			});
 			mockGetJobs.mockResolvedValue([job]);
 			vi.mocked(api.updateJob).mockResolvedValue({
 				...job,
 				ending_substatus: null,
-				status: "Applied",
+				status: "applied",
 			});
 
 			renderPage();
@@ -622,7 +622,7 @@ describe("jobManagementPage", () => {
 
 			const [{ onStatusChange }] = MockKanbanBoard.mock.lastCall!;
 			act(() => {
-				onStatusChange(job, "Applied");
+				onStatusChange(job, "applied");
 			});
 
 			await waitFor(() => {
@@ -630,7 +630,7 @@ describe("jobManagementPage", () => {
 					1,
 					expect.objectContaining({
 						ending_substatus: null,
-						status: "Applied",
+						status: "applied",
 					}),
 				);
 			});
@@ -771,7 +771,7 @@ describe("jobManagementPage", () => {
 			MockKanbanBoard.mockImplementation(({ jobs, onStatusChange }) => {
 				boardJobs = jobs;
 				return (
-					<button onClick={() => onStatusChange(jobs[0]!, "Phone screen")}>
+					<button onClick={() => onStatusChange(jobs[0]!, "phone_screen")}>
 						change status
 					</button>
 				);

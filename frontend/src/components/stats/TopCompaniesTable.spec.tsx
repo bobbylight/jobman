@@ -6,19 +6,19 @@ const TOP_COMPANIES = [
 	{
 		active: 2,
 		applications: 3,
-		bestStage: "Interviewing",
+		bestStage: "interviewing",
 		company: "Acme Corp",
 	},
 	{
 		active: 1,
 		applications: 2,
-		bestStage: "Phone screen",
+		bestStage: "phone_screen",
 		company: "Globex",
 	},
 	{
 		active: 0,
 		applications: 1,
-		bestStage: "Rejected/Withdrawn",
+		bestStage: "rejected_or_withdrawn",
 		company: "Initech",
 	},
 ];
@@ -71,19 +71,19 @@ describe("topCompaniesTable", () => {
 
 	it("renders all rows when given a full list of 5 companies", () => {
 		const FIVE_COMPANIES = [
-			{ active: 3, applications: 5, bestStage: "Offer!", company: "A" },
-			{ active: 2, applications: 4, bestStage: "Interviewing", company: "B" },
-			{ active: 1, applications: 3, bestStage: "Phone screen", company: "C" },
+			{ active: 3, applications: 5, bestStage: "offer", company: "A" },
+			{ active: 2, applications: 4, bestStage: "interviewing", company: "B" },
+			{ active: 1, applications: 3, bestStage: "phone_screen", company: "C" },
 			{
 				active: 0,
 				applications: 2,
-				bestStage: "Rejected/Withdrawn",
+				bestStage: "rejected_or_withdrawn",
 				company: "D",
 			},
 			{
 				active: 1,
 				applications: 1,
-				bestStage: "Applied",
+				bestStage: "applied",
 				company: "E",
 			},
 		];

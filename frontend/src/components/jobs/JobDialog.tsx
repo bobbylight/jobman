@@ -30,6 +30,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
 	OFFER_SUBSTATUSES,
 	REJECTED_SUBSTATUSES,
+	STATUS_LABELS,
 	FIT_SCORES,
 	JOB_MAX_LENGTHS,
 	JOB_TAGS,
@@ -66,7 +67,7 @@ const EMPTY: JobFormData = {
 	referred_by: null,
 	role: "",
 	salary: null,
-	status: "Not started",
+	status: "not_started",
 	tags: [],
 	updated_at: "",
 };
@@ -220,7 +221,7 @@ export default function JobDialog({
 		if (TERMINAL_STATUSES.has(form.status) && !form.ending_substatus) {
 			e.ending_substatus = "Required for this status";
 		}
-		if (isEdit && form.status === "Offer!" && !form.date_offer_extended) {
+		if (isEdit && form.status === "offer" && !form.date_offer_extended) {
 			e.date_offer_extended = "Required for Offer! status";
 		}
 		setErrors(e);
@@ -450,7 +451,7 @@ export default function JobDialog({
 											const isTerminal = TERMINAL_STATUSES.has(newStatus);
 											setForm((f) => {
 												const validSet =
-													newStatus === "Offer!"
+													newStatus === "offer"
 														? (OFFER_SUBSTATUSES as string[])
 														: (REJECTED_SUBSTATUSES as string[]);
 												const keepSubstatus =
@@ -477,7 +478,7 @@ export default function JobDialog({
 									>
 										{STATUSES.map((s) => (
 											<MenuItem key={s} value={s}>
-												{s}
+												{STATUS_LABELS[s]}
 											</MenuItem>
 										))}
 									</TextField>
@@ -503,7 +504,7 @@ export default function JobDialog({
 										<MenuItem value="">
 											<em>None</em>
 										</MenuItem>
-										{(form.status === "Offer!"
+										{(form.status === "offer"
 											? OFFER_SUBSTATUSES
 											: REJECTED_SUBSTATUSES
 										).map((s) => (
@@ -646,7 +647,7 @@ export default function JobDialog({
 											}
 											error={Boolean(errors.date_offer_extended)}
 											helperText={errors.date_offer_extended}
-											disabled={form.status !== "Offer!"}
+											disabled={form.status !== "offer"}
 											fullWidth
 											size="small"
 											slotProps={{ inputLabel: { shrink: true } }}

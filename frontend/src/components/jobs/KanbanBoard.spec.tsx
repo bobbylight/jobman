@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import KanbanBoard from "./KanbanBoard";
 import type { Job } from "../../types";
-import { STATUSES } from "../../constants";
+import { STATUSES, STATUS_LABELS } from "../../constants";
 import { makeJob } from "../../testUtils";
 
 vi.mock(
@@ -43,7 +43,7 @@ describe("kanbanBoard", () => {
 	it("renders all 6 status columns", () => {
 		render(<KanbanBoard {...DEFAULT_PROPS} jobs={[]} />);
 		for (const status of STATUSES) {
-			expect(screen.getByText(status)).toBeInTheDocument();
+			expect(screen.getByText(STATUS_LABELS[status])).toBeInTheDocument();
 		}
 	});
 
@@ -55,9 +55,9 @@ describe("kanbanBoard", () => {
 
 	it("places each job in the correct column", () => {
 		const jobs: Job[] = [
-			makeJob({ company: "Alpha", id: 1, status: "Not started" }),
-			makeJob({ company: "Beta", id: 2, status: "Offer!" }),
-			makeJob({ company: "Gamma", id: 3, status: "Not started" }),
+			makeJob({ company: "Alpha", id: 1, status: "not_started" }),
+			makeJob({ company: "Beta", id: 2, status: "offer" }),
+			makeJob({ company: "Gamma", id: 3, status: "not_started" }),
 		];
 		render(<KanbanBoard {...DEFAULT_PROPS} jobs={jobs} />);
 
@@ -68,8 +68,8 @@ describe("kanbanBoard", () => {
 
 	it("renders all provided jobs as cards", () => {
 		const jobs: Job[] = [
-			makeJob({ company: "Alpha", id: 1, status: "Not started" }),
-			makeJob({ company: "Beta", id: 2, status: "Applied" }),
+			makeJob({ company: "Alpha", id: 1, status: "not_started" }),
+			makeJob({ company: "Beta", id: 2, status: "applied" }),
 		];
 		render(<KanbanBoard {...DEFAULT_PROPS} jobs={jobs} />);
 		expect(screen.getByText("Alpha")).toBeInTheDocument();

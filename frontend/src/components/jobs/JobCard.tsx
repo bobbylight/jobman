@@ -40,27 +40,27 @@ const STATUS_DATE_LABEL: Record<
 	JobStatus,
 	{ label: string; getDate: (job: Job) => string | null }
 > = {
-	Interviewing: {
+	interviewing: {
 		getDate: (job) => formatDate(job.date_last_onsite),
 		label: "Last onsite",
 	},
-	"Not started": {
+	not_started: {
 		getDate: (job) => formatDate(job.created_at),
 		label: "Last updated",
 	},
-	"Offer!": {
+	offer: {
 		getDate: (job) => formatDate(job.date_offer_extended),
 		label: "Offer received",
 	},
-	"Phone screen": {
+	phone_screen: {
 		getDate: (job) => formatDate(job.date_phone_screen),
 		label: "Phone screen",
 	},
-	"Rejected/Withdrawn": {
+	rejected_or_withdrawn: {
 		getDate: (job) => formatDate(job.updated_at),
 		label: "Last updated",
 	},
-	Applied: {
+	applied: {
 		getDate: (job) => formatDate(job.date_applied),
 		label: "Applied",
 	},

@@ -27,7 +27,7 @@ import MarkdownField from "../../shared/MarkdownField";
 import { FEELING_OPTIONS, VIBE_OPTIONS } from "./interviewDisplayOptions";
 
 export function makeEmptyForm(jobStatus: JobStatus): InterviewFormData {
-	const isEarly = jobStatus === "Not started" || jobStatus === "Applied";
+	const isEarly = jobStatus === "not_started" || jobStatus === "applied";
 	return {
 		interview_dttm: "",
 		interview_interviewers: null,

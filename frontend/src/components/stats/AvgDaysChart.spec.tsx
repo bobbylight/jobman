@@ -22,9 +22,9 @@ vi.mock(
 );
 
 const STAGE_DATA = [
-	{ avgDays: 5, stage: "Applied" },
-	{ avgDays: 3, stage: "Phone screen" },
-	{ avgDays: 14, stage: "Interviewing" },
+	{ avgDays: 5, stage: "applied" },
+	{ avgDays: 3, stage: "phone_screen" },
+	{ avgDays: 14, stage: "interviewing" },
 ];
 
 describe("avgDaysChart", () => {
@@ -54,7 +54,7 @@ describe("avgDaysChart", () => {
 
 	it("renders with a single data point", () => {
 		render(
-			<AvgDaysChart avgDaysPerStage={[{ avgDays: 7, stage: "Applied" }]} />,
+			<AvgDaysChart avgDaysPerStage={[{ avgDays: 7, stage: "applied" }]} />,
 		);
 		expect(screen.getByTestId("recharts-container")).toBeInTheDocument();
 	});

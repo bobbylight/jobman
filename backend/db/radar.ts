@@ -140,7 +140,7 @@ export function getRadar(
 		.prepare(
 			`SELECT id, lower(company) as company_key, role, status, date_applied
        FROM jobs WHERE user_id = ?
-         AND NOT (status = 'Rejected/Withdrawn'
+         AND NOT (status = 'rejected_or_withdrawn'
            AND ending_substatus IN ('Job closed', 'Not a good fit'))
        ORDER BY date_applied DESC, created_at DESC`,
 		)
@@ -164,17 +164,17 @@ export function getRadar(
          CASE
            WHEN EXISTS(
              SELECT 1 FROM job_status_history h
-             WHERE h.job_id = j.id AND h.status IN ('Interviewing', 'Offer!')
+             WHERE h.job_id = j.id AND h.status IN ('interviewing', 'offer')
            ) THEN 'onsite'
            WHEN EXISTS(
              SELECT 1 FROM job_status_history h
-             WHERE h.job_id = j.id AND h.status = 'Phone screen'
+             WHERE h.job_id = j.id AND h.status = 'phone_screen'
            ) THEN 'phone_screen'
            ELSE 'applied'
          END as rejection_stage
        FROM jobs j
        JOIN job_status_history h_rej ON h_rej.job_id = j.id
-         AND h_rej.status = 'Rejected/Withdrawn'
+         AND h_rej.status = 'rejected_or_withdrawn'
        WHERE j.user_id = ?
          AND (j.ending_substatus IS NULL
            OR j.ending_substatus NOT IN ('Withdrawn', 'Offer declined', 'Offer accepted',
@@ -227,16 +227,16 @@ export function getRadar(
 	}
 
 	const STATUS_RANK: Record<string, number> = {
-		"Interviewing": 4,
-		"Phone screen": 3,
-		"Applied": 2,
-		"Not started": 1,
+		interviewing: 4,
+		phone_screen: 3,
+		applied: 2,
+		not_started: 1,
 	};
 	const RANK_TO_STATUS: Record<number, string> = {
-		4: "Interviewing",
-		3: "Phone screen",
-		2: "Applied",
-		1: "Not started",
+		4: "interviewing",
+		3: "phone_screen",
+		2: "applied",
+		1: "not_started",
 	};
 
 	const today = new Date();
@@ -252,12 +252,12 @@ export function getRadar(
 			lastApplication !== null || lastInterview !== null || companyJobs.length > 0;
 
 		const bestRank = companyJobs
-			.filter((j) => j.status !== "Offer!" && j.status !== "Rejected/Withdrawn")
+			.filter((j) => j.status !== "offer" && j.status !== "rejected_or_withdrawn")
 			.reduce((best, j) => Math.max(best, STATUS_RANK[j.status] ?? 0), 0);
 		const latestActiveStatus = bestRank > 0 ? (RANK_TO_STATUS[bestRank] ?? null) : null;
 
 		const activeJob =
-			companyJobs.find((j) => j.status !== "Rejected/Withdrawn") ?? null;
+			companyJobs.find((j) => j.status !== "rejected_or_withdrawn") ?? null;
 
 		// Compute the earliest date each cooldown expires
 		const unlockCandidates: Date[] = [];

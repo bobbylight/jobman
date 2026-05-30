@@ -36,9 +36,9 @@ function dateFilter(window: Window): string {
 	return "";
 }
 
-const ACTIVE_STATUSES = `('Not started', 'Applied', 'Phone screen', 'Interviewing')`;
-const SUBMITTED_STATUSES = `('Applied', 'Phone screen', 'Interviewing', 'Offer!', 'Rejected/Withdrawn')`;
-const RESPONDED_STATUSES = `('Phone screen', 'Interviewing', 'Offer!')`;
+const ACTIVE_STATUSES = `('not_started', 'applied', 'phone_screen', 'interviewing')`;
+const SUBMITTED_STATUSES = `('applied', 'phone_screen', 'interviewing', 'offer', 'rejected_or_withdrawn')`;
+const RESPONDED_STATUSES = `('phone_screen', 'interviewing', 'offer')`;
 const EXCLUDED_SUBSTATUSES = `('Withdrawn', 'Not a good fit', 'Job closed')`;
 
 export function getStats(
@@ -66,7 +66,7 @@ export function getStats(
 	const offers = (
 		db
 			.prepare(
-				`SELECT COUNT(*) as count FROM jobs WHERE ${baseWhere} AND status = 'Offer!'`,
+				`SELECT COUNT(*) as count FROM jobs WHERE ${baseWhere} AND status = 'offer'`,
 			)
 			.get(userId) as { count: number }
 	).count;
@@ -88,7 +88,7 @@ export function getStats(
 				`SELECT COUNT(*) as count FROM jobs WHERE ${baseWhere}
        AND (
          status IN ${RESPONDED_STATUSES}
-         OR (status = 'Rejected/Withdrawn' AND date_phone_screen IS NOT NULL)
+         OR (status = 'rejected_or_withdrawn' AND date_phone_screen IS NOT NULL)
        )`,
 			)
 			.get(userId) as { count: number }
@@ -110,8 +110,8 @@ export function getStats(
 			.prepare(
 				`SELECT COUNT(DISTINCT company) as count FROM jobs WHERE ${baseWhere}
        AND (
-         status IN ('Phone screen', 'Interviewing', 'Offer!')
-         OR (status = 'Rejected/Withdrawn' AND date_phone_screen IS NOT NULL)
+         status IN ('phone_screen', 'interviewing', 'offer')
+         OR (status = 'rejected_or_withdrawn' AND date_phone_screen IS NOT NULL)
        )`,
 			)
 			.get(userId) as { count: number }
@@ -122,8 +122,8 @@ export function getStats(
 			.prepare(
 				`SELECT COUNT(DISTINCT company) as count FROM jobs WHERE ${baseWhere}
        AND (
-         status IN ('Interviewing', 'Offer!')
-         OR (status = 'Rejected/Withdrawn' AND date_last_onsite IS NOT NULL)
+         status IN ('interviewing', 'offer')
+         OR (status = 'rejected_or_withdrawn' AND date_last_onsite IS NOT NULL)
        )`,
 			)
 			.get(userId) as { count: number }
@@ -183,12 +183,12 @@ export function getStats(
         AND julianday(next_entered_at) - julianday(entered_at) > 0
       GROUP BY status
       ORDER BY MIN(CASE status
-        WHEN 'Not started'       THEN 1
-        WHEN 'Applied'  THEN 2
-        WHEN 'Phone screen'      THEN 3
-        WHEN 'Interviewing'      THEN 4
-        WHEN 'Offer!'            THEN 5
-        WHEN 'Rejected/Withdrawn' THEN 6
+        WHEN 'not_started'        THEN 1
+        WHEN 'applied'            THEN 2
+        WHEN 'phone_screen'       THEN 3
+        WHEN 'interviewing'       THEN 4
+        WHEN 'offer'              THEN 5
+        WHEN 'rejected_or_withdrawn' THEN 6
         ELSE 7
       END)`,
 		)
@@ -218,65 +218,65 @@ export function getStats(
           jf.starting_status,
           jf.current_status,
           jf.ending_substatus,
-          MAX(CASE WHEN h.status = 'Applied'      THEN 1 ELSE 0 END) AS reached_applied,
-          MAX(CASE WHEN h.status = 'Phone screen' THEN 1 ELSE 0 END) AS reached_phone_screen,
-          MAX(CASE WHEN h.status = 'Interviewing' THEN 1 ELSE 0 END) AS reached_interviewing,
-          MAX(CASE WHEN h.status = 'Offer!'       THEN 1 ELSE 0 END) AS reached_offer
+          MAX(CASE WHEN h.status = 'applied'      THEN 1 ELSE 0 END) AS reached_applied,
+          MAX(CASE WHEN h.status = 'phone_screen' THEN 1 ELSE 0 END) AS reached_phone_screen,
+          MAX(CASE WHEN h.status = 'interviewing' THEN 1 ELSE 0 END) AS reached_interviewing,
+          MAX(CASE WHEN h.status = 'offer'        THEN 1 ELSE 0 END) AS reached_offer
         FROM job_filter jf
         LEFT JOIN job_status_history h ON h.job_id = jf.id
         GROUP BY jf.id, jf.starting_status, jf.current_status, jf.ending_substatus
       )
       -- Source → Applied
-      SELECT starting_status AS "from", 'Applied' AS "to", COUNT(*) AS count
+      SELECT starting_status AS "from", 'applied' AS "to", COUNT(*) AS count
       FROM job_stages WHERE reached_applied = 1
       GROUP BY starting_status
 
       UNION ALL
       -- Applied → Phone screen
-      SELECT 'Applied', 'Phone screen', COUNT(*) FROM job_stages
+      SELECT 'applied', 'phone_screen', COUNT(*) FROM job_stages
       WHERE reached_phone_screen = 1 HAVING COUNT(*) > 0
 
       UNION ALL
       -- Phone screen → Interviewing
-      SELECT 'Phone screen', 'Interviewing', COUNT(*) FROM job_stages
+      SELECT 'phone_screen', 'interviewing', COUNT(*) FROM job_stages
       WHERE reached_interviewing = 1 HAVING COUNT(*) > 0
 
       UNION ALL
-      -- Interviewing → Offer!
-      SELECT 'Interviewing', 'Offer!', COUNT(*) FROM job_stages
+      -- Interviewing → Offer
+      SELECT 'interviewing', 'offer', COUNT(*) FROM job_stages
       WHERE reached_offer = 1 HAVING COUNT(*) > 0
 
       UNION ALL
       -- Terminal at Applied (stopped before Phone screen, then rejected/withdrawn)
-      SELECT 'Applied', COALESCE(ending_substatus, 'Rejected/Withdrawn'), COUNT(*)
+      SELECT 'applied', COALESCE(ending_substatus, 'rejected_or_withdrawn'), COUNT(*)
       FROM job_stages
       WHERE reached_applied = 1 AND reached_phone_screen = 0
-        AND current_status = 'Rejected/Withdrawn'
-      GROUP BY COALESCE(ending_substatus, 'Rejected/Withdrawn')
+        AND current_status = 'rejected_or_withdrawn'
+      GROUP BY COALESCE(ending_substatus, 'rejected_or_withdrawn')
 
       UNION ALL
       -- Terminal at Phone screen (stopped before Interviewing, then rejected/withdrawn)
-      SELECT 'Phone screen', COALESCE(ending_substatus, 'Rejected/Withdrawn'), COUNT(*)
+      SELECT 'phone_screen', COALESCE(ending_substatus, 'rejected_or_withdrawn'), COUNT(*)
       FROM job_stages
       WHERE reached_phone_screen = 1 AND reached_interviewing = 0
-        AND current_status = 'Rejected/Withdrawn'
-      GROUP BY COALESCE(ending_substatus, 'Rejected/Withdrawn')
+        AND current_status = 'rejected_or_withdrawn'
+      GROUP BY COALESCE(ending_substatus, 'rejected_or_withdrawn')
 
       UNION ALL
-      -- Terminal at Interviewing (stopped before Offer!, then rejected/withdrawn)
-      SELECT 'Interviewing', COALESCE(ending_substatus, 'Rejected/Withdrawn'), COUNT(*)
+      -- Terminal at Interviewing (stopped before Offer, then rejected/withdrawn)
+      SELECT 'interviewing', COALESCE(ending_substatus, 'rejected_or_withdrawn'), COUNT(*)
       FROM job_stages
       WHERE reached_interviewing = 1 AND reached_offer = 0
-        AND current_status = 'Rejected/Withdrawn'
-      GROUP BY COALESCE(ending_substatus, 'Rejected/Withdrawn')
+        AND current_status = 'rejected_or_withdrawn'
+      GROUP BY COALESCE(ending_substatus, 'rejected_or_withdrawn')
 
       UNION ALL
-      -- Terminal at Offer! (offer concluded or rejected after reaching Offer!)
-      SELECT 'Offer!', COALESCE(ending_substatus, 'Rejected/Withdrawn'), COUNT(*)
+      -- Terminal at Offer (offer concluded or rejected after reaching Offer)
+      SELECT 'offer', COALESCE(ending_substatus, 'rejected_or_withdrawn'), COUNT(*)
       FROM job_stages
       WHERE reached_offer = 1
-        AND (ending_substatus IS NOT NULL OR current_status = 'Rejected/Withdrawn')
-      GROUP BY COALESCE(ending_substatus, 'Rejected/Withdrawn')`,
+        AND (ending_substatus IS NOT NULL OR current_status = 'rejected_or_withdrawn')
+      GROUP BY COALESCE(ending_substatus, 'rejected_or_withdrawn')`,
 		)
 		.all(userId) as { from: string; to: string; count: number }[];
 
@@ -305,23 +305,23 @@ export function getStats(
 			`SELECT
         company,
         COUNT(*) AS applications,
-        SUM(CASE WHEN status IN ('Not started', 'Applied', 'Phone screen', 'Interviewing', 'Offer!')
+        SUM(CASE WHEN status IN ('not_started', 'applied', 'phone_screen', 'interviewing', 'offer')
              THEN 1 ELSE 0 END) AS active,
         CASE MAX(CASE status
-          WHEN 'Offer!'             THEN 6
-          WHEN 'Interviewing'       THEN 5
-          WHEN 'Phone screen'       THEN 4
-          WHEN 'Applied'   THEN 3
-          WHEN 'Rejected/Withdrawn' THEN 2
-          WHEN 'Not started'        THEN 1
+          WHEN 'offer'                THEN 6
+          WHEN 'interviewing'         THEN 5
+          WHEN 'phone_screen'         THEN 4
+          WHEN 'applied'              THEN 3
+          WHEN 'rejected_or_withdrawn' THEN 2
+          WHEN 'not_started'          THEN 1
           ELSE 0
         END)
-          WHEN 6 THEN 'Offer!'
-          WHEN 5 THEN 'Interviewing'
-          WHEN 4 THEN 'Phone screen'
-          WHEN 3 THEN 'Applied'
-          WHEN 2 THEN 'Rejected/Withdrawn'
-          WHEN 1 THEN 'Not started'
+          WHEN 6 THEN 'offer'
+          WHEN 5 THEN 'interviewing'
+          WHEN 4 THEN 'phone_screen'
+          WHEN 3 THEN 'applied'
+          WHEN 2 THEN 'rejected_or_withdrawn'
+          WHEN 1 THEN 'not_started'
         END AS bestStage
        FROM jobs
        WHERE ${baseWhere}
@@ -413,39 +413,39 @@ export interface LinkJob {
 
 const VALID_LINK_NODES = new Set([
 	"Direct", "Recruited", "Referred",
-	"Applied", "Phone screen", "Interviewing", "Offer!",
-	"Rejected/Withdrawn",
+	"applied", "phone_screen", "interviewing", "offer",
+	"rejected_or_withdrawn",
 	"Ghosted", "Job closed", "No response", "Not a good fit",
 	"Offer accepted", "Offer declined", "Rejected", "Withdrawn",
 ]);
 
 const STAGE_TO_COL: Record<string, string> = {
-	Applied: "reached_applied",
-	"Phone screen": "reached_phone_screen",
-	Interviewing: "reached_interviewing",
-	"Offer!": "reached_offer",
+	applied: "reached_applied",
+	phone_screen: "reached_phone_screen",
+	interviewing: "reached_interviewing",
+	offer: "reached_offer",
 };
 
 const STAGE_NEXT: Record<string, string | undefined> = {
-	Applied: "Phone screen",
-	"Phone screen": "Interviewing",
-	Interviewing: "Offer!",
-	"Offer!": undefined,
+	applied: "phone_screen",
+	phone_screen: "interviewing",
+	interviewing: "offer",
+	offer: undefined,
 };
 
 const SOURCES = new Set(["Direct", "Recruited", "Referred"]);
 
 function buildLinkCondition(from: string, to: string): [string, string[]] {
-	if (SOURCES.has(from) && to === "Applied") {
+	if (SOURCES.has(from) && to === "applied") {
 		return ["js.starting_status = ? AND js.reached_applied = 1", [from]];
 	}
-	if (from === "Applied" && to === "Phone screen") {
+	if (from === "applied" && to === "phone_screen") {
 		return ["js.reached_phone_screen = 1", []];
 	}
-	if (from === "Phone screen" && to === "Interviewing") {
+	if (from === "phone_screen" && to === "interviewing") {
 		return ["js.reached_interviewing = 1", []];
 	}
-	if (from === "Interviewing" && to === "Offer!") {
+	if (from === "interviewing" && to === "offer") {
 		return ["js.reached_offer = 1", []];
 	}
 
@@ -456,28 +456,28 @@ function buildLinkCondition(from: string, to: string): [string, string[]] {
 	const nextStage = STAGE_NEXT[from];
 	const notNextCond = nextStage ? `AND js.${STAGE_TO_COL[nextStage]} = 0` : "";
 
-	if (from === "Offer!") {
-		if (to === "Rejected/Withdrawn") {
+	if (from === "offer") {
+		if (to === "rejected_or_withdrawn") {
 			return [
-				"js.reached_offer = 1 AND js.current_status = 'Rejected/Withdrawn' AND js.ending_substatus IS NULL",
+				"js.reached_offer = 1 AND js.current_status = 'rejected_or_withdrawn' AND js.ending_substatus IS NULL",
 				[],
 			];
 		}
 		return [
-			"js.reached_offer = 1 AND (js.ending_substatus IS NOT NULL OR js.current_status = 'Rejected/Withdrawn') AND js.ending_substatus = ?",
+			"js.reached_offer = 1 AND (js.ending_substatus IS NOT NULL OR js.current_status = 'rejected_or_withdrawn') AND js.ending_substatus = ?",
 			[to],
 		];
 	}
 
-	if (to === "Rejected/Withdrawn") {
+	if (to === "rejected_or_withdrawn") {
 		return [
-			`js.${fromCol} = 1 ${notNextCond} AND js.current_status = 'Rejected/Withdrawn' AND js.ending_substatus IS NULL`,
+			`js.${fromCol} = 1 ${notNextCond} AND js.current_status = 'rejected_or_withdrawn' AND js.ending_substatus IS NULL`,
 			[],
 		];
 	}
 
 	return [
-		`js.${fromCol} = 1 ${notNextCond} AND js.current_status = 'Rejected/Withdrawn' AND js.ending_substatus = ?`,
+		`js.${fromCol} = 1 ${notNextCond} AND js.current_status = 'rejected_or_withdrawn' AND js.ending_substatus = ?`,
 		[to],
 	];
 }
@@ -514,10 +514,10 @@ export function getJobsForLink(
           jf.starting_status,
           jf.current_status,
           jf.ending_substatus,
-          MAX(CASE WHEN h.status = 'Applied'      THEN 1 ELSE 0 END) AS reached_applied,
-          MAX(CASE WHEN h.status = 'Phone screen' THEN 1 ELSE 0 END) AS reached_phone_screen,
-          MAX(CASE WHEN h.status = 'Interviewing' THEN 1 ELSE 0 END) AS reached_interviewing,
-          MAX(CASE WHEN h.status = 'Offer!'       THEN 1 ELSE 0 END) AS reached_offer
+          MAX(CASE WHEN h.status = 'applied'      THEN 1 ELSE 0 END) AS reached_applied,
+          MAX(CASE WHEN h.status = 'phone_screen' THEN 1 ELSE 0 END) AS reached_phone_screen,
+          MAX(CASE WHEN h.status = 'interviewing' THEN 1 ELSE 0 END) AS reached_interviewing,
+          MAX(CASE WHEN h.status = 'offer'        THEN 1 ELSE 0 END) AS reached_offer
         FROM job_filter jf
         LEFT JOIN job_status_history h ON h.job_id = jf.id
         GROUP BY jf.id, jf.starting_status, jf.current_status, jf.ending_substatus

@@ -9,7 +9,11 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
-import { OFFER_SUBSTATUSES, REJECTED_SUBSTATUSES } from "../../constants";
+import {
+	OFFER_SUBSTATUSES,
+	REJECTED_SUBSTATUSES,
+	STATUS_LABELS,
+} from "../../constants";
 import type { EndingSubstatus, Job, JobStatus } from "../../types";
 
 interface Props {
@@ -37,7 +41,7 @@ export default function EndingStatusDialog({
 	const [error, setError] = useState("");
 	const [offerDateError, setOfferDateError] = useState("");
 
-	const isOffer = newStatus === "Offer!";
+	const isOffer = newStatus === "offer";
 	const substatusOptions = isOffer ? OFFER_SUBSTATUSES : REJECTED_SUBSTATUSES;
 
 	useEffect(() => {
@@ -81,7 +85,7 @@ export default function EndingStatusDialog({
 					<strong>
 						{job?.company} – {job?.role}
 					</strong>{" "}
-					to <strong>{newStatus}</strong>
+					to <strong>{newStatus ? STATUS_LABELS[newStatus] : ""}</strong>
 				</Typography>
 				<TextField
 					select

@@ -13,7 +13,12 @@ import {
 	type SankeyNode,
 } from "d3-sankey";
 import { Box, Paper, Typography, useTheme } from "@mui/material";
-import { ENDING_SUBSTATUSES, STATUSES, STATUS_COLORS } from "../../constants";
+import {
+	ENDING_SUBSTATUSES,
+	STATUSES,
+	STATUS_COLORS,
+	STATUS_LABELS,
+} from "../../constants";
 import type { EndingSubstatus, JobStatus } from "../../types";
 
 interface Props {
@@ -53,8 +58,10 @@ const STARTING_STATUS_COLORS: Record<string, string> = {
 // Index) to keep the Sankey flowing left→right.
 const NODE_ORDER: string[] = [
 	...Object.keys(STARTING_STATUS_COLORS),
-	...STATUSES.filter((s) => s !== "Not started" && s !== "Rejected/Withdrawn"),
-	"Rejected/Withdrawn",
+	...STATUSES.filter(
+		(s) => s !== "not_started" && s !== "rejected_or_withdrawn",
+	),
+	"rejected_or_withdrawn",
 	...ENDING_SUBSTATUSES,
 ];
 
@@ -71,7 +78,7 @@ function nodeColor(name: string): string {
 // Pipeline stages like "Phone screen" are intentionally excluded so they always
 // Exit from the bottom of a source node, keeping the active funnel at the bottom.
 const TERMINAL_NAMES = new Set<string>([
-	"Rejected/Withdrawn",
+	"rejected_or_withdrawn",
 	...ENDING_SUBSTATUSES,
 ]);
 
@@ -301,7 +308,9 @@ export default function PipelineFunnelChart({
 						const lx = x + w + 6;
 						const cy = y + h / 2;
 						const count = String(node.value ?? 0);
-						const bgW = count.length * 7.5 + 4 + node.name.length * 6.5;
+						const nodeLabel =
+							STATUS_LABELS[node.name as JobStatus] ?? node.name;
+						const bgW = count.length * 7.5 + 4 + nodeLabel.length * 6.5;
 						const bgH = 17;
 						return (
 							<g key={node.name}>
@@ -330,7 +339,7 @@ export default function PipelineFunnelChart({
 									fill="#444"
 								>
 									<tspan fontWeight="bold">{count}</tspan>
-									{` ${node.name}`}
+									{` ${nodeLabel}`}
 								</text>
 							</g>
 						);

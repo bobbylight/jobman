@@ -6,12 +6,12 @@ export interface User {
 }
 
 export type JobStatus =
-	| "Not started"
-	| "Applied"
-	| "Phone screen"
-	| "Interviewing"
-	| "Offer!"
-	| "Rejected/Withdrawn";
+	| "not_started"
+	| "applied"
+	| "phone_screen"
+	| "interviewing"
+	| "offer"
+	| "rejected_or_withdrawn";
 
 export type RejectedSubstatus =
 	| "Withdrawn"

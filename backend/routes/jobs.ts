@@ -26,13 +26,13 @@ export function createJobsRouter(db: Database.Database) {
 		if (lengthError) {return res.status(422).json({ error: lengthError });}
 
 		const substatusError = validateEndingSubstatus(
-			f.status ?? "Not started",
+			f.status ?? "not_started",
 			f.ending_substatus ?? null,
 		);
 		if (substatusError) {return res.status(422).json({ error: substatusError });}
 
 		const offerDateError = validateOfferDate(
-			f.status ?? "Not started",
+			f.status ?? "not_started",
 			f.date_offer_extended ?? null,
 		);
 		if (offerDateError) {return res.status(422).json({ error: offerDateError });}
@@ -57,7 +57,7 @@ export function createJobsRouter(db: Database.Database) {
 			referred_by: f.referred_by ?? null,
 			role: f.role,
 			salary: f.salary ?? null,
-			status: f.status ?? "Not started",
+			status: f.status ?? "not_started",
 			tags: Array.isArray(f.tags) ? f.tags : [],
 			user_id: userId,
 		});

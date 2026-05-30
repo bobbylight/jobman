@@ -15,45 +15,45 @@ describe("isPossiblyGhosted", () => {
 		vi.useRealTimers();
 	});
 
-	it("returns false for 'Not started' regardless of dates", () => {
+	it("returns false for 'not_started' regardless of dates", () => {
 		expect(
 			isPossiblyGhosted({
 				...BASE_JOB,
-				status: "Not started",
+				status: "not_started",
 				date_applied: "2024-12-31",
 			}),
 		).toBeFalsy();
 	});
 
-	it("returns false for 'Offer!' regardless of dates", () => {
+	it("returns false for 'offer' regardless of dates", () => {
 		expect(
 			isPossiblyGhosted({
 				...BASE_JOB,
-				status: "Offer!",
+				status: "offer",
 				date_applied: "2024-12-31",
 			}),
 		).toBeFalsy();
 	});
 
-	it("returns false for 'Rejected/Withdrawn' regardless of dates", () => {
+	it("returns false for 'rejected_or_withdrawn' regardless of dates", () => {
 		expect(
 			isPossiblyGhosted({
 				...BASE_JOB,
-				status: "Rejected/Withdrawn",
+				status: "rejected_or_withdrawn",
 				date_applied: "2024-12-31",
 			}),
 		).toBeFalsy();
 	});
 
 	it("returns false when all dates are null (no data)", () => {
-		expect(isPossiblyGhosted({ ...BASE_JOB, status: "Applied" })).toBeFalsy();
+		expect(isPossiblyGhosted({ ...BASE_JOB, status: "applied" })).toBeFalsy();
 	});
 
 	it("returns true for Applied when date_applied is 31 days ago", () => {
 		expect(
 			isPossiblyGhosted({
 				...BASE_JOB,
-				status: "Applied",
+				status: "applied",
 				date_applied: "2024-12-31",
 			}),
 		).toBeTruthy();
@@ -63,17 +63,17 @@ describe("isPossiblyGhosted", () => {
 		expect(
 			isPossiblyGhosted({
 				...BASE_JOB,
-				status: "Applied",
+				status: "applied",
 				date_applied: "2026-01-01",
 			}),
 		).toBeFalsy();
 	});
 
-	it("returns true for 'Phone screen' when date_phone_screen is 31 days ago", () => {
+	it("returns true for 'phone_screen' when date_phone_screen is 31 days ago", () => {
 		expect(
 			isPossiblyGhosted({
 				...BASE_JOB,
-				status: "Phone screen",
+				status: "phone_screen",
 				date_phone_screen: "2024-12-31",
 			}),
 		).toBeTruthy();
@@ -83,7 +83,7 @@ describe("isPossiblyGhosted", () => {
 		expect(
 			isPossiblyGhosted({
 				...BASE_JOB,
-				status: "Interviewing",
+				status: "interviewing",
 				date_last_onsite: "2024-12-31",
 			}),
 		).toBeTruthy();
@@ -94,7 +94,7 @@ describe("isPossiblyGhosted", () => {
 		expect(
 			isPossiblyGhosted({
 				...BASE_JOB,
-				status: "Phone screen",
+				status: "phone_screen",
 				date_applied: "2024-12-31",
 				date_phone_screen: "2026-01-20",
 			}),
@@ -105,7 +105,7 @@ describe("isPossiblyGhosted", () => {
 		expect(
 			isPossiblyGhosted({
 				...BASE_JOB,
-				status: "Interviewing",
+				status: "interviewing",
 				date_applied: "2024-11-01",
 				date_phone_screen: "2024-11-15",
 				date_last_onsite: "2024-12-31",

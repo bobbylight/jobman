@@ -225,7 +225,7 @@ describe("jobCard", () => {
 		it("shows 'Possibly ghosted' chip when Applied with old date_applied", () => {
 			render(
 				<JobCard
-					job={{ ...BASE_JOB, status: "Applied", date_applied: "2024-12-31" }}
+					job={{ ...BASE_JOB, status: "applied", date_applied: "2024-12-31" }}
 					onCardClick={vi.fn()}
 					onToggleFavorite={vi.fn()}
 				/>,
@@ -238,7 +238,7 @@ describe("jobCard", () => {
 				<JobCard
 					job={{
 						...BASE_JOB,
-						status: "Phone screen",
+						status: "phone_screen",
 						date_phone_screen: "2024-12-31",
 					}}
 					onCardClick={vi.fn()}
@@ -253,7 +253,7 @@ describe("jobCard", () => {
 				<JobCard
 					job={{
 						...BASE_JOB,
-						status: "Interviewing",
+						status: "interviewing",
 						date_last_onsite: "2024-12-31",
 					}}
 					onCardClick={vi.fn()}
@@ -266,7 +266,7 @@ describe("jobCard", () => {
 		it("does not show chip when date is within 30 days", () => {
 			render(
 				<JobCard
-					job={{ ...BASE_JOB, status: "Applied", date_applied: "2026-01-20" }}
+					job={{ ...BASE_JOB, status: "applied", date_applied: "2026-01-20" }}
 					onCardClick={vi.fn()}
 					onToggleFavorite={vi.fn()}
 				/>,
@@ -274,12 +274,12 @@ describe("jobCard", () => {
 			expect(screen.queryByText("👻 Possibly ghosted")).not.toBeInTheDocument();
 		});
 
-		it("does not show chip for 'Not started' even with old dates", () => {
+		it("does not show chip for 'not_started' even with old dates", () => {
 			render(
 				<JobCard
 					job={{
 						...BASE_JOB,
-						status: "Not started",
+						status: "not_started",
 						date_applied: "2024-12-31",
 					}}
 					onCardClick={vi.fn()}
@@ -289,10 +289,10 @@ describe("jobCard", () => {
 			expect(screen.queryByText("👻 Possibly ghosted")).not.toBeInTheDocument();
 		});
 
-		it("does not show chip for 'Offer!' even with old dates", () => {
+		it("does not show chip for 'offer' even with old dates", () => {
 			render(
 				<JobCard
-					job={{ ...BASE_JOB, status: "Offer!", date_applied: "2024-12-31" }}
+					job={{ ...BASE_JOB, status: "offer", date_applied: "2024-12-31" }}
 					onCardClick={vi.fn()}
 					onToggleFavorite={vi.fn()}
 				/>,
@@ -300,12 +300,12 @@ describe("jobCard", () => {
 			expect(screen.queryByText("👻 Possibly ghosted")).not.toBeInTheDocument();
 		});
 
-		it("does not show chip for 'Rejected/Withdrawn' even with old dates", () => {
+		it("does not show chip for 'rejected_or_withdrawn' even with old dates", () => {
 			render(
 				<JobCard
 					job={{
 						...BASE_JOB,
-						status: "Rejected/Withdrawn",
+						status: "rejected_or_withdrawn",
 						date_applied: "2024-12-31",
 					}}
 					onCardClick={vi.fn()}
@@ -318,7 +318,7 @@ describe("jobCard", () => {
 		it("does not show chip when all dates are null", () => {
 			render(
 				<JobCard
-					job={{ ...BASE_JOB, status: "Applied" }}
+					job={{ ...BASE_JOB, status: "applied" }}
 					onCardClick={vi.fn()}
 					onToggleFavorite={vi.fn()}
 				/>,
@@ -331,7 +331,7 @@ describe("jobCard", () => {
 				<JobCard
 					job={{
 						...BASE_JOB,
-						status: "Phone screen",
+						status: "phone_screen",
 						date_applied: "2024-12-31",
 						date_phone_screen: "2026-01-20",
 					}}
@@ -349,7 +349,7 @@ describe("jobCard", () => {
 				<JobCard
 					job={{
 						...BASE_JOB,
-						status: "Rejected/Withdrawn",
+						status: "rejected_or_withdrawn",
 						updated_at: "2025-06-15T00:00:00",
 					}}
 					onCardClick={vi.fn()}
@@ -363,7 +363,7 @@ describe("jobCard", () => {
 		it("renders label without a date when updated_at is empty", () => {
 			render(
 				<JobCard
-					job={{ ...BASE_JOB, status: "Rejected/Withdrawn", updated_at: "" }}
+					job={{ ...BASE_JOB, status: "rejected_or_withdrawn", updated_at: "" }}
 					onCardClick={vi.fn()}
 					onToggleFavorite={vi.fn()}
 				/>,
@@ -378,7 +378,7 @@ describe("jobCard", () => {
 				<JobCard
 					job={{
 						...BASE_JOB,
-						status: "Offer!",
+						status: "offer",
 						// Include time so the string is parsed as local time (no UTC shift)
 						date_offer_extended: "2026-05-15T12:00",
 					}}
@@ -393,7 +393,7 @@ describe("jobCard", () => {
 		it("renders 'Offer received' without a date when date_offer_extended is null", () => {
 			render(
 				<JobCard
-					job={{ ...BASE_JOB, status: "Offer!" }}
+					job={{ ...BASE_JOB, status: "offer" }}
 					onCardClick={vi.fn()}
 					onToggleFavorite={vi.fn()}
 				/>,
