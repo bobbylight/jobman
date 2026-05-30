@@ -34,7 +34,7 @@ export default function StatusDonutChart({ byStatus }: Props) {
 				sx={{
 					alignItems: "center",
 					display: "flex",
-					height: 260,
+					height: 220,
 					justifyContent: "center",
 				}}
 			>
@@ -46,14 +46,14 @@ export default function StatusDonutChart({ byStatus }: Props) {
 	}
 
 	return (
-		<ResponsiveContainer width="100%" height={260}>
+		<ResponsiveContainer width="100%" height={220}>
 			<PieChart>
 				<Pie
 					data={data}
 					cx="50%"
-					cy="50%"
-					innerRadius={70}
-					outerRadius={100}
+					cy="44%"
+					innerRadius={35}
+					outerRadius={60}
 					paddingAngle={2}
 					dataKey="value"
 				>
