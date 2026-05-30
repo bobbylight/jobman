@@ -19,6 +19,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import PhoneIcon from "@mui/icons-material/Phone";
 import { api } from "../../../api";
 import { QUESTION_MAX_LENGTHS } from "../../../constants";
+import { getDefaultQuestionType } from "../../../interviewUtils";
 import type {
 	Interview,
 	InterviewQuestion,
@@ -128,7 +129,10 @@ export default function QuestionSubView({ jobId, interview }: Props) {
 	}
 
 	function handleAddClick() {
-		setForm(EMPTY_QUESTION_FORM);
+		setForm({
+			...EMPTY_QUESTION_FORM,
+			question_type: getDefaultQuestionType(interview, questions),
+		});
 		setFormError(null);
 		setMode("add");
 	}
