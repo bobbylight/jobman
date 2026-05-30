@@ -183,17 +183,6 @@ const JobCard = React.memo(({ job, onCardClick, onToggleFavorite }: Props) => {
 					{job.company}
 				</Typography>
 
-				{job.fit_score && (
-					<Tooltip title={`Fit: ${job.fit_score}`} placement="top">
-						<Box
-							onPointerDown={(e) => e.stopPropagation()}
-							sx={{ alignItems: "center", cursor: "default", display: "flex" }}
-						>
-							<FitScoreBars score={job.fit_score} />
-						</Box>
-					</Tooltip>
-				)}
-
 				<Tooltip title="Open job listing">
 					<IconButton
 						size="small"
@@ -203,7 +192,7 @@ const JobCard = React.memo(({ job, onCardClick, onToggleFavorite }: Props) => {
 						rel="noopener noreferrer"
 						onPointerDown={(e) => e.stopPropagation()}
 						onClick={(e) => e.stopPropagation()}
-						sx={{ color: "text.disabled", flexShrink: 0 }}
+						sx={{ color: "text.disabled", flexShrink: 0, paddingX: "1px" }}
 					>
 						<OpenInNewIcon fontSize="small" />
 					</IconButton>
@@ -219,6 +208,7 @@ const JobCard = React.memo(({ job, onCardClick, onToggleFavorite }: Props) => {
 						sx={{
 							color: job.favorite ? "warning.main" : "text.disabled",
 							flexShrink: 0,
+							paddingX: "1px",
 						}}
 					>
 						{job.favorite ? (
@@ -265,6 +255,19 @@ const JobCard = React.memo(({ job, onCardClick, onToggleFavorite }: Props) => {
 									: { bgcolor: "#e0e0e0", color: "#757575" }
 							}
 						/>
+						{job.fit_score && (
+							<Tooltip title={`Fit: ${job.fit_score}`} placement="top">
+								<Box
+									sx={{
+										alignItems: "center",
+										cursor: "default",
+										display: "flex",
+									}}
+								>
+									<FitScoreBars score={job.fit_score} />
+								</Box>
+							</Tooltip>
+						)}
 						{job.referred_by && (
 							<Chip
 								icon={<PeopleIcon />}
