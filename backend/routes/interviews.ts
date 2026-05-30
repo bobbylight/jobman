@@ -1,5 +1,5 @@
 import type Database from "better-sqlite3";
-import expressLib from "express";
+import { Router, type Response } from "express";
 import * as InterviewsDb from "../db/interviews.js";
 import { validateInterview, validateInterviewQuestion } from "../validators.js";
 
@@ -16,7 +16,7 @@ function toEnrichedResponse(rows: InterviewsDb.EnrichedInterviewRow[]) {
 //   Date-range mode:  ?from=<iso>&to=<iso>   (inclusive bounds, both optional)
 //   Cursor/page mode: ?after=<iso>&limit=<n>  (exclusive lower bound, limit 1–50)
 export function createInterviewSearchRouter(db: Database.Database) {
-	const router = expressLib.Router();
+	const router = Router();
 
 	router.get("/", (req, res) => {
 		const { from, to, after, limit } = req.query as {
@@ -70,7 +70,7 @@ function resolveInterview(
 	jobId: string,
 	interviewId: string,
 	userId: number,
-	res: expressLib.Response,
+	res: Response,
 ): InterviewsDb.InterviewRow | null {
 	if (!InterviewsDb.jobBelongsToUser(db, Number(jobId), userId)) {
 		res.status(404).json({ error: "Job not found" });
@@ -89,7 +89,7 @@ function resolveInterview(
 }
 
 export function createInterviewsRouter(db: Database.Database) {
-	const router = expressLib.Router({ mergeParams: true });
+	const router = Router({ mergeParams: true });
 
 	// GET all interviews for a job
 	router.get("/", (req, res) => {

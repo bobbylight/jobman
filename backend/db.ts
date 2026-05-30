@@ -31,7 +31,7 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS jobs (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id          INTEGER REFERENCES users(id),
+    user_id          INTEGER NOT NULL REFERENCES users(id),
     date_applied     TEXT     CHECK(length(date_applied) <= 16),
     company          TEXT NOT NULL CHECK(length(company) <= 128),
     role             TEXT NOT NULL CHECK(length(role) <= 256),
