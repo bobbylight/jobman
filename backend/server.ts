@@ -4,7 +4,7 @@ import session from "express-session";
 import passport from "passport";
 import SqliteStoreFactory from "better-sqlite3-session-store";
 import type Database from "better-sqlite3";
-import { createAuthRouter } from "./routes/auth.js";
+import { createAuthRouter, registerStrategies } from "./routes/auth.js";
 import { createInterviewInsightsRouter } from "./routes/interviewInsights.js";
 import {
 	createInterviewSearchRouter,
@@ -20,8 +20,6 @@ declare module "express-session" {
 		userId: number;
 	}
 }
-
-const PORT = 3001;
 
 function requireAuth(
 	req: express.Request,
@@ -61,6 +59,7 @@ export function createApp(db: Database.Database) {
 		}),
 	);
 
+	registerStrategies(db);
 	app.use(passport.initialize());
 
 	app.use("/api/auth", createAuthRouter(db));
@@ -79,19 +78,16 @@ export function createApp(db: Database.Database) {
 		createInterviewInsightsRouter(db),
 	);
 
-	return app;
-}
+	app.use(
+		(
+			err: unknown,
+			_req: express.Request,
+			res: express.Response,
+			_next: express.NextFunction,
+		) => {
+			res.status(500).json({ error: "Internal server error" });
+		},
+	);
 
-// Production startup — dynamic import keeps db.ts out of the module graph
-// When server.ts is imported by tests. dotenv is loaded first so env vars
-// Are available before db.ts runs its seed migration.
-if (process.env["NODE_ENV"] !== "test") {
-	const { config } = await import("dotenv");
-	config({ path: `.env.${process.env["NODE_ENV"] ?? "development"}` });
-	const { default: rawDb } = await import("./db.js");
-	const app = createApp(rawDb);
-	app.listen(PORT, () => {
-		// eslint-disable-next-line no-console
-		console.log(`JobMan API running at http://localhost:${PORT}`);
-	});
+	return app;
 }

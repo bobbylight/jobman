@@ -1,5 +1,5 @@
 import type Database from "better-sqlite3";
-import express from "express";
+import { Router } from "express";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import * as UsersDb from "../db/users.js";
@@ -17,12 +17,10 @@ declare global {
 	}
 }
 
-export function createAuthRouter(db: Database.Database) {
-	const router = express.Router();
-
-	// Only register the Google strategy when credentials are present.
-	// Auth routes exist in all environments but are non-functional in tests
-	// (no credentials → no strategy registered → passport.authenticate returns 500).
+// Only register the Google strategy when credentials are present.
+// Auth routes exist in all environments but are non-functional in tests
+// (no credentials → no strategy registered → passport.authenticate returns 500).
+export function registerStrategies(db: Database.Database) {
 	if (process.env["GOOGLE_CLIENT_ID"]) {
 		passport.use(
 			new GoogleStrategy(
@@ -55,6 +53,10 @@ export function createAuthRouter(db: Database.Database) {
 			),
 		);
 	}
+}
+
+export function createAuthRouter(db: Database.Database) {
+	const router = Router();
 
 	router.get(
 		"/google",

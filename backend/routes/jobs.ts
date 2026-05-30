@@ -1,11 +1,11 @@
 import type Database from "better-sqlite3";
-import express from "express";
+import { Router } from "express";
 import * as JobsDb from "../db/jobs.js";
 import type { JobView } from "../db/jobs.js";
 import { validateEndingSubstatus, validateJobFields, validateOfferDate } from "../validators.js";
 
 export function createJobsRouter(db: Database.Database) {
-	const router = express.Router();
+	const router = Router();
 
 	router.get("/", (req, res) => {
 		const view: JobView = req.query.view === "full" ? "full" : "summary";
