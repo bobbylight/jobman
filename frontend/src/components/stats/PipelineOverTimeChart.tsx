@@ -9,7 +9,7 @@ import {
 	YAxis,
 } from "recharts";
 import { Box, Typography } from "@mui/material";
-import { STATUSES, STATUS_COLORS } from "../../constants";
+import { STATUSES, STATUS_COLORS, STATUS_LABELS } from "../../constants";
 import type { JobStatus } from "../../types";
 
 interface Props {
@@ -85,6 +85,7 @@ export default function PipelineOverTimeChart({ statusOverTime }: Props) {
 						key={status}
 						type="monotone"
 						dataKey={status}
+						name={STATUS_LABELS[status as JobStatus]}
 						stackId="pipeline"
 						stroke={STATUS_COLORS[status as JobStatus]}
 						fill={STATUS_COLORS[status as JobStatus]}

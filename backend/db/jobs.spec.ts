@@ -17,7 +17,7 @@ const SCHEMA = `
     salary TEXT,
     fit_score TEXT,
     referred_by TEXT,
-    status TEXT DEFAULT 'Not started',
+    status TEXT DEFAULT 'not_started',
     recruiter TEXT,
     notes TEXT,
     favorite INTEGER DEFAULT 0,
@@ -66,7 +66,7 @@ const BASE_JOB: Omit<JobCreateData, "user_id"> = {
 	referred_by: null,
 	role: "Engineer",
 	salary: null,
-	status: "Not started",
+	status: "not_started",
 	tags: [],
 };
 

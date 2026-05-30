@@ -23,7 +23,7 @@ const SCHEMA = `
     salary TEXT,
     fit_score TEXT,
     referred_by TEXT,
-    status TEXT DEFAULT 'Not started',
+    status TEXT DEFAULT 'not_started',
     recruiter TEXT,
     notes TEXT,
     favorite INTEGER DEFAULT 0,
@@ -135,7 +135,7 @@ describe("gET /api/stats", () => {
 				favorite: false,
 				link: "https://alpha.com",
 				role: "Dev",
-				status: "Not started",
+				status: "not_started",
 			});
 		await request(app)
 			.post("/api/jobs")
@@ -145,7 +145,7 @@ describe("gET /api/stats", () => {
 				favorite: false,
 				link: "https://beta.com",
 				role: "PM",
-				status: "Interviewing",
+				status: "interviewing",
 			});
 
 		const res = await req("/api/stats");
@@ -161,7 +161,7 @@ describe("gET /api/stats", () => {
 				`INSERT INTO jobs (user_id, company, role, link, status, date_applied)
          VALUES (?, ?, ?, ?, ?, ?)`,
 			)
-			.run(TEST_USER_ID, "Old Co", "Dev", "https://old.com", "Not started", "2020-01-01");
+			.run(TEST_USER_ID, "Old Co", "Dev", "https://old.com", "not_started", "2020-01-01");
 
 		const res = await req("/api/stats");
 		expect(res.status).toBe(200);
@@ -175,14 +175,14 @@ describe("gET /api/stats", () => {
 				`INSERT INTO jobs (user_id, company, role, link, status, date_applied)
          VALUES (?, ?, ?, ?, ?, date('now'))`,
 			)
-			.run(TEST_USER_ID, "New Co", "Dev", "https://new.com", "Not started");
+			.run(TEST_USER_ID, "New Co", "Dev", "https://new.com", "not_started");
 		// Old job (outside 30-day window)
 		testDb
 			.prepare(
 				`INSERT INTO jobs (user_id, company, role, link, status, date_applied)
          VALUES (?, ?, ?, ?, ?, ?)`,
 			)
-			.run(TEST_USER_ID, "Old Co", "Dev", "https://old.com", "Not started", "2020-01-01");
+			.run(TEST_USER_ID, "Old Co", "Dev", "https://old.com", "not_started", "2020-01-01");
 
 		const res = await req("/api/stats?window=30");
 		expect(res.status).toBe(200);
@@ -196,14 +196,14 @@ describe("gET /api/stats", () => {
 				`INSERT INTO jobs (user_id, company, role, link, status, date_applied)
          VALUES (?, ?, ?, ?, ?, date('now', '-60 days'))`,
 			)
-			.run(TEST_USER_ID, "Recent Co", "Dev", "https://recent.com", "Not started");
+			.run(TEST_USER_ID, "Recent Co", "Dev", "https://recent.com", "not_started");
 		// Job 100 days ago — outside 90-day window
 		testDb
 			.prepare(
 				`INSERT INTO jobs (user_id, company, role, link, status, date_applied)
          VALUES (?, ?, ?, ?, ?, date('now', '-100 days'))`,
 			)
-			.run(TEST_USER_ID, "Old Co", "Dev", "https://old.com", "Not started");
+			.run(TEST_USER_ID, "Old Co", "Dev", "https://old.com", "not_started");
 
 		const res = await req("/api/stats?window=90");
 		expect(res.status).toBe(200);
@@ -216,7 +216,7 @@ describe("gET /api/stats", () => {
 				`INSERT INTO jobs (user_id, company, role, link, status, date_applied)
          VALUES (?, ?, ?, ?, ?, ?)`,
 			)
-			.run(TEST_USER_ID, "Old Co", "Dev", "https://old.com", "Not started", "2020-01-01");
+			.run(TEST_USER_ID, "Old Co", "Dev", "https://old.com", "not_started", "2020-01-01");
 
 		const res = await req("/api/stats?window=forever");
 		expect(res.status).toBe(200);
@@ -230,12 +230,12 @@ describe("gET /api/stats/link-jobs", () => {
 	});
 
 	it("returns 401 when the request is not authenticated", async () => {
-		const res = await request(app).get("/api/stats/link-jobs?from=Direct&to=Applied");
+		const res = await request(app).get("/api/stats/link-jobs?from=Direct&to=applied");
 		expect(res.status).toBe(401);
 	});
 
 	it("returns 400 when 'from' is missing", async () => {
-		const res = await req("/api/stats/link-jobs?to=Applied");
+		const res = await req("/api/stats/link-jobs?to=applied");
 		expect(res.status).toBe(400);
 	});
 
@@ -245,7 +245,7 @@ describe("gET /api/stats/link-jobs", () => {
 	});
 
 	it("returns 400 when 'from' is not a valid node name", async () => {
-		const res = await req("/api/stats/link-jobs?from=Hacking&to=Applied");
+		const res = await req("/api/stats/link-jobs?from=Hacking&to=applied");
 		expect(res.status).toBe(400);
 	});
 
@@ -255,7 +255,7 @@ describe("gET /api/stats/link-jobs", () => {
 	});
 
 	it("returns 200 with an empty array when no jobs match the link", async () => {
-		const res = await req("/api/stats/link-jobs?from=Direct&to=Applied");
+		const res = await req("/api/stats/link-jobs?from=Direct&to=applied");
 		expect(res.status).toBe(200);
 		expect(res.body).toStrictEqual([]);
 	});
@@ -266,15 +266,15 @@ describe("gET /api/stats/link-jobs", () => {
 				`INSERT INTO jobs (user_id, company, role, link, status, date_applied)
          VALUES (?, ?, ?, ?, ?, ?)`,
 			)
-			.run(TEST_USER_ID, "Acme", "Engineer", "https://acme.com", "Applied", "2025-05-01")
+			.run(TEST_USER_ID, "Acme", "Engineer", "https://acme.com", "applied", "2025-05-01")
 			.lastInsertRowid;
 		testDb
 			.prepare(
 				"INSERT INTO job_status_history (job_id, status, entered_at) VALUES (?, ?, ?)",
 			)
-			.run(jobId, "Applied", "2025-05-01T00:00:00Z");
+			.run(jobId, "applied", "2025-05-01T00:00:00Z");
 
-		const res = await req("/api/stats/link-jobs?from=Direct&to=Applied");
+		const res = await req("/api/stats/link-jobs?from=Direct&to=applied");
 		expect(res.status).toBe(200);
 		expect(res.body).toHaveLength(1);
 		expect(res.body[0]).toMatchObject({
@@ -286,7 +286,7 @@ describe("gET /api/stats/link-jobs", () => {
 	});
 
 	it("treats an unrecognised window value as 'all'", async () => {
-		const res = await req("/api/stats/link-jobs?from=Direct&to=Applied&window=bogus");
+		const res = await req("/api/stats/link-jobs?from=Direct&to=applied&window=bogus");
 		expect(res.status).toBe(200);
 		expect(res.body).toStrictEqual([]);
 	});

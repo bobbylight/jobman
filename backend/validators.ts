@@ -1,4 +1,13 @@
-export const TERMINAL_STATUSES = new Set(["Rejected/Withdrawn", "Offer!"]);
+export const TERMINAL_STATUSES = new Set(["rejected_or_withdrawn", "offer"]);
+
+const STATUS_LABELS: Record<string, string> = {
+	not_started: "Not started",
+	applied: "Applied",
+	phone_screen: "Phone screen",
+	interviewing: "Interviewing",
+	offer: "Offer!",
+	rejected_or_withdrawn: "Rejected/Withdrawn",
+};
 
 // ── Max-length constants ───────────────────────────────────────────────────────
 export const JOB_MAX_LENGTHS = {
@@ -94,22 +103,22 @@ export function validateEndingSubstatus(
 	status: string,
 	ending_substatus: unknown,
 ): string | null {
-	if (status === "Offer!") {
+	if (status === "offer") {
 		if (
 			typeof ending_substatus !== "string" ||
 			!VALID_OFFER_SUBSTATUSES.has(ending_substatus)
 		) {
-			return `ending_substatus is required for status "Offer!" and must be one of: ${[...VALID_OFFER_SUBSTATUSES].join(", ")}`;
+			return `ending_substatus is required for status "${STATUS_LABELS["offer"]}" and must be one of: ${[...VALID_OFFER_SUBSTATUSES].join(", ")}`;
 		}
-	} else if (status === "Rejected/Withdrawn") {
+	} else if (status === "rejected_or_withdrawn") {
 		if (
 			typeof ending_substatus !== "string" ||
 			!VALID_REJECTED_SUBSTATUSES.has(ending_substatus)
 		) {
-			return `ending_substatus is required for status "Rejected/Withdrawn" and must be one of: ${[...VALID_REJECTED_SUBSTATUSES].join(", ")}`;
+			return `ending_substatus is required for status "${STATUS_LABELS["rejected_or_withdrawn"]}" and must be one of: ${[...VALID_REJECTED_SUBSTATUSES].join(", ")}`;
 		}
 	} else if (ending_substatus != null) {
-		return `ending_substatus must be null when status is "${status}"`;
+		return `ending_substatus must be null when status is "${STATUS_LABELS[status] ?? status}"`;
 	}
 	return null;
 }
@@ -118,12 +127,12 @@ export function validateOfferDate(
 	status: string,
 	date_offer_extended: unknown,
 ): string | null {
-	if (status === "Offer!") {
+	if (status === "offer") {
 		if (typeof date_offer_extended !== "string" || !date_offer_extended) {
-			return 'date_offer_extended is required when status is "Offer!"';
+			return `date_offer_extended is required when status is "${STATUS_LABELS["offer"]}"`;
 		}
 	} else if (date_offer_extended != null) {
-		return `date_offer_extended must be null when status is not "Offer!"`;
+		return `date_offer_extended must be null when status is not "${STATUS_LABELS["offer"]}"`;
 	}
 	return null;
 }

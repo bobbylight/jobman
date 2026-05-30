@@ -3,15 +3,15 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import PipelineFunnelChart from "./PipelineFunnelChart";
 
 const TRANSITIONS = [
-	{ count: 5, from: "Direct", to: "Applied" },
-	{ count: 2, from: "Recruited", to: "Applied" },
-	{ count: 1, from: "Referred", to: "Applied" },
-	{ count: 5, from: "Applied", to: "Phone screen" },
-	{ count: 3, from: "Applied", to: "Rejected/Withdrawn" },
-	{ count: 3, from: "Phone screen", to: "Interviewing" },
-	{ count: 2, from: "Phone screen", to: "Rejected/Withdrawn" },
-	{ count: 1, from: "Interviewing", to: "Offer!" },
-	{ count: 2, from: "Interviewing", to: "Rejected/Withdrawn" },
+	{ count: 5, from: "Direct", to: "applied" },
+	{ count: 2, from: "Recruited", to: "applied" },
+	{ count: 1, from: "Referred", to: "applied" },
+	{ count: 5, from: "applied", to: "phone_screen" },
+	{ count: 3, from: "applied", to: "rejected_or_withdrawn" },
+	{ count: 3, from: "phone_screen", to: "interviewing" },
+	{ count: 2, from: "phone_screen", to: "rejected_or_withdrawn" },
+	{ count: 1, from: "interviewing", to: "offer" },
+	{ count: 2, from: "interviewing", to: "rejected_or_withdrawn" },
 ];
 
 describe("pipelineFunnelChart", () => {

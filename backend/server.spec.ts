@@ -19,7 +19,7 @@ const SCHEMA = `
     company TEXT NOT NULL,
     role TEXT NOT NULL,
     link TEXT NOT NULL,
-    status TEXT DEFAULT 'Not started',
+    status TEXT DEFAULT 'not_started',
     favorite INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now'))
   );

@@ -21,7 +21,7 @@ const MOCK_JOBS: LinkJob[] = [
 		id: 1,
 		link: "https://acme.com/job",
 		role: "Senior Engineer",
-		status: "Applied",
+		status: "applied",
 	},
 	{
 		company: "Globex",
@@ -30,15 +30,15 @@ const MOCK_JOBS: LinkJob[] = [
 		id: 2,
 		link: "",
 		role: "Staff Engineer",
-		status: "Phone screen",
+		status: "phone_screen",
 	},
 ];
 
 const DEFAULT_PROPS = {
-	from: "Applied",
+	from: "applied",
 	onClose: vi.fn(),
 	open: true,
-	to: "Phone screen",
+	to: "phone_screen",
 	window: "all" as const,
 };
 
@@ -133,8 +133,8 @@ describe("transitionJobsDialog", () => {
 		render(<TransitionJobsDialog {...DEFAULT_PROPS} />);
 		await waitFor(() =>
 			expect(api.getLinkJobs).toHaveBeenCalledWith(
-				"Applied",
-				"Phone screen",
+				"applied",
+				"phone_screen",
 				"all",
 			),
 		);

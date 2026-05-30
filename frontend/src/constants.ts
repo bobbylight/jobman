@@ -10,18 +10,27 @@ import type {
 } from "./types";
 
 export const STATUSES: JobStatus[] = [
-	"Not started",
-	"Applied",
-	"Phone screen",
-	"Interviewing",
-	"Offer!",
-	"Rejected/Withdrawn",
+	"not_started",
+	"applied",
+	"phone_screen",
+	"interviewing",
+	"offer",
+	"rejected_or_withdrawn",
 ];
 
 export const TERMINAL_STATUSES = new Set<JobStatus>([
-	"Offer!",
-	"Rejected/Withdrawn",
+	"offer",
+	"rejected_or_withdrawn",
 ]);
+
+export const STATUS_LABELS: Record<JobStatus, string> = {
+	not_started: "Not started",
+	applied: "Applied",
+	phone_screen: "Phone screen",
+	interviewing: "Interviewing",
+	offer: "Offer!",
+	rejected_or_withdrawn: "Rejected/Withdrawn",
+};
 
 export const REJECTED_SUBSTATUSES: RejectedSubstatus[] = [
 	"Withdrawn",
@@ -54,12 +63,12 @@ export const FIT_SCORES: FitScore[] = [
 // `satisfies` checks the shape at the definition site without widening the type,
 // So STATUS_COLORS['Not started'] stays '#90a4ae' (literal) not just `string`.
 export const STATUS_COLORS = {
-	Interviewing: "#1e88e5",
-	"Not started": "#90a4ae",
-	"Offer!": "#66bb6a",
-	"Phone screen": "#ab47bc",
-	"Rejected/Withdrawn": "#ef5350",
-	Applied: "#ffa726",
+	interviewing: "#1e88e5",
+	not_started: "#90a4ae",
+	offer: "#66bb6a",
+	phone_screen: "#ab47bc",
+	rejected_or_withdrawn: "#ef5350",
+	applied: "#ffa726",
 } satisfies Record<JobStatus, string>;
 
 // Sorted alphabetically by display label

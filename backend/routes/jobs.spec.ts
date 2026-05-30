@@ -29,7 +29,7 @@ const SCHEMA = `
     salary TEXT,
     fit_score TEXT,
     referred_by TEXT,
-    status TEXT DEFAULT 'Not started',
+    status TEXT DEFAULT 'not_started',
     recruiter TEXT,
     notes TEXT,
     favorite INTEGER DEFAULT 0,
@@ -111,7 +111,7 @@ const BASE_JOB = {
 	referred_by: null,
 	role: "Engineer",
 	salary: null,
-	status: "Not started",
+	status: "not_started",
 };
 
 describe("gET /api/jobs", () => {
@@ -203,11 +203,11 @@ describe("pOST /api/jobs", () => {
 		expect(res.body.referred_by).toBe("Jane Doe");
 	});
 
-	it("defaults status to 'Not started' when not provided", async () => {
+	it("defaults status to 'not_started' when not provided", async () => {
 		const { status: _s, ...withoutStatus } = BASE_JOB;
 		const res = await req("post", "/api/jobs").send(withoutStatus);
 		expect(res.status).toBe(201);
-		expect(res.body.status).toBe("Not started");
+		expect(res.body.status).toBe("not_started");
 	});
 
 	it("maps omitted optional fields to null", async () => {
@@ -257,11 +257,11 @@ describe("pUT /api/jobs/:id", () => {
 			...BASE_JOB,
 			company: "Updated Corp",
 			referred_by: "Jane Doe",
-			status: "Applied",
+			status: "applied",
 		});
 		expect(res.status).toBe(200);
 		expect(res.body.company).toBe("Updated Corp");
-		expect(res.body.status).toBe("Applied");
+		expect(res.body.status).toBe("applied");
 		expect(res.body.referred_by).toBe("Jane Doe");
 	});
 
@@ -278,7 +278,7 @@ describe("pUT /api/jobs/:id", () => {
 		const { notes: _n, ...withoutDetailFields } = BASE_JOB;
 		const res = await req("put", `/api/jobs/${id}`).send({
 			...withoutDetailFields,
-			status: "Phone screen",
+			status: "phone_screen",
 		});
 		expect(res.status).toBe(200);
 		expect(res.body.notes).toBe("keep me");
@@ -326,10 +326,10 @@ describe("dELETE /api/jobs/:id", () => {
 
 describe("ending_substatus validation", () => {
 	const NON_TERMINAL_CASES = [
-		"Not started",
-		"Applied",
-		"Phone screen",
-		"Interviewing",
+		"not_started",
+		"applied",
+		"phone_screen",
+		"interviewing",
 	] as const;
 
 	describe("pOST /api/jobs", () => {
@@ -361,7 +361,7 @@ describe("ending_substatus validation", () => {
 					...BASE_JOB,
 					date_offer_extended: "2026-05-15",
 					ending_substatus,
-					status: "Offer!",
+					status: "offer",
 				});
 				expect(res.status).toBe(201);
 				expect(res.body.ending_substatus).toBe(ending_substatus);
@@ -374,7 +374,7 @@ describe("ending_substatus validation", () => {
 				const res = await req("post", "/api/jobs").send({
 					...BASE_JOB,
 					ending_substatus,
-					status: "Rejected/Withdrawn",
+					status: "rejected_or_withdrawn",
 				});
 				expect(res.status).toBe(201);
 				expect(res.body.ending_substatus).toBe(ending_substatus);
@@ -385,7 +385,7 @@ describe("ending_substatus validation", () => {
 			const res = await req("post", "/api/jobs").send({
 				...BASE_JOB,
 				ending_substatus: "Ghosted",
-				status: "Offer!",
+				status: "offer",
 			});
 			expect(res.status).toBe(422);
 		});
@@ -394,7 +394,7 @@ describe("ending_substatus validation", () => {
 			const res = await req("post", "/api/jobs").send({
 				...BASE_JOB,
 				ending_substatus: "Offer accepted",
-				status: "Rejected/Withdrawn",
+				status: "rejected_or_withdrawn",
 			});
 			expect(res.status).toBe(422);
 		});
@@ -426,7 +426,7 @@ describe("ending_substatus validation", () => {
 
 			const res = await req("put", `/api/jobs/${id}`).send({
 				...BASE_JOB,
-				status: "Rejected/Withdrawn",
+				status: "rejected_or_withdrawn",
 			});
 			expect(res.status).toBe(422);
 			expect(res.body.error).toMatch(/ending_substatus is required/);
@@ -439,7 +439,7 @@ describe("ending_substatus validation", () => {
 			const res = await req("put", `/api/jobs/${id}`).send({
 				...BASE_JOB,
 				ending_substatus: "Ghosted",
-				status: "Rejected/Withdrawn",
+				status: "rejected_or_withdrawn",
 			});
 			expect(res.status).toBe(200);
 			expect(res.body.ending_substatus).toBe("Ghosted");
@@ -452,7 +452,7 @@ describe("ending_substatus validation", () => {
 			const res = await req("put", `/api/jobs/${id}`).send({
 				...BASE_JOB,
 				ending_substatus: "Ghosted",
-				status: "Applied",
+				status: "applied",
 			});
 			expect(res.status).toBe(422);
 		});
@@ -462,14 +462,14 @@ describe("ending_substatus validation", () => {
 				...BASE_JOB,
 				date_offer_extended: "2026-05-15",
 				ending_substatus: "Offer accepted",
-				status: "Offer!",
+				status: "offer",
 			});
 			const {id} = createRes.body;
 
 			const res = await req("put", `/api/jobs/${id}`).send({
 				...BASE_JOB,
 				date_offer_extended: null,
-				status: "Interviewing",
+				status: "interviewing",
 			});
 			expect(res.status).toBe(200);
 			expect(res.body.ending_substatus).toBeNull();
@@ -526,7 +526,7 @@ describe("date_offer_extended validation", () => {
 	const OFFER_BASE = {
 		...BASE_JOB,
 		ending_substatus: "Offer accepted",
-		status: "Offer!",
+		status: "offer",
 	};
 
 	describe("pOST /api/jobs", () => {
@@ -549,7 +549,7 @@ describe("date_offer_extended validation", () => {
 			const res = await req("post", "/api/jobs").send({
 				...BASE_JOB,
 				date_offer_extended: "2026-05-15",
-				status: "Applied",
+				status: "applied",
 			});
 			expect(res.status).toBe(422);
 			expect(res.body.error).toMatch(/date_offer_extended/);
@@ -587,7 +587,7 @@ describe("date_offer_extended validation", () => {
 			const res = await req("put", `/api/jobs/${id}`).send({
 				...BASE_JOB,
 				date_offer_extended: "2026-05-15",
-				status: "Applied",
+				status: "applied",
 			});
 			expect(res.status).toBe(422);
 		});
@@ -602,7 +602,7 @@ describe("date_offer_extended validation", () => {
 			const res = await req("put", `/api/jobs/${id}`).send({
 				...BASE_JOB,
 				date_offer_extended: null,
-				status: "Interviewing",
+				status: "interviewing",
 			});
 			expect(res.status).toBe(200);
 			expect(res.body.date_offer_extended).toBeNull();

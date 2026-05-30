@@ -10,7 +10,7 @@ import {
 	YAxis,
 } from "recharts";
 import { Box, Typography } from "@mui/material";
-import { STATUS_COLORS } from "../../constants";
+import { STATUS_COLORS, STATUS_LABELS } from "../../constants";
 import type { JobStatus } from "../../types";
 
 interface Props {
@@ -48,6 +48,7 @@ export default function AvgDaysChart({ avgDaysPerStage }: Props) {
 					dataKey="stage"
 					width={130}
 					tick={{ fontSize: 12 }}
+					tickFormatter={(v) => STATUS_LABELS[v as JobStatus] ?? v}
 				/>
 				<Tooltip
 					formatter={(value) => [`${value} days`, "Avg. time in stage"]}

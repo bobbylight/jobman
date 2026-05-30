@@ -4,7 +4,7 @@ import EndingStatusDialog from "./EndingStatusDialog";
 import { makeJob } from "../../testUtils";
 
 const BASE_JOB = makeJob({
-	status: "Interviewing",
+	status: "interviewing",
 	notes: "Some existing notes",
 });
 
@@ -16,7 +16,7 @@ function changeSelect(labelText: RegExp | string, optionName: string) {
 // Default uses Rejected/Withdrawn — the general case where the user picks a resolution
 const DEFAULT_PROPS = {
 	job: BASE_JOB,
-	newStatus: "Rejected/Withdrawn" as const,
+	newStatus: "rejected_or_withdrawn" as const,
 	onCancel: vi.fn(),
 	onConfirm: vi.fn(),
 	open: true,
@@ -101,7 +101,7 @@ describe("endingStatusDialog", () => {
 
 	describe("offer! destination", () => {
 		const FIXED_TODAY = "2026-05-24";
-		const OFFER_PROPS = { ...DEFAULT_PROPS, newStatus: "Offer!" as const };
+		const OFFER_PROPS = { ...DEFAULT_PROPS, newStatus: "offer" as const };
 
 		beforeEach(() => {
 			vi.useFakeTimers();

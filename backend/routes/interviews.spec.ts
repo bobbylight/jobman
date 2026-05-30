@@ -32,7 +32,7 @@ const SCHEMA = `
     salary TEXT,
     fit_score TEXT,
     referred_by TEXT,
-    status TEXT DEFAULT 'Not started',
+    status TEXT DEFAULT 'not_started',
     recruiter TEXT,
     notes TEXT,
     favorite INTEGER DEFAULT 0,
@@ -112,7 +112,7 @@ const BASE_JOB = {
 	favorite: false,
 	link: "https://acme.example.com/jobs/1",
 	role: "Engineer",
-	status: "Not started",
+	status: "not_started",
 };
 
 const BASE_INTERVIEW = {
@@ -820,7 +820,7 @@ describe("gET /api/interviews", () => {
 			.prepare(
 				"INSERT INTO jobs (user_id, company, role, link, status) VALUES (?, ?, ?, ?, ?)",
 			)
-			.run(2, "Other Corp", "PM", "https://other.example.com", "Not started");
+			.run(2, "Other Corp", "PM", "https://other.example.com", "not_started");
 		const otherJobId = (
 			testDb.prepare("SELECT last_insert_rowid() AS id").get() as { id: number }
 		).id;
@@ -930,7 +930,7 @@ describe("gET /api/interviews — cursor pagination (?after + ?limit)", () => {
 		// Insert an interview for a different user directly
 		testDb
 			.prepare("INSERT INTO jobs (user_id, company, role, link, status) VALUES (?, ?, ?, ?, ?)")
-			.run(2, "Other Corp", "PM", "https://other.example.com", "Not started");
+			.run(2, "Other Corp", "PM", "https://other.example.com", "not_started");
 		const otherJobId = (testDb.prepare("SELECT last_insert_rowid() AS id").get() as { id: number }).id;
 		testDb
 			.prepare("INSERT INTO interviews (job_id, interview_stage, interview_dttm) VALUES (?, ?, ?)")

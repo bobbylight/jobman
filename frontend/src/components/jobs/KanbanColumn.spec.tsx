@@ -29,7 +29,7 @@ vi.mock(
 const DEFAULT_PROPS = {
 	onCardClick: vi.fn(),
 	onToggleFavorite: vi.fn(),
-	status: "Not started" as const,
+	status: "not_started" as const,
 };
 
 describe("kanbanColumn", () => {
@@ -49,8 +49,8 @@ describe("kanbanColumn", () => {
 
 	it("shows the job count", () => {
 		const jobs = [
-			makeJob({ id: 1, status: "Not started" }),
-			makeJob({ id: 2, status: "Not started" }),
+			makeJob({ id: 1, status: "not_started" }),
+			makeJob({ id: 2, status: "not_started" }),
 		];
 		render(<KanbanColumn {...DEFAULT_PROPS} jobs={jobs} />);
 		expect(screen.getByText("2")).toBeInTheDocument();
@@ -65,7 +65,7 @@ describe("kanbanColumn", () => {
 		render(
 			<KanbanColumn
 				{...DEFAULT_PROPS}
-				jobs={[makeJob({ id: 1, status: "Not started" })]}
+				jobs={[makeJob({ id: 1, status: "not_started" })]}
 			/>,
 		);
 		expect(screen.queryByText("Drop here")).not.toBeInTheDocument();
@@ -73,8 +73,8 @@ describe("kanbanColumn", () => {
 
 	it("renders a card for each job", () => {
 		const jobs = [
-			makeJob({ company: "Alpha Corp", id: 1, status: "Not started" }),
-			makeJob({ company: "Beta Inc", id: 2, status: "Not started" }),
+			makeJob({ company: "Alpha Corp", id: 1, status: "not_started" }),
+			makeJob({ company: "Beta Inc", id: 2, status: "not_started" }),
 		];
 		render(<KanbanColumn {...DEFAULT_PROPS} jobs={jobs} />);
 		expect(screen.getByText("Alpha Corp")).toBeInTheDocument();

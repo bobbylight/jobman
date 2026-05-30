@@ -39,7 +39,9 @@ db.exec(`
     salary           TEXT     CHECK(length(salary) <= 64),
     fit_score        TEXT     CHECK(length(fit_score) <= 32),
     referred_by      TEXT     CHECK(length(referred_by) <= 128),
-    status           TEXT DEFAULT 'Not started' CHECK(length(status) <= 128),
+    status           TEXT NOT NULL DEFAULT 'not_started'
+                              CHECK(status IN ('not_started', 'applied', 'phone_screen',
+                                               'interviewing', 'offer', 'rejected_or_withdrawn')),
     recruiter        TEXT     CHECK(length(recruiter) <= 128),
     notes            TEXT     CHECK(length(notes) <= 20000),
     favorite         INTEGER DEFAULT 0,
@@ -86,7 +88,8 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS job_status_history (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     job_id     INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-    status     TEXT NOT NULL,
+    status     TEXT NOT NULL CHECK(status IN ('not_started', 'applied', 'phone_screen',
+                                             'interviewing', 'offer', 'rejected_or_withdrawn')),
     entered_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
   );
 

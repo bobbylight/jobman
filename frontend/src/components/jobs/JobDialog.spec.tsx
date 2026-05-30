@@ -32,7 +32,7 @@ const BASE_JOB = makeJob({
 	recruiter: "Jane",
 	referred_by: "Alice",
 	salary: "$120k",
-	status: "Applied",
+	status: "applied",
 });
 
 const MOCK_INTERVIEW: Interview = {
@@ -539,7 +539,7 @@ describe("jobDialog", () => {
 
 			it("is enabled when editing a job that already has a terminal status", async () => {
 				vi.mocked(api.getJob).mockResolvedValue(
-					terminalJob("Offer!", "Offer accepted"),
+					terminalJob("offer", "Offer accepted"),
 				);
 				render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 				await waitFor(() => {
@@ -565,7 +565,7 @@ describe("jobDialog", () => {
 
 			it("becomes disabled again when status reverts from terminal to non-terminal", async () => {
 				vi.mocked(api.getJob).mockResolvedValue(
-					terminalJob("Offer!", "Offer accepted"),
+					terminalJob("offer", "Offer accepted"),
 				);
 				render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 				await waitFor(() =>
@@ -584,7 +584,7 @@ describe("jobDialog", () => {
 		describe("auto-clear behavior", () => {
 			it("clears the substatus value when status changes from terminal to non-terminal", async () => {
 				vi.mocked(api.getJob).mockResolvedValue(
-					terminalJob("Offer!", "Offer accepted"),
+					terminalJob("offer", "Offer accepted"),
 				);
 				render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 				await waitFor(() => {
@@ -600,7 +600,7 @@ describe("jobDialog", () => {
 
 			it("clears the substatus when switching between terminal statuses with incompatible values", async () => {
 				vi.mocked(api.getJob).mockResolvedValue(
-					terminalJob("Offer!", "Offer accepted"),
+					terminalJob("offer", "Offer accepted"),
 				);
 				render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 				await waitFor(() => {
@@ -617,7 +617,7 @@ describe("jobDialog", () => {
 
 			it("preserves the substatus when switching between terminal statuses with a compatible value", async () => {
 				vi.mocked(api.getJob).mockResolvedValue(
-					terminalJob("Rejected/Withdrawn", "Ghosted"),
+					terminalJob("rejected_or_withdrawn", "Ghosted"),
 				);
 				render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 				await waitFor(() => {
@@ -635,7 +635,7 @@ describe("jobDialog", () => {
 		describe("pre-fill", () => {
 			it("displays the existing substatus value when editing a terminal-status job", async () => {
 				vi.mocked(api.getJob).mockResolvedValue(
-					terminalJob("Rejected/Withdrawn", "Ghosted"),
+					terminalJob("rejected_or_withdrawn", "Ghosted"),
 				);
 				render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 				await waitFor(() => {
@@ -648,7 +648,7 @@ describe("jobDialog", () => {
 
 		describe("validation", () => {
 			it("blocks save and shows error when terminal status has no substatus", async () => {
-				vi.mocked(api.getJob).mockResolvedValue(terminalJob("Offer!", null));
+				vi.mocked(api.getJob).mockResolvedValue(terminalJob("offer", null));
 				render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 				await waitFor(() =>
 					expect(screen.getByRole("button", { name: "Save" })).toBeEnabled(),
@@ -669,7 +669,7 @@ describe("jobDialog", () => {
 			});
 
 			it("clears the substatus error when a substatus is subsequently chosen", async () => {
-				vi.mocked(api.getJob).mockResolvedValue(terminalJob("Offer!", null));
+				vi.mocked(api.getJob).mockResolvedValue(terminalJob("offer", null));
 				render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 				await waitFor(() =>
 					expect(screen.getByRole("button", { name: "Save" })).toBeEnabled(),
@@ -689,7 +689,7 @@ describe("jobDialog", () => {
 			});
 
 			it("clears the substatus error when status changes away from terminal", async () => {
-				vi.mocked(api.getJob).mockResolvedValue(terminalJob("Offer!", null));
+				vi.mocked(api.getJob).mockResolvedValue(terminalJob("offer", null));
 				render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 				await waitFor(() =>
 					expect(screen.getByRole("button", { name: "Save" })).toBeEnabled(),
@@ -710,7 +710,7 @@ describe("jobDialog", () => {
 		describe("onSave payload", () => {
 			it("includes ending_substatus in the saved data", async () => {
 				vi.mocked(api.getJob).mockResolvedValue(
-					terminalJob("Rejected/Withdrawn", "Ghosted"),
+					terminalJob("rejected_or_withdrawn", "Ghosted"),
 				);
 				render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 				await waitFor(() =>
@@ -720,7 +720,7 @@ describe("jobDialog", () => {
 				expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
 					expect.objectContaining({
 						ending_substatus: "Ghosted",
-						status: "Rejected/Withdrawn",
+						status: "rejected_or_withdrawn",
 					}),
 				);
 			});
@@ -746,7 +746,7 @@ describe("jobDialog", () => {
 		describe("substatus options filtered by status", () => {
 			it("shows only offer substatuses when status is Offer!", async () => {
 				vi.mocked(api.getJob).mockResolvedValue(
-					terminalJob("Offer!", "Offer accepted"),
+					terminalJob("offer", "Offer accepted"),
 				);
 				render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 				await waitFor(() =>
@@ -769,7 +769,7 @@ describe("jobDialog", () => {
 
 			it("shows only rejection substatuses when status is Rejected/Withdrawn", async () => {
 				vi.mocked(api.getJob).mockResolvedValue(
-					terminalJob("Rejected/Withdrawn", "Ghosted"),
+					terminalJob("rejected_or_withdrawn", "Ghosted"),
 				);
 				render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 				await waitFor(() =>
@@ -792,7 +792,7 @@ describe("jobDialog", () => {
 
 			it("can save with 'Offer declined' for an Offer! job", async () => {
 				vi.mocked(api.getJob).mockResolvedValue({
-					...terminalJob("Offer!", "Offer accepted"),
+					...terminalJob("offer", "Offer accepted"),
 					date_offer_extended: "2026-04-10",
 				});
 				render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
@@ -804,7 +804,7 @@ describe("jobDialog", () => {
 				expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
 					expect.objectContaining({
 						ending_substatus: "Offer declined",
-						status: "Offer!",
+						status: "offer",
 					}),
 				);
 			});
@@ -883,7 +883,7 @@ describe("jobDialog", () => {
 		it("is disabled when job status is not Offer!", async () => {
 			vi.mocked(api.getJob).mockResolvedValue({
 				...BASE_JOB,
-				status: "Applied",
+				status: "applied",
 			});
 			render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 			await waitFor(() =>
@@ -893,7 +893,7 @@ describe("jobDialog", () => {
 
 		it("is enabled when job status is Offer!", async () => {
 			vi.mocked(api.getJob).mockResolvedValue(
-				terminalJob("Offer!", "Offer accepted"),
+				terminalJob("offer", "Offer accepted"),
 			);
 			render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 			await waitFor(() =>
@@ -903,7 +903,7 @@ describe("jobDialog", () => {
 
 		it("pre-fills value from date_offer_extended on the loaded job", async () => {
 			vi.mocked(api.getJob).mockResolvedValue({
-				...terminalJob("Offer!", "Offer accepted"),
+				...terminalJob("offer", "Offer accepted"),
 				date_offer_extended: "2026-04-10",
 			});
 			render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
@@ -914,7 +914,7 @@ describe("jobDialog", () => {
 
 		it("shows validation error when saving Offer! job without an offer date", async () => {
 			vi.mocked(api.getJob).mockResolvedValue(
-				terminalJob("Offer!", "Offer accepted"),
+				terminalJob("offer", "Offer accepted"),
 			);
 			render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);
 			await waitFor(() =>
@@ -929,7 +929,7 @@ describe("jobDialog", () => {
 
 		it("includes date_offer_extended in onSave payload when set", async () => {
 			vi.mocked(api.getJob).mockResolvedValue({
-				...terminalJob("Offer!", "Offer accepted"),
+				...terminalJob("offer", "Offer accepted"),
 				date_offer_extended: "2026-04-10",
 			});
 			render(<JobDialog {...DEFAULT_PROPS} jobId={42} />);

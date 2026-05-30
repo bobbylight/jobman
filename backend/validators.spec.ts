@@ -6,63 +6,65 @@ import {
 } from "./validators.js";
 
 describe("validateEndingSubstatus", () => {
-	describe("offer! status", () => {
+	describe("offer status", () => {
 		it("accepts 'Offer accepted'", () => {
-			expect(validateEndingSubstatus("Offer!", "Offer accepted")).toBeNull();
+			expect(validateEndingSubstatus("offer", "Offer accepted")).toBeNull();
 		});
 
 		it("accepts 'Offer declined'", () => {
-			expect(validateEndingSubstatus("Offer!", "Offer declined")).toBeNull();
+			expect(validateEndingSubstatus("offer", "Offer declined")).toBeNull();
 		});
 
-		it("rejects null for Offer! (substatus is required)", () => {
-			expect(validateEndingSubstatus("Offer!", null)).not.toBeNull();
+		it("rejects null for offer (substatus is required)", () => {
+			expect(validateEndingSubstatus("offer", null)).not.toBeNull();
 		});
 
-		it("rejects a rejection substatus for Offer!", () => {
-			expect(validateEndingSubstatus("Offer!", "Ghosted")).not.toBeNull();
+		it("rejects a rejection substatus for offer", () => {
+			expect(validateEndingSubstatus("offer", "Ghosted")).not.toBeNull();
 		});
 
-		it("rejects every rejection substatus for Offer!", () => {
+		it("rejects every rejection substatus for offer", () => {
 			for (const s of VALID_REJECTED_SUBSTATUSES) {
-				expect(validateEndingSubstatus("Offer!", s)).not.toBeNull();
+				expect(validateEndingSubstatus("offer", s)).not.toBeNull();
 			}
 		});
 
 		it("returns an error mentioning the valid offer values", () => {
-			const err = validateEndingSubstatus("Offer!", null);
+			const err = validateEndingSubstatus("offer", null);
 			expect(err).toMatch(/Offer accepted/);
 			expect(err).toMatch(/Offer declined/);
 		});
 	});
 
-	describe("rejected/Withdrawn status", () => {
+	describe("rejected_or_withdrawn status", () => {
 		it.each([...VALID_REJECTED_SUBSTATUSES])("accepts '%s'", (substatus) => {
 			expect(
-				validateEndingSubstatus("Rejected/Withdrawn", substatus),
+				validateEndingSubstatus("rejected_or_withdrawn", substatus),
 			).toBeNull();
 		});
 
-		it("rejects null for Rejected/Withdrawn (substatus is required)", () => {
+		it("rejects null for rejected_or_withdrawn (substatus is required)", () => {
 			expect(
-				validateEndingSubstatus("Rejected/Withdrawn", null),
+				validateEndingSubstatus("rejected_or_withdrawn", null),
 			).not.toBeNull();
 		});
 
-		it("rejects 'Offer accepted' for Rejected/Withdrawn", () => {
+		it("rejects 'Offer accepted' for rejected_or_withdrawn", () => {
 			expect(
-				validateEndingSubstatus("Rejected/Withdrawn", "Offer accepted"),
+				validateEndingSubstatus("rejected_or_withdrawn", "Offer accepted"),
 			).not.toBeNull();
 		});
 
-		it("rejects every offer substatus for Rejected/Withdrawn", () => {
+		it("rejects every offer substatus for rejected_or_withdrawn", () => {
 			for (const s of VALID_OFFER_SUBSTATUSES) {
-				expect(validateEndingSubstatus("Rejected/Withdrawn", s)).not.toBeNull();
+				expect(
+					validateEndingSubstatus("rejected_or_withdrawn", s),
+				).not.toBeNull();
 			}
 		});
 
 		it("returns an error that does not mention offer substatuses", () => {
-			const err = validateEndingSubstatus("Rejected/Withdrawn", null);
+			const err = validateEndingSubstatus("rejected_or_withdrawn", null);
 			expect(err).not.toMatch(/Offer accepted/);
 			expect(err).not.toMatch(/Offer declined/);
 		});
@@ -70,10 +72,10 @@ describe("validateEndingSubstatus", () => {
 
 	describe("non-terminal statuses", () => {
 		const ACTIVE_STATUSES = [
-			"Not started",
-			"Applied",
-			"Phone screen",
-			"Interviewing",
+			"not_started",
+			"applied",
+			"phone_screen",
+			"interviewing",
 		];
 
 		it.each(
@@ -91,32 +93,32 @@ describe("validateEndingSubstatus", () => {
 });
 
 describe("validateOfferDate", () => {
-	describe("offer! status", () => {
+	describe("offer status", () => {
 		it("accepts a valid date string", () => {
-			expect(validateOfferDate("Offer!", "2026-05-15")).toBeNull();
+			expect(validateOfferDate("offer", "2026-05-15")).toBeNull();
 		});
 
-		it("rejects null for Offer! (date is required)", () => {
-			expect(validateOfferDate("Offer!", null)).not.toBeNull();
+		it("rejects null for offer (date is required)", () => {
+			expect(validateOfferDate("offer", null)).not.toBeNull();
 		});
 
-		it("rejects empty string for Offer!", () => {
-			expect(validateOfferDate("Offer!", "")).not.toBeNull();
+		it("rejects empty string for offer", () => {
+			expect(validateOfferDate("offer", "")).not.toBeNull();
 		});
 
 		it("returns an error mentioning date_offer_extended", () => {
-			const err = validateOfferDate("Offer!", null);
+			const err = validateOfferDate("offer", null);
 			expect(err).toMatch(/date_offer_extended/);
 		});
 	});
 
-	describe("non-Offer! statuses", () => {
+	describe("non-offer statuses", () => {
 		const NON_OFFER_STATUSES = [
-			"Not started",
-			"Applied",
-			"Phone screen",
-			"Interviewing",
-			"Rejected/Withdrawn",
+			"not_started",
+			"applied",
+			"phone_screen",
+			"interviewing",
+			"rejected_or_withdrawn",
 		];
 
 		it.each(NON_OFFER_STATUSES)("accepts null for status '%s'", (status) => {

@@ -1,7 +1,7 @@
 import React, { memo } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { Box, Chip, Typography } from "@mui/material";
-import { STATUS_COLORS } from "../../constants";
+import { STATUS_COLORS, STATUS_LABELS } from "../../constants";
 import type { Job, JobStatus } from "../../types";
 import JobCard from "./JobCard";
 
@@ -57,7 +57,7 @@ export default memo(
 							textTransform: "uppercase",
 						}}
 					>
-						{status}
+						{STATUS_LABELS[status]}
 					</Typography>
 					<Chip
 						label={jobs.length}
