@@ -101,6 +101,15 @@ export default function JobDialog({
 	const [viewingQuestionsFor, setViewingQuestionsFor] =
 		useState<Interview | null>(null);
 	const abortRef = useRef<AbortController | null>(null);
+	const dialogContentRef = useRef<HTMLDivElement>(null);
+
+	// Force a scroll to the top of the question panel. Without this, the vertical scroll will be
+	// "inherited" from the prior, `Interviews` card content.
+	useEffect(() => {
+		if (viewingQuestionsFor && dialogContentRef.current) {
+			dialogContentRef.current.scrollTop = 0;
+		}
+	}, [viewingQuestionsFor]);
 
 	useEffect(() => {
 		if (!open) {
@@ -344,7 +353,7 @@ export default function JobDialog({
 					</Tabs>
 				)}
 
-				<DialogContent dividers>
+				<DialogContent dividers ref={dialogContentRef}>
 					{loadingJob && (
 						<Box
 							component="output"
