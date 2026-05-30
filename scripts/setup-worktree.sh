@@ -6,13 +6,17 @@ MAIN_ROOT=$(dirname "$(git rev-parse --git-common-dir)")
 
 echo "Setting up worktree from main project at: $MAIN_ROOT"
 
-# Symlink .env so OAuth credentials stay in sync with the main project
-if [ ! -e backend/.env ]; then
-  ln -sf "$MAIN_ROOT/backend/.env" backend/.env
-  echo "Linked backend/.env from main project"
-else
-  echo "backend/.env already exists, skipping"
-fi
+# Symlink env files so OAuth credentials stay in sync with the main project
+for env_file in .env.development .env.deploy; do
+  if [ ! -e "backend/$env_file" ]; then
+    if [ -f "$MAIN_ROOT/backend/$env_file" ]; then
+      ln -sf "$MAIN_ROOT/backend/$env_file" "backend/$env_file"
+      echo "Linked backend/$env_file from main project"
+    fi
+  else
+    echo "backend/$env_file already exists, skipping"
+  fi
+done
 
 # Copy the database so the worktree has real data but schema changes are isolated
 if [ ! -e backend/jobman.db ]; then
