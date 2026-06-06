@@ -1,57 +1,11 @@
 
 import Database from "better-sqlite3";
 import { getJobsForLink, getStats } from "./stats.js";
-
-const SCHEMA = `
-  CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL
-  );
-  CREATE TABLE jobs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    date_applied TEXT,
-    company TEXT NOT NULL,
-    role TEXT NOT NULL,
-    link TEXT NOT NULL,
-    salary TEXT,
-    fit_score TEXT,
-    referred_by TEXT,
-    status TEXT DEFAULT 'not_started',
-    recruiter TEXT,
-    notes TEXT,
-    favorite INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now')),
-    job_description TEXT,
-    ending_substatus TEXT,
-    date_phone_screen TEXT,
-    date_last_onsite TEXT,
-    date_offer_extended TEXT
-  );
-  CREATE TABLE job_status_history (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    job_id     INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-    status     TEXT NOT NULL,
-    entered_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-  );
-  CREATE TABLE interviews (
-    id                    INTEGER PRIMARY KEY AUTOINCREMENT,
-    job_id                INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-    interview_stage       TEXT NOT NULL,
-    interview_dttm        TEXT NOT NULL,
-    interview_interviewers TEXT,
-    interview_type        TEXT,
-    interview_vibe        TEXT,
-    interview_notes       TEXT,
-    interview_result      TEXT,
-    interview_feeling     TEXT
-  );
-`;
+import { applySchema } from "../db.js";
 
 function makeDb() {
 	const db = new Database(":memory:");
-	db.exec(SCHEMA);
+	applySchema(db);
 	return db;
 }
 

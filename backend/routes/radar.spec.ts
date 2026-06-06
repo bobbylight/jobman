@@ -2,89 +2,21 @@ import { createHmac } from "node:crypto";
 import Database from "better-sqlite3";
 import request from "supertest";
 import { createApp } from "../server.js";
-
-const SCHEMA = `
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL
-  );
-  CREATE TABLE IF NOT EXISTS sessions (
-    sid TEXT NOT NULL PRIMARY KEY,
-    sess JSON NOT NULL,
-    expire TEXT NOT NULL
-  );
-  CREATE TABLE IF NOT EXISTS target_companies (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
-    tier TEXT NOT NULL DEFAULT 'faang_adjacent',
-    application_cooldown_days INTEGER,
-    phone_screen_cooldown_days INTEGER,
-    onsite_cooldown_days INTEGER,
-    max_apps_per_period INTEGER,
-    apps_period_days INTEGER,
-    policy_summary TEXT,
-    policy_url TEXT,
-    policy_confidence TEXT,
-    policy_updated_at TEXT,
-    user_notes TEXT,
-    hidden INTEGER NOT NULL DEFAULT 0
-  );
-  CREATE TABLE IF NOT EXISTS jobs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    company TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'Engineer',
-    link TEXT NOT NULL DEFAULT 'https://example.com',
-    status TEXT NOT NULL DEFAULT 'Not started',
-    ending_substatus TEXT,
-    date_applied TEXT,
-    created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-  );
-  CREATE TABLE IF NOT EXISTS job_status_history (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    job_id INTEGER NOT NULL,
-    status TEXT NOT NULL,
-    entered_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-  );
-  CREATE TABLE IF NOT EXISTS interviews (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    job_id INTEGER NOT NULL,
-    interview_dttm TEXT NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS offers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    job_id INTEGER NOT NULL UNIQUE REFERENCES jobs(id) ON DELETE CASCADE,
-    base_pay_amount INTEGER,
-    target_bonus_percent REAL,
-    equity_amount INTEGER,
-    equity_vesting_years INTEGER DEFAULT 4,
-    equity_type TEXT,
-    signing_bonus_amount INTEGER,
-    wellness_stipend_amount INTEGER,
-    other_amount INTEGER,
-    other_label TEXT,
-    other_is_recurring INTEGER DEFAULT 0,
-    k401_match_percent REAL,
-    offer_deadline TEXT,
-    notes TEXT,
-    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS job_tags (
-    job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-    tag    TEXT NOT NULL,
-    PRIMARY KEY (job_id, tag)
-  );
-`;
+import { applySchema } from "../db.js";
 
 const SESSION_SECRET = "dev-secret";
 const TEST_USER_ID = 1;
 const TEST_SESSION_ID = "test-session-radar-routes";
 
 const testDb = new Database(":memory:");
-testDb.exec(SCHEMA);
+applySchema(testDb);
+testDb.exec(`
+  CREATE TABLE IF NOT EXISTS sessions (
+    sid TEXT NOT NULL PRIMARY KEY,
+    sess JSON NOT NULL,
+    expire TEXT NOT NULL
+  );
+`);
 testDb.prepare("INSERT INTO users (id, email) VALUES (?, ?)").run(TEST_USER_ID, "test@test.com");
 testDb
 	.prepare("INSERT INTO sessions (sid, sess, expire) VALUES (?, ?, datetime('now', '+7 days'))")
@@ -117,7 +49,7 @@ function insertJob(overrides: { company?: string; status?: string; date_applied?
 		.run(
 			TEST_USER_ID,
 			overrides.company ?? "Acme",
-			overrides.status ?? "Applied",
+			overrides.status ?? "applied",
 			overrides.date_applied ?? null,
 		) as { lastInsertRowid: number };
 	return Number(result.lastInsertRowid);
@@ -139,7 +71,7 @@ describe("gET /api/radar", () => {
 
 	it("returns a radar response with entries and generated_at", async () => {
 		const id = insertCompany({ name: "Acme" });
-		insertJob({ company: "Acme", status: "Applied", date_applied: daysAgo(5) });
+		insertJob({ company: "Acme", status: "applied", date_applied: daysAgo(5) });
 		const res = await req("get", "/api/radar");
 		expect(res.status).toBe(200);
 		expect(res.body.generated_at).toBeTruthy();
@@ -150,7 +82,7 @@ describe("gET /api/radar", () => {
 
 	it("excludes hidden companies by default", async () => {
 		insertCompany({ name: "Acme", hidden: 1 });
-		insertJob({ company: "Acme", status: "Applied" });
+		insertJob({ company: "Acme", status: "applied" });
 		const res = await req("get", "/api/radar");
 		expect(res.status).toBe(200);
 		expect(res.body.entries).toHaveLength(0);
@@ -158,7 +90,7 @@ describe("gET /api/radar", () => {
 
 	it("includes hidden companies when includeHidden=true", async () => {
 		insertCompany({ name: "Acme", hidden: 1 });
-		insertJob({ company: "Acme", status: "Applied" });
+		insertJob({ company: "Acme", status: "applied" });
 		const res = await req("get", "/api/radar?includeHidden=true");
 		expect(res.status).toBe(200);
 		expect(res.body.entries).toHaveLength(1);

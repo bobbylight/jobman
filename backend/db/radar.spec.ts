@@ -1,59 +1,21 @@
 
 import Database from "better-sqlite3";
 import { getRadar, patchRadarEntry } from "./radar.js";
+import { applySchema } from "../db.js";
 
-const SCHEMA = `
-  CREATE TABLE target_companies (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
-    tier TEXT NOT NULL DEFAULT 'faang_adjacent',
-    application_cooldown_days INTEGER,
-    phone_screen_cooldown_days INTEGER,
-    onsite_cooldown_days INTEGER,
-    max_apps_per_period INTEGER,
-    apps_period_days INTEGER,
-    policy_summary TEXT,
-    policy_url TEXT,
-    policy_confidence TEXT,
-    policy_updated_at TEXT,
-    user_notes TEXT,
-    hidden INTEGER NOT NULL DEFAULT 0
-  );
-  CREATE TABLE jobs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    company TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'Engineer',
-    link TEXT NOT NULL DEFAULT 'https://example.com',
-    status TEXT NOT NULL DEFAULT 'not_started',
-    ending_substatus TEXT,
-    date_applied TEXT,
-    created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-  );
-  CREATE TABLE job_status_history (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    job_id INTEGER NOT NULL,
-    status TEXT NOT NULL,
-    entered_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-  );
-  CREATE TABLE interviews (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    job_id INTEGER NOT NULL,
-    interview_dttm TEXT NOT NULL
-  );
-`;
+const USER_ID = 1;
 
 function makeDb() {
 	const db = new Database(":memory:");
-	db.exec(SCHEMA);
+	applySchema(db);
+	db.prepare("INSERT INTO users (id, email) VALUES (?, ?)").run(USER_ID, "test@example.com");
+	db.prepare("INSERT INTO users (id, email) VALUES (2, 'other@example.com')").run();
 	return db;
 }
 
 function daysAgo(n: number): string {
 	return new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
 }
-
-const USER_ID = 1;
 
 interface CompanyOverrides {
 	name?: string;
@@ -229,7 +191,7 @@ describe("getRadar", () => {
 	it("only returns jobs for the specified user", () => {
 		const db = makeDb();
 		insertCompany(db, { name: "Acme" });
-		insertJob(db, { company: "Acme", user_id: 999 });
+		insertJob(db, { company: "Acme", user_id: 2 });
 		const result = getRadar(db, USER_ID);
 		expect(result.entries).toHaveLength(0);
 	});
@@ -297,7 +259,7 @@ describe("getRadar", () => {
 		const db = makeDb();
 		insertCompany(db, { name: "Acme" });
 		const jobId = insertJob(db, { company: "Acme", status: "interviewing", date_applied: daysAgo(20) });
-		db.prepare("INSERT INTO interviews (job_id, interview_dttm) VALUES (?, '2026-03-15T10:00')").run(jobId);
+		db.prepare("INSERT INTO interviews (job_id, interview_dttm, interview_stage) VALUES (?, '2026-03-15T10:00', 'Technical')").run(jobId);
 		const result = getRadar(db, USER_ID);
 		expect(result.entries[0]!.last_interview_date).toBe("2026-03-15T10:00");
 	});

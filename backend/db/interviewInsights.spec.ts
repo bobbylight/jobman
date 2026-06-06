@@ -1,43 +1,11 @@
 
 import Database from "better-sqlite3";
 import { getInterviewInsights } from "./interviewInsights.js";
-
-const SCHEMA = `
-  CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL
-  );
-  CREATE TABLE jobs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    company TEXT NOT NULL DEFAULT 'Acme',
-    role TEXT NOT NULL DEFAULT 'Engineer',
-    link TEXT NOT NULL DEFAULT 'https://example.com',
-    status TEXT DEFAULT 'Not started'
-  );
-  CREATE TABLE interviews (
-    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-    job_id              INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-    interview_stage     TEXT NOT NULL,
-    interview_dttm      TEXT NOT NULL,
-    interview_type      TEXT,
-    interview_vibe      TEXT,
-    interview_result    TEXT,
-    interview_feeling   TEXT
-  );
-  CREATE TABLE interview_questions (
-    id             INTEGER PRIMARY KEY AUTOINCREMENT,
-    interview_id   INTEGER NOT NULL REFERENCES interviews(id) ON DELETE CASCADE,
-    question_type  TEXT NOT NULL,
-    question_text  TEXT NOT NULL,
-    question_notes TEXT,
-    difficulty     INTEGER NOT NULL
-  );
-`;
+import { applySchema } from "../db.js";
 
 function makeDb() {
 	const db = new Database(":memory:");
-	db.exec(SCHEMA);
+	applySchema(db);
 	return db;
 }
 
@@ -49,7 +17,7 @@ function insertJob(
 	const res = db
 		.prepare(
 			`INSERT INTO jobs (user_id, company, role, link, status)
-       VALUES (?, ?, 'Engineer', 'https://example.com', 'Interviewing')`,
+       VALUES (?, ?, 'Engineer', 'https://example.com', 'interviewing')`,
 		)
 		.run(userId, overrides.company ?? "Acme") as { lastInsertRowid: number };
 	return Number(res.lastInsertRowid);

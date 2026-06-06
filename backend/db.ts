@@ -1,12 +1,8 @@
 import Database from "better-sqlite3";
 import { join } from "node:path";
 
-const db = new Database(join(import.meta.dirname, "jobman.db"));
-
-// Enable foreign key enforcement
-db.pragma("foreign_keys = ON");
-
-db.exec(`
+export function applySchema(db: Database.Database): void {
+	db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     email        TEXT NOT NULL,
@@ -150,6 +146,13 @@ db.exec(`
     hidden                     INTEGER NOT NULL DEFAULT 0
   );
 `);
+}
+
+const db = new Database(join(import.meta.dirname, "jobman.db"));
+
+// Enable foreign key enforcement
+db.pragma("foreign_keys = ON");
+applySchema(db);
 
 // Seed target companies (INSERT OR IGNORE — safe to re-run)
 db.exec(`
