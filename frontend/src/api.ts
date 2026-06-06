@@ -8,6 +8,8 @@ import type {
 	Job,
 	JobFormData,
 	LinkJob,
+	Offer,
+	OfferFormData,
 	RadarPatch,
 	RadarResponse,
 	StatsResponse,
@@ -153,4 +155,19 @@ export const api = {
 			`/jobs/${jobId}/interviews/${interviewId}/questions/${questionId}`,
 			{ method: "DELETE" },
 		),
+
+	// Offers
+	getOffer: (jobId: number) => request<Offer>(`/jobs/${jobId}/offer`),
+	createOffer: (jobId: number, data: OfferFormData) =>
+		request<Offer>(`/jobs/${jobId}/offer`, {
+			body: JSON.stringify(data),
+			method: "POST",
+		}),
+	updateOffer: (jobId: number, data: OfferFormData) =>
+		request<Offer>(`/jobs/${jobId}/offer`, {
+			body: JSON.stringify(data),
+			method: "PUT",
+		}),
+	deleteOffer: (jobId: number) =>
+		request<void>(`/jobs/${jobId}/offer`, { method: "DELETE" }),
 };

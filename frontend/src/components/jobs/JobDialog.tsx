@@ -21,6 +21,7 @@ import {
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import InterviewsTab from "./interviews/InterviewsTab";
+import OfferTab from "./OfferTab";
 import EditIcon from "@mui/icons-material/Edit";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
@@ -49,6 +50,7 @@ import type {
 	JobFormData,
 	JobStatus,
 	JobTag,
+	Offer,
 } from "../../types";
 
 const EMPTY: JobFormData = {
@@ -59,6 +61,7 @@ const EMPTY: JobFormData = {
 	date_phone_screen: null,
 	ending_substatus: null,
 	favorite: false,
+	has_offer: false,
 	fit_score: null,
 	job_description: null,
 	link: "",
@@ -101,6 +104,7 @@ export default function JobDialog({
 	const [interviewCount, setInterviewCount] = useState<number | null>(null);
 	const [viewingQuestionsFor, setViewingQuestionsFor] =
 		useState<Interview | null>(null);
+	const [offerData, setOfferData] = useState<Offer | null>(null);
 	const abortRef = useRef<AbortController | null>(null);
 	const dialogContentRef = useRef<HTMLDivElement>(null);
 
@@ -125,6 +129,7 @@ export default function JobDialog({
 		setActiveTab(0);
 		setInterviewCount(null);
 		setViewingQuestionsFor(null);
+		setOfferData(null);
 		setLoadError(null);
 
 		if (jobId === null) {
@@ -139,11 +144,23 @@ export default function JobDialog({
 
 		api
 			.getJob(jobId)
-			.then((job) => {
+			.then(async (job) => {
 				if (controller.signal.aborted) {
 					return;
 				}
 				setForm({ ...EMPTY, ...job });
+
+				if (job.status === "offer") {
+					try {
+						const offer = await api.getOffer(jobId);
+						if (!controller.signal.aborted) {
+							setOfferData(offer);
+						}
+					} catch {
+						// 404 = no offer yet — leave offerData null
+					}
+				}
+
 				setLoadingJob(false);
 			})
 			.catch(() => {
@@ -274,10 +291,26 @@ export default function JobDialog({
 
 	const formDisabled = loadingJob || Boolean(loadError);
 
+	function actionsJustifyContent(): "space-between" | "flex-end" {
+		if (activeTab === 0) {
+			return isEdit ? "space-between" : "flex-end";
+		}
+		if (activeTab === 1) {
+			return viewingQuestionsFor ? "space-between" : "flex-end";
+		}
+		return "flex-end";
+	}
+
 	// ── Main dialog ────────────────────────────────────────────────────────────
 	return (
 		<>
-			<Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+			<Dialog
+				open={open}
+				onClose={handleClose}
+				maxWidth="sm"
+				fullWidth
+				sx={{ "& .MuiDialog-paper": { maxWidth: "640px" } }}
+			>
 				<DialogTitle
 					sx={{
 						alignItems: "center",
@@ -351,6 +384,7 @@ export default function JobDialog({
 									: "Interviews"
 							}
 						/>
+						{form.status === "offer" && <Tab label="Offer" />}
 					</Tabs>
 				)}
 
@@ -716,14 +750,19 @@ export default function JobDialog({
 								onViewingQuestionsChange={setViewingQuestionsFor}
 							/>
 						)}
+						{isEdit && activeTab === 2 && form.status === "offer" && (
+							<OfferTab
+								jobId={jobId!}
+								offerData={offerData}
+								onOfferChange={setOfferData}
+							/>
+						)}
 					</Box>
 				</DialogContent>
 
 				<DialogActions
 					sx={{
-						justifyContent: (activeTab === 1 ? viewingQuestionsFor : isEdit)
-							? "space-between"
-							: "flex-end",
+						justifyContent: actionsJustifyContent(),
 						px: 3,
 						py: 2,
 					}}
@@ -766,6 +805,7 @@ export default function JobDialog({
 							<Button onClick={handleClose}>Close</Button>
 						</>
 					)}
+					{activeTab === 2 && <Button onClick={handleClose}>Close</Button>}
 				</DialogActions>
 			</Dialog>
 
