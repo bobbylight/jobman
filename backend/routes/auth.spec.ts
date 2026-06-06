@@ -2,20 +2,7 @@ import { createHmac } from "node:crypto";
 import Database from "better-sqlite3";
 import request from "supertest";
 import { createApp } from "../server.js";
-
-const SCHEMA = `
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL,
-    display_name TEXT,
-    avatar_url TEXT
-  );
-  CREATE TABLE IF NOT EXISTS sessions (
-    sid TEXT NOT NULL PRIMARY KEY,
-    sess JSON NOT NULL,
-    expire TEXT NOT NULL
-  );
-`;
+import { applySchema } from "../db.js";
 
 const SESSION_SECRET = "dev-secret";
 
@@ -35,7 +22,14 @@ function insertSession(db: Database.Database, id: string, userId: number) {
 }
 
 const testDb = new Database(":memory:");
-testDb.exec(SCHEMA);
+applySchema(testDb);
+testDb.exec(`
+  CREATE TABLE IF NOT EXISTS sessions (
+    sid TEXT NOT NULL PRIMARY KEY,
+    sess JSON NOT NULL,
+    expire TEXT NOT NULL
+  );
+`);
 
 const TEST_USER_ID = 1;
 testDb

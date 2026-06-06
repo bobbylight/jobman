@@ -6,29 +6,11 @@ import {
 	findUserById,
 	updateGoogleTokens,
 } from "./users.js";
-
-const SCHEMA = `
-  CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL,
-    display_name TEXT,
-    avatar_url TEXT
-  );
-  CREATE TABLE user_identities (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    provider TEXT NOT NULL,
-    provider_user_id TEXT NOT NULL,
-    email TEXT NOT NULL,
-    access_token TEXT NOT NULL,
-    refresh_token TEXT,
-    updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-  );
-`;
+import { applySchema } from "../db.js";
 
 function makeDb() {
 	const db = new Database(":memory:");
-	db.exec(SCHEMA);
+	applySchema(db);
 	return db;
 }
 

@@ -1,72 +1,11 @@
 
 import Database from "better-sqlite3";
 import { listJobs, findJob, jobExists, createJob, updateJob, deleteJob, type JobCreateData } from './jobs.js';
-
-const SCHEMA = `
-  CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL
-  );
-  CREATE TABLE jobs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    date_applied TEXT,
-    company TEXT NOT NULL,
-    role TEXT NOT NULL,
-    link TEXT NOT NULL,
-    salary TEXT,
-    fit_score TEXT,
-    referred_by TEXT,
-    status TEXT DEFAULT 'not_started',
-    recruiter TEXT,
-    notes TEXT,
-    favorite INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now')),
-    job_description TEXT,
-    ending_substatus TEXT,
-    date_phone_screen TEXT,
-    date_last_onsite TEXT,
-    date_offer_extended TEXT
-  );
-  CREATE TABLE job_status_history (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    job_id     INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-    status     TEXT NOT NULL,
-    entered_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-  );
-  CREATE TABLE job_tags (
-    job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-    tag    TEXT NOT NULL,
-    PRIMARY KEY (job_id, tag)
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_job_tags_tag ON job_tags(tag);
-
-  CREATE TABLE IF NOT EXISTS offers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    job_id INTEGER NOT NULL UNIQUE REFERENCES jobs(id) ON DELETE CASCADE,
-    base_pay_amount INTEGER,
-    target_bonus_percent REAL,
-    equity_amount INTEGER,
-    equity_vesting_years INTEGER DEFAULT 4,
-    equity_type TEXT,
-    signing_bonus_amount INTEGER,
-    wellness_stipend_amount INTEGER,
-    other_amount INTEGER,
-    other_label TEXT,
-    other_is_recurring INTEGER DEFAULT 0,
-    k401_match_percent REAL,
-    offer_deadline TEXT,
-    notes TEXT,
-    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-  );
-`;
+import { applySchema } from "../db.js";
 
 function makeDb() {
 	const db = new Database(":memory:");
-	db.exec(SCHEMA);
+	applySchema(db);
 	return db;
 }
 

@@ -1,53 +1,16 @@
 
 import Database from "better-sqlite3";
 import { jobBelongsToUser, listInterviews, findInterview, createInterview, updateInterview, deleteInterview, listQuestions, findQuestion, createQuestion, updateQuestion, deleteQuestion, type InterviewCreateData, type QuestionCreateData } from './interviews.js';
-
-const SCHEMA = `
-  CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL
-  );
-  CREATE TABLE jobs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    company TEXT NOT NULL,
-    role TEXT NOT NULL,
-    link TEXT NOT NULL,
-    status TEXT DEFAULT 'Not started',
-    favorite INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now'))
-  );
-  CREATE TABLE interviews (
-    id                     INTEGER PRIMARY KEY AUTOINCREMENT,
-    job_id                 INTEGER NOT NULL,
-    interview_stage        TEXT NOT NULL,
-    interview_dttm         TEXT NOT NULL,
-    interview_interviewers TEXT,
-    interview_type         TEXT,
-    interview_vibe         TEXT,
-    interview_notes        TEXT,
-    interview_result       TEXT,
-    interview_feeling      TEXT
-  );
-  CREATE TABLE interview_questions (
-    id             INTEGER PRIMARY KEY AUTOINCREMENT,
-    interview_id   INTEGER NOT NULL,
-    question_type  TEXT NOT NULL,
-    question_text  TEXT NOT NULL,
-    question_notes TEXT,
-    difficulty     INTEGER NOT NULL
-  );
-`;
+import { applySchema } from "../db.js";
 
 function makeDb() {
 	const db = new Database(":memory:");
-	db.exec(SCHEMA);
+	applySchema(db);
 	return db;
 }
 
 const BASE_INTERVIEW: Omit<InterviewCreateData, "job_id"> = {
-	interview_dttm: "2025-06-01T10:00:00Z",
+	interview_dttm: "2025-06-01T10:00",
 	interview_feeling: null,
 	interview_interviewers: "Alice",
 	interview_notes: "Went well",
@@ -142,7 +105,7 @@ describe("interviews db", () => {
 			expect(interview.id).toBeGreaterThan(0);
 			expect(interview.job_id).toBe(jobId);
 			expect(interview.interview_stage).toBe("Technical");
-			expect(interview.interview_dttm).toBe("2025-06-01T10:00:00Z");
+			expect(interview.interview_dttm).toBe("2025-06-01T10:00");
 		});
 
 		it("stores nullable fields as null", () => {
