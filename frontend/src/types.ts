@@ -72,12 +72,45 @@ export interface Job {
 	date_last_onsite: string | null;
 	date_offer_extended: string | null;
 	favorite: boolean;
+	has_offer: boolean;
 	tags: JobTag[];
 	created_at: string;
 	updated_at: string;
 }
 
 export type JobFormData = Omit<Job, "id" | "created_at">;
+
+export type EquityType =
+	| "rsus"
+	| "isos"
+	| "nsos"
+	| "profit_sharing"
+	| "phantom";
+
+export interface Offer {
+	id: number;
+	job_id: number;
+	base_pay_amount: number | null;
+	target_bonus_percent: number | null;
+	equity_amount: number | null;
+	equity_vesting_years: number;
+	equity_type: EquityType | null;
+	signing_bonus_amount: number | null;
+	wellness_stipend_amount: number | null;
+	other_amount: number | null;
+	other_label: string | null;
+	other_is_recurring: boolean;
+	k401_match_percent: number | null;
+	offer_deadline: string | null;
+	notes: string | null;
+	created_at: string;
+	updated_at: string;
+}
+
+export type OfferFormData = Omit<
+	Offer,
+	"id" | "job_id" | "created_at" | "updated_at"
+>;
 
 export type InterviewStage = "phone_screen" | "onsite";
 export type InterviewType =
