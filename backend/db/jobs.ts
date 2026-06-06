@@ -19,14 +19,16 @@ interface JobDbRow {
 	date_last_onsite: string | null;
 	date_offer_extended: string | null;
 	favorite: number;
+	has_offer: number;
 	created_at: string;
 	updated_at: string;
 	tags_csv: string | null;
 }
 
 // SQLite stores booleans as 0/1 — convert for the client
-export type Job = Omit<JobDbRow, "favorite" | "tags_csv" | "notes" | "job_description"> & {
+export type Job = Omit<JobDbRow, "favorite" | "has_offer" | "tags_csv" | "notes" | "job_description"> & {
 	favorite: boolean;
+	has_offer: boolean;
 	tags: string[];
 	/** Absent in summary view; present in full view. */
 	notes?: string | null;
@@ -39,7 +41,7 @@ export type JobView = "full" | "summary";
 function toClient(row: unknown): Job {
 	const r = row as JobDbRow;
 	const { tags_csv, ...rest } = r;
-	return { ...rest, favorite: Boolean(r.favorite), tags: tags_csv ? tags_csv.split(",") : [] };
+	return { ...rest, favorite: Boolean(r.favorite), has_offer: Boolean(r.has_offer), tags: tags_csv ? tags_csv.split(",") : [] };
 }
 
 export interface JobCreateData {
@@ -74,7 +76,8 @@ export type JobUpdateData = Omit<JobCreateData, "user_id" | "notes" | "job_descr
 };
 
 const JOBS_WITH_TAGS_SQL = `
-  SELECT j.*, GROUP_CONCAT(jt.tag) AS tags_csv
+  SELECT j.*, GROUP_CONCAT(jt.tag) AS tags_csv,
+         EXISTS(SELECT 1 FROM offers o WHERE o.job_id = j.id) AS has_offer
   FROM jobs j
   LEFT JOIN job_tags jt ON j.id = jt.job_id
 `;

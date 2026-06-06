@@ -104,6 +104,33 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_job_tags_tag ON job_tags(tag);
 
+  CREATE TABLE IF NOT EXISTS offers (
+    id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_id                  INTEGER NOT NULL UNIQUE REFERENCES jobs(id) ON DELETE CASCADE,
+    base_pay_amount         INTEGER,
+    target_bonus_percent    REAL,
+    equity_amount           INTEGER,
+    equity_vesting_years    INTEGER DEFAULT 4,
+    equity_type             TEXT CHECK(equity_type IN
+                              ('rsus', 'isos', 'nsos', 'profit_sharing', 'phantom')),
+    signing_bonus_amount    INTEGER,
+    wellness_stipend_amount INTEGER,
+    other_amount            INTEGER,
+    other_label             TEXT     CHECK(length(other_label) <= 128),
+    other_is_recurring      INTEGER DEFAULT 0,
+    k401_match_percent      REAL,
+    offer_deadline          TEXT     CHECK(length(offer_deadline) <= 16),
+    notes                   TEXT     CHECK(length(notes) <= 20000),
+    created_at              TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    updated_at              TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+  );
+
+  CREATE TRIGGER IF NOT EXISTS offers_updated_at
+  AFTER UPDATE ON offers FOR EACH ROW
+  BEGIN
+    UPDATE offers SET updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = OLD.id;
+  END;
+
   CREATE TABLE IF NOT EXISTS target_companies (
     id                         INTEGER PRIMARY KEY AUTOINCREMENT,
     name                       TEXT    NOT NULL UNIQUE,

@@ -67,6 +67,26 @@ const SCHEMA = `
   );
 
   CREATE INDEX IF NOT EXISTS idx_job_tags_tag ON job_tags(tag);
+
+  CREATE TABLE IF NOT EXISTS offers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_id INTEGER NOT NULL UNIQUE REFERENCES jobs(id) ON DELETE CASCADE,
+    base_pay_amount INTEGER,
+    target_bonus_percent REAL,
+    equity_amount INTEGER,
+    equity_vesting_years INTEGER DEFAULT 4,
+    equity_type TEXT,
+    signing_bonus_amount INTEGER,
+    wellness_stipend_amount INTEGER,
+    other_amount INTEGER,
+    other_label TEXT,
+    other_is_recurring INTEGER DEFAULT 0,
+    k401_match_percent REAL,
+    offer_deadline TEXT,
+    notes TEXT,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+  );
 `;
 
 const TEST_USER_ID = 1;

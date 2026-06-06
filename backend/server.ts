@@ -11,6 +11,7 @@ import {
 	createInterviewsRouter,
 } from "./routes/interviews.js";
 import { createJobsRouter } from "./routes/jobs.js";
+import { createOffersListRouter, createOffersRouter } from "./routes/offers.js";
 import { createRadarRouter } from "./routes/radar.js";
 import { createStatsRouter } from "./routes/stats.js";
 
@@ -70,6 +71,8 @@ export function createApp(db: Database.Database) {
 		requireAuth,
 		createInterviewsRouter(db),
 	);
+	app.use("/api/jobs/:jobId/offer", requireAuth, createOffersRouter(db));
+	app.use("/api/offers", requireAuth, createOffersListRouter(db));
 	app.use("/api/radar", requireAuth, createRadarRouter(db));
 	app.use("/api/stats", requireAuth, createStatsRouter(db));
 	app.use(

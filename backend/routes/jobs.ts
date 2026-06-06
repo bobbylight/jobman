@@ -3,6 +3,7 @@ import { Router } from "express";
 import * as JobsDb from "../db/jobs.js";
 import type { JobView } from "../db/jobs.js";
 import { validateEndingSubstatus, validateJobFields, validateOfferDate } from "../validators.js";
+import * as OffersDb from "../db/offers.js";
 
 export function createJobsRouter(db: Database.Database) {
 	const router = Router();
@@ -82,9 +83,17 @@ export function createJobsRouter(db: Database.Database) {
 		);
 		if (offerDateError) {return res.status(422).json({ error: offerDateError });}
 
+		const jobId = Number(req.params.id);
+		const currentJob = db
+			.prepare("SELECT status FROM jobs WHERE id = ? AND user_id = ?")
+			.get(jobId, req.session.userId!) as { status: string } | undefined;
+		if (f.status !== undefined && currentJob?.status === "offer" && f.status !== "offer") {
+			OffersDb.deleteOffer(db, jobId);
+		}
+
 		const job = JobsDb.updateJob(
 			db,
-			Number(req.params.id),
+			jobId,
 			req.session.userId!,
 			{
 				date_applied: f.date_applied ?? null,
