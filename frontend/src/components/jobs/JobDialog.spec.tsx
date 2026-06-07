@@ -1140,4 +1140,99 @@ describe("jobDialog", () => {
 			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(expect.any(Object));
 		});
 	});
+
+	describe("leaving the Offer column", () => {
+		const OFFER_JOB: Job = {
+			...BASE_JOB,
+			status: "offer",
+			ending_substatus: "Offer accepted",
+			has_offer: true,
+			date_offer_extended: "2024-04-01",
+		};
+
+		function clickSave() {
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+		}
+
+		it("shows LeaveOfferDialog when status changes away from Offer and the job had an offer", async () => {
+			vi.mocked(api.getJob).mockResolvedValue(OFFER_JOB);
+			await renderEditMode(OFFER_JOB);
+
+			changeSelect("Status", "Applied");
+			clickSave();
+
+			expect(screen.getByText("Remove offer details?")).toBeInTheDocument();
+			expect(DEFAULT_PROPS.onSave).not.toHaveBeenCalled();
+		});
+
+		it("does not show LeaveOfferDialog when the job had no offer", async () => {
+			const job: Job = { ...OFFER_JOB, has_offer: false };
+			vi.mocked(api.getJob).mockResolvedValue(job);
+			await renderEditMode(job);
+
+			changeSelect("Status", "Applied");
+			clickSave();
+
+			expect(
+				screen.queryByText("Remove offer details?"),
+			).not.toBeInTheDocument();
+			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
+				expect.objectContaining({ status: "applied" }),
+			);
+		});
+
+		it("does not show LeaveOfferDialog when status is left as Offer", async () => {
+			vi.mocked(api.getJob).mockResolvedValue(OFFER_JOB);
+			await renderEditMode(OFFER_JOB);
+
+			fireEvent.change(screen.getByLabelText(/Company/), {
+				target: { value: "Updated Corp" },
+			});
+			clickSave();
+
+			expect(
+				screen.queryByText("Remove offer details?"),
+			).not.toBeInTheDocument();
+			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
+				expect.objectContaining({ company: "Updated Corp", status: "offer" }),
+			);
+		});
+
+		it("proceeds with the save when the dialog is confirmed", async () => {
+			vi.mocked(api.getJob).mockResolvedValue(OFFER_JOB);
+			await renderEditMode(OFFER_JOB);
+
+			changeSelect("Status", "Applied");
+			clickSave();
+			fireEvent.click(
+				screen.getByRole("button", { name: "Remove & Continue" }),
+			);
+
+			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
+				expect.objectContaining({ status: "applied" }),
+			);
+		});
+
+		it("leaves the form in its pre-save state when the dialog is cancelled", async () => {
+			vi.mocked(api.getJob).mockResolvedValue(OFFER_JOB);
+			await renderEditMode(OFFER_JOB);
+
+			changeSelect("Status", "Applied");
+			clickSave();
+
+			const leaveOfferDialog = screen
+				.getByText("Remove offer details?")
+				.closest('[role="dialog"]') as HTMLElement;
+			fireEvent.click(
+				within(leaveOfferDialog).getByRole("button", { name: "Cancel" }),
+			);
+
+			expect(DEFAULT_PROPS.onSave).not.toHaveBeenCalled();
+			await waitFor(() => {
+				expect(
+					screen.getByRole("combobox", { name: "Status" }),
+				).toHaveTextContent("Applied");
+			});
+		});
+	});
 });

@@ -11,6 +11,7 @@ import { STATUSES } from "../../constants";
 import type { Job, JobStatus } from "../../types";
 import KanbanColumn from "./KanbanColumn";
 import JobCard from "./JobCard";
+import LeaveOfferDialog from "./LeaveOfferDialog";
 
 interface Props {
 	jobs: Job[];
@@ -22,6 +23,10 @@ interface Props {
 export default memo(
 	({ jobs, onStatusChange, onCardClick, onToggleFavorite }: Props) => {
 		const [activeJob, setActiveJob] = useState<Job | null>(null);
+		const [pendingStatusChange, setPendingStatusChange] = useState<{
+			job: Job;
+			newStatus: JobStatus;
+		} | null>(null);
 
 		const byStatus = useMemo(
 			() =>
@@ -54,6 +59,20 @@ export default memo(
 			if (newStatus === job.status) {
 				return;
 			}
+
+			if (job.status === "offer" && job.has_offer) {
+				setPendingStatusChange({ job, newStatus });
+				return;
+			}
+			onStatusChange(job, newStatus);
+		}
+
+		function handleConfirmLeaveOffer() {
+			if (!pendingStatusChange) {
+				return;
+			}
+			const { job, newStatus } = pendingStatusChange;
+			setPendingStatusChange(null);
 			onStatusChange(job, newStatus);
 		}
 
@@ -94,6 +113,13 @@ export default memo(
 						/>
 					) : null}
 				</DragOverlay>
+
+				<LeaveOfferDialog
+					open={pendingStatusChange !== null}
+					company={pendingStatusChange?.job.company ?? null}
+					onConfirm={handleConfirmLeaveOffer}
+					onCancel={() => setPendingStatusChange(null)}
+				/>
 			</DndContext>
 		);
 	},
