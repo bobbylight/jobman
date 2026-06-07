@@ -1,17 +1,35 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import KanbanBoard from "./KanbanBoard";
 import type { Job } from "../../types";
 import { STATUSES, STATUS_LABELS } from "../../constants";
 import { makeJob } from "../../testUtils";
 
+let capturedOnDragEnd: ((event: unknown) => void) | null = null;
+
+function dragJobTo(job: Job, overId: string) {
+	act(() => {
+		capturedOnDragEnd!({
+			active: { data: { current: { job } } },
+			over: { id: overId },
+		});
+	});
+}
+
 vi.mock(
 	import("@dnd-kit/core"),
 	() =>
 		({
-			DndContext: ({ children }: { children: React.ReactNode }) => (
-				<>{children}</>
-			),
+			DndContext: ({
+				children,
+				onDragEnd,
+			}: {
+				children: React.ReactNode;
+				onDragEnd: (event: unknown) => void;
+			}) => {
+				capturedOnDragEnd = onDragEnd;
+				return <>{children}</>;
+			},
 			DragOverlay: () => null,
 			pointerWithin: () => [],
 			useDraggable: () => ({
@@ -79,5 +97,85 @@ describe("kanbanBoard", () => {
 	it("shows no cards when jobs array is empty", () => {
 		render(<KanbanBoard {...DEFAULT_PROPS} jobs={[]} />);
 		expect(screen.queryByText("Acme")).not.toBeInTheDocument();
+	});
+
+	describe("leaving the Offer column", () => {
+		beforeEach(() => vi.clearAllMocks());
+
+		it("shows the LeaveOfferDialog when dragging a job with an offer out of the Offer column", () => {
+			const job = makeJob({
+				company: "Acme",
+				has_offer: true,
+				status: "offer",
+			});
+			render(<KanbanBoard {...DEFAULT_PROPS} jobs={[job]} />);
+
+			dragJobTo(job, "applied");
+
+			expect(screen.getByText("Remove offer details?")).toBeInTheDocument();
+			expect(DEFAULT_PROPS.onStatusChange).not.toHaveBeenCalled();
+		});
+
+		it("proceeds immediately when dragging a job without an offer out of the Offer column", () => {
+			const job = makeJob({
+				company: "Acme",
+				has_offer: false,
+				status: "offer",
+			});
+			render(<KanbanBoard {...DEFAULT_PROPS} jobs={[job]} />);
+
+			dragJobTo(job, "applied");
+
+			expect(
+				screen.queryByText("Remove offer details?"),
+			).not.toBeInTheDocument();
+			expect(DEFAULT_PROPS.onStatusChange).toHaveBeenCalledWith(job, "applied");
+		});
+
+		it("never shows the dialog when dragging a job into the Offer column", () => {
+			const job = makeJob({
+				company: "Acme",
+				has_offer: false,
+				status: "applied",
+			});
+			render(<KanbanBoard {...DEFAULT_PROPS} jobs={[job]} />);
+
+			dragJobTo(job, "offer");
+
+			expect(
+				screen.queryByText("Remove offer details?"),
+			).not.toBeInTheDocument();
+			expect(DEFAULT_PROPS.onStatusChange).toHaveBeenCalledWith(job, "offer");
+		});
+
+		it("completes the status change when the dialog is confirmed", () => {
+			const job = makeJob({
+				company: "Acme",
+				has_offer: true,
+				status: "offer",
+			});
+			render(<KanbanBoard {...DEFAULT_PROPS} jobs={[job]} />);
+
+			dragJobTo(job, "applied");
+			fireEvent.click(
+				screen.getByRole("button", { name: "Remove & Continue" }),
+			);
+
+			expect(DEFAULT_PROPS.onStatusChange).toHaveBeenCalledWith(job, "applied");
+		});
+
+		it("leaves the job unchanged when the dialog is cancelled", () => {
+			const job = makeJob({
+				company: "Acme",
+				has_offer: true,
+				status: "offer",
+			});
+			render(<KanbanBoard {...DEFAULT_PROPS} jobs={[job]} />);
+
+			dragJobTo(job, "applied");
+			fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+			expect(DEFAULT_PROPS.onStatusChange).not.toHaveBeenCalled();
+		});
 	});
 });

@@ -22,6 +22,7 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import InterviewsTab from "./interviews/InterviewsTab";
 import OfferTab from "./OfferTab";
+import LeaveOfferDialog from "./LeaveOfferDialog";
 import EditIcon from "@mui/icons-material/Edit";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
@@ -105,8 +106,11 @@ export default function JobDialog({
 	const [viewingQuestionsFor, setViewingQuestionsFor] =
 		useState<Interview | null>(null);
 	const [offerData, setOfferData] = useState<Offer | null>(null);
+	const [confirmLeaveOffer, setConfirmLeaveOffer] = useState(false);
 	const abortRef = useRef<AbortController | null>(null);
 	const dialogContentRef = useRef<HTMLDivElement>(null);
+	const originalStatusRef = useRef<JobStatus | null>(null);
+	const originalHasOfferRef = useRef(false);
 
 	// Force a scroll to the top of the question panel. Without this, the vertical scroll will be
 	// "inherited" from the prior, `Interviews` card content.
@@ -130,7 +134,10 @@ export default function JobDialog({
 		setInterviewCount(null);
 		setViewingQuestionsFor(null);
 		setOfferData(null);
+		setConfirmLeaveOffer(false);
 		setLoadError(null);
+		originalStatusRef.current = null;
+		originalHasOfferRef.current = false;
 
 		if (jobId === null) {
 			setLoadingJob(false);
@@ -149,6 +156,8 @@ export default function JobDialog({
 					return;
 				}
 				setForm({ ...EMPTY, ...job });
+				originalStatusRef.current = job.status;
+				originalHasOfferRef.current = job.has_offer;
 
 				if (job.status === "offer") {
 					try {
@@ -247,6 +256,14 @@ export default function JobDialog({
 
 	function handleSave() {
 		if (!validate()) {
+			return;
+		}
+		if (
+			form.status !== "offer" &&
+			originalStatusRef.current === "offer" &&
+			originalHasOfferRef.current
+		) {
+			setConfirmLeaveOffer(true);
 			return;
 		}
 		onSave(form);
@@ -810,6 +827,16 @@ export default function JobDialog({
 			</Dialog>
 
 			{confirmDialog}
+
+			<LeaveOfferDialog
+				open={confirmLeaveOffer}
+				company={form.company}
+				onConfirm={() => {
+					setConfirmLeaveOffer(false);
+					onSave(form);
+				}}
+				onCancel={() => setConfirmLeaveOffer(false)}
+			/>
 		</>
 	);
 }
