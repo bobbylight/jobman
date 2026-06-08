@@ -9,6 +9,7 @@ import type {
 	JobFormData,
 	LinkJob,
 	Offer,
+	OfferComparisonEntry,
 	OfferFormData,
 	RadarPatch,
 	RadarResponse,
@@ -170,4 +171,5 @@ export const api = {
 		}),
 	deleteOffer: (jobId: number) =>
 		request<void>(`/jobs/${jobId}/offer`, { method: "DELETE" }),
+	getOffersComparison: () => request<OfferComparisonEntry[]>("/offers"),
 };
