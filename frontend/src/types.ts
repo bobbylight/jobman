@@ -112,6 +112,11 @@ export type OfferFormData = Omit<
 	"id" | "job_id" | "created_at" | "updated_at"
 >;
 
+export interface OfferComparisonEntry {
+	job: Job;
+	offer: Offer | null;
+}
+
 export type InterviewStage = "phone_screen" | "onsite";
 export type InterviewType =
 	| "recruiter_call"
