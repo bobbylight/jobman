@@ -23,7 +23,11 @@ export default function OfferSummaryCard({ job, offer }: Props) {
 						<Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
 							{job.company}
 						</Typography>
-						<Typography variant="caption" color="text.secondary" noWrap>
+						<Typography
+							variant="caption"
+							color="text.secondary"
+							sx={{ minHeight: "3.32em" }}
+						>
 							{job.role}
 						</Typography>
 					</Box>
