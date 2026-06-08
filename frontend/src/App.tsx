@@ -8,6 +8,7 @@ import LoginPage from "./components/LoginPage";
 import PageSpinner from "./components/shared/PageSpinner";
 import AppShell from "./components/shared/AppShell";
 import InsightsPage from "./components/insights/InsightsPage";
+import OfferComparatorPage from "./components/offers/OfferComparatorPage";
 import JobManagementPage from "./components/jobs/JobManagementPage";
 import InterviewsPage from "./components/calendar/InterviewsPage";
 import RadarPage from "./components/radar/RadarPage";
@@ -63,6 +64,7 @@ export default function App() {
 						<Route path="/stats" element={<StatsPage />} />
 						<Route path="/insights" element={<InsightsPage />} />
 						<Route path="/radar" element={<RadarPage />} />
+						<Route path="/offers" element={<OfferComparatorPage />} />
 						<Route path="*" element={<Navigate to="/jobs" replace />} />
 					</Route>
 				</Routes>

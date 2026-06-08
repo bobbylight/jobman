@@ -15,6 +15,7 @@ import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import InsightsIcon from "@mui/icons-material/Insights";
 import PsychologyOutlinedIcon from "@mui/icons-material/PsychologyOutlined";
 import RadarIcon from "@mui/icons-material/Radar";
@@ -38,6 +39,7 @@ const NAV_ITEMS = [
 		path: "/insights",
 	},
 	{ icon: <RadarIcon />, label: "Radar", path: "/radar" },
+	{ icon: <CompareArrowsIcon />, label: "Offers", path: "/offers" },
 ] as const;
 
 interface Props {
