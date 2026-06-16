@@ -4,6 +4,7 @@ import {
 	Button,
 	FormControlLabel,
 	Grid,
+	InputAdornment,
 	MenuItem,
 	Switch,
 	TextField,
@@ -159,26 +160,32 @@ export default function OfferTab({ jobId, offerData, onOfferChange }: Props) {
 
 				{/* Row 2: equity */}
 				<Grid size={{ sm: 4, xs: 12 }}>
-					<Box sx={{ alignItems: "center", display: "flex", gap: 0.5 }}>
-						<TextField
-							label="Equity Amount ($)"
-							type="number"
-							value={form.equity_amount ?? ""}
-							onChange={(e) =>
-								setField("equity_amount", parseAmount(e.target.value))
-							}
-							fullWidth
-							size="small"
-							slotProps={{ htmlInput: { min: 0 } }}
-						/>
-						<Tooltip title="Enter total grant value at current fair market value">
-							<InfoOutlinedIcon
-								aria-label="Enter total grant value at current fair market value"
-								fontSize="small"
-								sx={{ color: "text.secondary", flexShrink: 0 }}
-							/>
-						</Tooltip>
-					</Box>
+					<TextField
+						label="Equity Amount ($)"
+						type="number"
+						value={form.equity_amount ?? ""}
+						onChange={(e) =>
+							setField("equity_amount", parseAmount(e.target.value))
+						}
+						fullWidth
+						size="small"
+						slotProps={{
+							htmlInput: { min: 0 },
+							input: {
+								endAdornment: (
+									<InputAdornment position="end">
+										<Tooltip title="Enter total grant value at current fair market value">
+											<InfoOutlinedIcon
+												aria-label="Enter total grant value at current fair market value"
+												fontSize="small"
+												sx={{ color: "text.secondary" }}
+											/>
+										</Tooltip>
+									</InputAdornment>
+								),
+							},
+						}}
+					/>
 				</Grid>
 
 				<Grid size={{ sm: 4, xs: 12 }}>
