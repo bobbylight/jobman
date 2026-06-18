@@ -13,6 +13,7 @@ import JobManagementPage from "./JobManagementPage";
 import StatsPage from "../stats/StatsPage";
 import KanbanBoard from "./KanbanBoard";
 import { api } from "../../api";
+import { SnackbarProvider } from "../../useSnackbar";
 import type { Job, User } from "../../types";
 import { makeJob } from "../../testUtils";
 
@@ -99,17 +100,19 @@ const MOCK_ON_LOGOUT = vi.fn();
 /** Renders JobManagementPage inside AppShell with the same route structure as App.tsx. */
 function renderPage(initialPath = "/jobs", onLogout = MOCK_ON_LOGOUT) {
 	return render(
-		<MemoryRouter initialEntries={[initialPath]}>
-			<Routes>
-				<Route
-					element={<AppShell currentUser={MOCK_USER} onLogout={onLogout} />}
-				>
-					<Route path="/jobs" element={<JobManagementPage />} />
-					<Route path="/jobs/:jobId" element={<JobManagementPage />} />
-					<Route path="/stats" element={<StatsPage />} />
-				</Route>
-			</Routes>
-		</MemoryRouter>,
+		<SnackbarProvider>
+			<MemoryRouter initialEntries={[initialPath]}>
+				<Routes>
+					<Route
+						element={<AppShell currentUser={MOCK_USER} onLogout={onLogout} />}
+					>
+						<Route path="/jobs" element={<JobManagementPage />} />
+						<Route path="/jobs/:jobId" element={<JobManagementPage />} />
+						<Route path="/stats" element={<StatsPage />} />
+					</Route>
+				</Routes>
+			</MemoryRouter>
+		</SnackbarProvider>,
 	);
 }
 

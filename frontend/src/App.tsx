@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import theme from "./theme";
 import { api, setUnauthorizedHandler } from "./api";
 import type { User } from "./types";
+import { SnackbarProvider } from "./useSnackbar";
 import LoginPage from "./components/LoginPage";
 import PageSpinner from "./components/shared/PageSpinner";
 import AppShell from "./components/shared/AppShell";
@@ -50,25 +51,27 @@ export default function App() {
 		content = <LoginPage />;
 	} else {
 		content = (
-			<BrowserRouter>
-				<Routes>
-					<Route
-						element={
-							<AppShell currentUser={currentUser} onLogout={handleLogout} />
-						}
-					>
-						<Route path="/" element={<Navigate to="/jobs" replace />} />
-						<Route path="/jobs" element={<JobManagementPage />} />
-						<Route path="/jobs/:jobId" element={<JobManagementPage />} />
-						<Route path="/calendar" element={<InterviewsPage />} />
-						<Route path="/stats" element={<StatsPage />} />
-						<Route path="/insights" element={<InsightsPage />} />
-						<Route path="/radar" element={<RadarPage />} />
-						<Route path="/offers" element={<OfferComparatorPage />} />
-						<Route path="*" element={<Navigate to="/jobs" replace />} />
-					</Route>
-				</Routes>
-			</BrowserRouter>
+			<SnackbarProvider>
+				<BrowserRouter>
+					<Routes>
+						<Route
+							element={
+								<AppShell currentUser={currentUser} onLogout={handleLogout} />
+							}
+						>
+							<Route path="/" element={<Navigate to="/jobs" replace />} />
+							<Route path="/jobs" element={<JobManagementPage />} />
+							<Route path="/jobs/:jobId" element={<JobManagementPage />} />
+							<Route path="/calendar" element={<InterviewsPage />} />
+							<Route path="/stats" element={<StatsPage />} />
+							<Route path="/insights" element={<InsightsPage />} />
+							<Route path="/radar" element={<RadarPage />} />
+							<Route path="/offers" element={<OfferComparatorPage />} />
+							<Route path="*" element={<Navigate to="/jobs" replace />} />
+						</Route>
+					</Routes>
+				</BrowserRouter>
+			</SnackbarProvider>
 		);
 	}
 

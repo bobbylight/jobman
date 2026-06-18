@@ -15,7 +15,7 @@ import PhoneIcon from "@mui/icons-material/Phone";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../api";
 import { INTERVIEW_STAGE_LABELS, INTERVIEW_TYPE_LABELS } from "../../constants";
-import { useSnackbar } from "../../useSnackbar";
+import { useNotify } from "../../useSnackbar";
 import { formatTime } from "../../jobUtils";
 import MarkdownSnippet from "../shared/MarkdownSnippet";
 import CompanyLogo from "../shared/CompanyLogo";
@@ -160,7 +160,7 @@ export default function InterviewsPage() {
 	const [error, setError] = useState(false);
 	const [loadingMore, setLoadingMore] = useState(false);
 	const [reachedEnd, setReachedEnd] = useState(false);
-	const [notify, snackbarNode] = useSnackbar();
+	const notify = useNotify();
 	const [from, setFrom] = useState(() => getDefaultDateRange().from);
 	const [to, setTo] = useState(() => getDefaultDateRange().to);
 
@@ -374,8 +374,6 @@ export default function InterviewsPage() {
 					</Box>
 				)}
 			</Box>
-
-			{snackbarNode}
 		</>
 	);
 }
