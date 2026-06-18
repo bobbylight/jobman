@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import InterviewsPage, { getDefaultDateRange } from "./InterviewsPage";
 import { api } from "../../api";
+import { SnackbarProvider } from "../../useSnackbar";
 import type { EnrichedInterview } from "../../types";
 
 vi.mock(
@@ -61,9 +62,11 @@ function makeInterview(
 
 function renderPage() {
 	return render(
-		<MemoryRouter>
-			<InterviewsPage />
-		</MemoryRouter>,
+		<SnackbarProvider>
+			<MemoryRouter>
+				<InterviewsPage />
+			</MemoryRouter>
+		</SnackbarProvider>,
 	);
 }
 

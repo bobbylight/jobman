@@ -31,7 +31,7 @@ import StarBorderIcon from "@mui/icons-material/StarBorder";
 import TuneIcon from "@mui/icons-material/Tune";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api";
-import { useSnackbar } from "../../useSnackbar";
+import { useNotify } from "../../useSnackbar";
 import type {
 	EndingSubstatus,
 	FitScore,
@@ -90,7 +90,7 @@ export default function JobManagementPage() {
 		newStatus: JobStatus;
 	} | null>(null);
 	const searchRef = useRef<HTMLInputElement>(null);
-	const [notify, snackbarNode] = useSnackbar();
+	const notify = useNotify();
 
 	const loadJobs = useCallback(async () => {
 		try {
@@ -576,8 +576,6 @@ export default function JobManagementPage() {
 				onConfirm={handleTerminalConfirm}
 				onCancel={() => setPendingTerminalChange(null)}
 			/>
-
-			{snackbarNode}
 		</>
 	);
 }

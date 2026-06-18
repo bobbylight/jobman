@@ -1,8 +1,15 @@
 import React from "react";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 
 import OfferTab from "./OfferTab";
 import { api } from "../../api";
+import { SnackbarProvider } from "../../useSnackbar";
 import type { Offer } from "../../types";
 
 vi.mock(import("../../api"));
@@ -33,12 +40,20 @@ const DEFAULT_PROPS = {
 	onOfferChange: vi.fn(),
 };
 
+function renderTab(props = DEFAULT_PROPS) {
+	return render(
+		<SnackbarProvider>
+			<OfferTab {...props} />
+		</SnackbarProvider>,
+	);
+}
+
 describe("offerTab", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	describe("rendering with no existing offer", () => {
 		it("renders pay and equity fields", () => {
-			render(<OfferTab {...DEFAULT_PROPS} />);
+			renderTab();
 			expect(screen.getByLabelText(/Base Pay/i)).toBeInTheDocument();
 			expect(screen.getByLabelText(/Target Bonus %/i)).toBeInTheDocument();
 			expect(screen.getByLabelText(/Equity Amount/i)).toBeInTheDocument();
@@ -50,7 +65,7 @@ describe("offerTab", () => {
 		});
 
 		it("renders other, deadline, and notes fields", () => {
-			render(<OfferTab {...DEFAULT_PROPS} />);
+			renderTab();
 			expect(screen.getByLabelText(/Other Amount/i)).toBeInTheDocument();
 			expect(screen.getByLabelText(/Other Label/i)).toBeInTheDocument();
 			expect(
@@ -61,26 +76,26 @@ describe("offerTab", () => {
 		});
 
 		it("renders a Save Offer button", () => {
-			render(<OfferTab {...DEFAULT_PROPS} />);
+			renderTab();
 			expect(
 				screen.getByRole("button", { name: "Save Offer" }),
 			).toBeInTheDocument();
 		});
 
 		it("does not render a Clear button when offerData is null", () => {
-			render(<OfferTab {...DEFAULT_PROPS} />);
+			renderTab();
 			expect(
 				screen.queryByRole("button", { name: "Clear" }),
 			).not.toBeInTheDocument();
 		});
 
 		it("initializes equity vesting years to 4", () => {
-			render(<OfferTab {...DEFAULT_PROPS} />);
+			renderTab();
 			expect(screen.getByLabelText(/Equity Vesting/i)).toHaveValue(4);
 		});
 
 		it("shows the FMV info icon on the equity amount field", () => {
-			render(<OfferTab {...DEFAULT_PROPS} />);
+			renderTab();
 			expect(
 				screen.getByLabelText(
 					"Enter total grant value at current fair market value",
@@ -91,7 +106,7 @@ describe("offerTab", () => {
 
 	describe("rendering with an existing offer", () => {
 		it("pre-fills fields from offerData", () => {
-			render(<OfferTab {...DEFAULT_PROPS} offerData={BASE_OFFER} />);
+			renderTab({ ...DEFAULT_PROPS, offerData: BASE_OFFER });
 			expect(screen.getByLabelText(/Base Pay/i)).toHaveValue(150_000);
 			expect(screen.getByLabelText(/Target Bonus %/i)).toHaveValue(15);
 			expect(screen.getByLabelText(/Equity Amount/i)).toHaveValue(200_000);
@@ -103,7 +118,7 @@ describe("offerTab", () => {
 		});
 
 		it("renders a Clear button when offerData is set", () => {
-			render(<OfferTab {...DEFAULT_PROPS} offerData={BASE_OFFER} />);
+			renderTab({ ...DEFAULT_PROPS, offerData: BASE_OFFER });
 			expect(screen.getByRole("button", { name: "Clear" })).toBeInTheDocument();
 		});
 	});
@@ -111,7 +126,7 @@ describe("offerTab", () => {
 	describe("save Offer — POST on first save", () => {
 		it("calls createOffer when offerData is null and save is clicked", async () => {
 			vi.mocked(api.createOffer).mockResolvedValue(BASE_OFFER);
-			render(<OfferTab {...DEFAULT_PROPS} offerData={null} />);
+			renderTab();
 
 			fireEvent.change(screen.getByLabelText(/Base Pay/i), {
 				target: { value: "150000" },
@@ -128,7 +143,7 @@ describe("offerTab", () => {
 
 		it("calls onOfferChange with the saved offer after POST", async () => {
 			vi.mocked(api.createOffer).mockResolvedValue(BASE_OFFER);
-			render(<OfferTab {...DEFAULT_PROPS} offerData={null} />);
+			renderTab();
 
 			await act(async () => {
 				fireEvent.click(screen.getByRole("button", { name: "Save Offer" }));
@@ -139,7 +154,7 @@ describe("offerTab", () => {
 
 		it("does not call updateOffer on first save", async () => {
 			vi.mocked(api.createOffer).mockResolvedValue(BASE_OFFER);
-			render(<OfferTab {...DEFAULT_PROPS} offerData={null} />);
+			renderTab();
 
 			await act(async () => {
 				fireEvent.click(screen.getByRole("button", { name: "Save Offer" }));
@@ -147,12 +162,25 @@ describe("offerTab", () => {
 
 			expect(vi.mocked(api.updateOffer)).not.toHaveBeenCalled();
 		});
+
+		it("shows a success snackbar after saving", async () => {
+			vi.mocked(api.createOffer).mockResolvedValue(BASE_OFFER);
+			renderTab();
+
+			await act(async () => {
+				fireEvent.click(screen.getByRole("button", { name: "Save Offer" }));
+			});
+
+			await waitFor(() => {
+				expect(screen.getByText("Offer saved")).toBeInTheDocument();
+			});
+		});
 	});
 
 	describe("save Offer — PUT on subsequent save", () => {
 		it("calls updateOffer when offerData is set and save is clicked", async () => {
 			vi.mocked(api.updateOffer).mockResolvedValue(BASE_OFFER);
-			render(<OfferTab {...DEFAULT_PROPS} offerData={BASE_OFFER} />);
+			renderTab({ ...DEFAULT_PROPS, offerData: BASE_OFFER });
 
 			await act(async () => {
 				fireEvent.click(screen.getByRole("button", { name: "Save Offer" }));
@@ -166,7 +194,7 @@ describe("offerTab", () => {
 
 		it("does not call createOffer on subsequent save", async () => {
 			vi.mocked(api.updateOffer).mockResolvedValue(BASE_OFFER);
-			render(<OfferTab {...DEFAULT_PROPS} offerData={BASE_OFFER} />);
+			renderTab({ ...DEFAULT_PROPS, offerData: BASE_OFFER });
 
 			await act(async () => {
 				fireEvent.click(screen.getByRole("button", { name: "Save Offer" }));
@@ -179,7 +207,7 @@ describe("offerTab", () => {
 	describe("clear", () => {
 		it("calls deleteOffer and resets form when Clear is clicked", async () => {
 			vi.mocked(api.deleteOffer).mockResolvedValue(undefined);
-			render(<OfferTab {...DEFAULT_PROPS} offerData={BASE_OFFER} />);
+			renderTab({ ...DEFAULT_PROPS, offerData: BASE_OFFER });
 
 			await act(async () => {
 				fireEvent.click(screen.getByRole("button", { name: "Clear" }));
@@ -191,7 +219,7 @@ describe("offerTab", () => {
 
 		it("clears the base pay field after Clear", async () => {
 			vi.mocked(api.deleteOffer).mockResolvedValue(undefined);
-			render(<OfferTab {...DEFAULT_PROPS} offerData={BASE_OFFER} />);
+			renderTab({ ...DEFAULT_PROPS, offerData: BASE_OFFER });
 
 			await act(async () => {
 				fireEvent.click(screen.getByRole("button", { name: "Clear" }));
@@ -199,45 +227,62 @@ describe("offerTab", () => {
 
 			expect(screen.getByLabelText(/Base Pay/i)).toHaveValue(null);
 		});
-	});
 
-	describe("error handling", () => {
-		it("shows an error message when save fails", async () => {
-			vi.mocked(api.createOffer).mockRejectedValue(new Error("Network error"));
-			render(<OfferTab {...DEFAULT_PROPS} offerData={null} />);
-
-			await act(async () => {
-				fireEvent.click(screen.getByRole("button", { name: "Save Offer" }));
-			});
-
-			expect(
-				screen.getByText("Failed to save offer. Please try again."),
-			).toBeInTheDocument();
-		});
-
-		it("shows an error message when clear fails", async () => {
-			vi.mocked(api.deleteOffer).mockRejectedValue(new Error("Network error"));
-			render(<OfferTab {...DEFAULT_PROPS} offerData={BASE_OFFER} />);
+		it("shows a success snackbar after clearing", async () => {
+			vi.mocked(api.deleteOffer).mockResolvedValue(undefined);
+			renderTab({ ...DEFAULT_PROPS, offerData: BASE_OFFER });
 
 			await act(async () => {
 				fireEvent.click(screen.getByRole("button", { name: "Clear" }));
 			});
 
-			expect(
-				screen.getByText("Failed to clear offer. Please try again."),
-			).toBeInTheDocument();
+			await waitFor(() => {
+				expect(screen.getByText("Offer cleared")).toBeInTheDocument();
+			});
+		});
+	});
+
+	describe("error handling", () => {
+		it("shows an error snackbar when save fails", async () => {
+			vi.mocked(api.createOffer).mockRejectedValue(new Error("Network error"));
+			renderTab();
+
+			await act(async () => {
+				fireEvent.click(screen.getByRole("button", { name: "Save Offer" }));
+			});
+
+			await waitFor(() => {
+				expect(
+					screen.getByText("Failed to save offer. Please try again."),
+				).toBeInTheDocument();
+			});
+		});
+
+		it("shows an error snackbar when clear fails", async () => {
+			vi.mocked(api.deleteOffer).mockRejectedValue(new Error("Network error"));
+			renderTab({ ...DEFAULT_PROPS, offerData: BASE_OFFER });
+
+			await act(async () => {
+				fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+			});
+
+			await waitFor(() => {
+				expect(
+					screen.getByText("Failed to clear offer. Please try again."),
+				).toBeInTheDocument();
+			});
 		});
 	});
 
 	describe("equity type select", () => {
 		it("renders RSUs as an option", () => {
-			render(<OfferTab {...DEFAULT_PROPS} />);
+			renderTab();
 			fireEvent.mouseDown(screen.getByLabelText(/Equity Type/i));
 			expect(screen.getByRole("option", { name: "RSUs" })).toBeInTheDocument();
 		});
 
 		it("renders all equity type options", () => {
-			render(<OfferTab {...DEFAULT_PROPS} />);
+			renderTab();
 			fireEvent.mouseDown(screen.getByLabelText(/Equity Type/i));
 			expect(screen.getByRole("option", { name: "RSUs" })).toBeInTheDocument();
 			expect(screen.getByRole("option", { name: "ISOs" })).toBeInTheDocument();
@@ -253,7 +298,7 @@ describe("offerTab", () => {
 
 	describe("other_is_recurring toggle", () => {
 		it("is unchecked by default", () => {
-			const { container } = render(<OfferTab {...DEFAULT_PROPS} />);
+			const { container } = renderTab();
 			const toggle = container.querySelector(
 				'input[type="checkbox"]',
 			) as HTMLInputElement;
@@ -261,7 +306,7 @@ describe("offerTab", () => {
 		});
 
 		it("can be toggled on", () => {
-			const { container } = render(<OfferTab {...DEFAULT_PROPS} />);
+			const { container } = renderTab();
 			const toggle = container.querySelector(
 				'input[type="checkbox"]',
 			) as HTMLInputElement;
@@ -273,7 +318,7 @@ describe("offerTab", () => {
 	describe("save payload", () => {
 		it("includes other_is_recurring as false by default", async () => {
 			vi.mocked(api.createOffer).mockResolvedValue(BASE_OFFER);
-			render(<OfferTab {...DEFAULT_PROPS} offerData={null} />);
+			renderTab();
 
 			await act(async () => {
 				fireEvent.click(screen.getByRole("button", { name: "Save Offer" }));
@@ -287,7 +332,7 @@ describe("offerTab", () => {
 
 		it("includes equity_vesting_years default of 4", async () => {
 			vi.mocked(api.createOffer).mockResolvedValue(BASE_OFFER);
-			render(<OfferTab {...DEFAULT_PROPS} offerData={null} />);
+			renderTab();
 
 			await act(async () => {
 				fireEvent.click(screen.getByRole("button", { name: "Save Offer" }));

@@ -9,10 +9,10 @@ import {
 	Switch,
 	TextField,
 	Tooltip,
-	Typography,
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { api } from "../../api";
+import { useNotify } from "../../useSnackbar";
 import type { EquityType, Offer, OfferFormData } from "../../types";
 
 const EQUITY_TYPE_LABELS: Record<EquityType, string> = {
@@ -72,11 +72,11 @@ interface Props {
 }
 
 export default function OfferTab({ jobId, offerData, onOfferChange }: Props) {
+	const notify = useNotify();
 	const [form, setForm] = useState<OfferFormData>(
 		offerData ? offerToForm(offerData) : EMPTY_FORM,
 	);
 	const [saving, setSaving] = useState(false);
-	const [error, setError] = useState<string | null>(null);
 
 	function setField<K extends keyof OfferFormData>(
 		field: K,
@@ -97,7 +97,6 @@ export default function OfferTab({ jobId, offerData, onOfferChange }: Props) {
 
 	async function handleSave() {
 		setSaving(true);
-		setError(null);
 		try {
 			const saved =
 				offerData === null
@@ -105,8 +104,9 @@ export default function OfferTab({ jobId, offerData, onOfferChange }: Props) {
 					: await api.updateOffer(jobId, form);
 			onOfferChange(saved);
 			setForm(offerToForm(saved));
+			notify("Offer saved");
 		} catch {
-			setError("Failed to save offer. Please try again.");
+			notify("Failed to save offer. Please try again.", "error");
 		} finally {
 			setSaving(false);
 		}
@@ -114,13 +114,13 @@ export default function OfferTab({ jobId, offerData, onOfferChange }: Props) {
 
 	async function handleClear() {
 		setSaving(true);
-		setError(null);
 		try {
 			await api.deleteOffer(jobId);
 			onOfferChange(null);
 			setForm(EMPTY_FORM);
+			notify("Offer cleared");
 		} catch {
-			setError("Failed to clear offer. Please try again.");
+			notify("Failed to clear offer. Please try again.", "error");
 		} finally {
 			setSaving(false);
 		}
@@ -340,12 +340,6 @@ export default function OfferTab({ jobId, offerData, onOfferChange }: Props) {
 					/>
 				</Grid>
 			</Grid>
-
-			{error && (
-				<Typography color="error" variant="body2" sx={{ mt: 1 }}>
-					{error}
-				</Typography>
-			)}
 
 			<Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end", mt: 2 }}>
 				{offerData !== null && (
