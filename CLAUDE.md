@@ -67,7 +67,7 @@ jobman/
 | Backend      | Node.js + Express 5, `better-sqlite3`               |
 | Auth         | Google OAuth 2.0 via Passport.js + express-session  |
 | Session store| better-sqlite3-session-store                        |
-| Frontend     | React 18, Vite, Material UI v5, react-router-dom v6 |
+| Frontend     | React 19, Vite, Material UI v9, react-router-dom v7 |
 | Drag & Drop  | @dnd-kit/core                                       |
 | TypeScript   | Strict mode, exactOptionalPropertyTypes             |
 | Formatter    | Biome                                               |
