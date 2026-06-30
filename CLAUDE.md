@@ -84,6 +84,10 @@ npm run format       # Biome format check
 npm run format:fix   # Biome format write
 npm run tsc          # Type-check all workspaces
 npm run install:all  # Install all dependencies (root + backend + frontend)
+npm run deploy:backend   # rsync backend source to EC2 and restart via pm2
+npm run deploy:frontend  # Build and sync frontend assets to S3/CloudFront
+npm run db:pull      # Download production jobman.db to local
+npm run db:push      # Overwrite production jobman.db with local copy (prompts for confirmation)
 ```
 
 Vite proxies `/api/*` → `http://localhost:3001`.

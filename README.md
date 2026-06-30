@@ -70,9 +70,18 @@ The frontend runs at `http://localhost:5173` and proxies `/api/*` to the backend
 
 ```bash
 npm run dev          # Start both backend and frontend in dev mode
-npm run build         # Build the frontend for production
-npm test              # Run all tests (backend + frontend)
-npm run lint           # Lint with Oxlint
-npm run format         # Check formatting with Biome
-npm run tsc             # Type-check all workspaces
+npm run build        # Build the frontend for production
+npm test             # Run all tests (backend + frontend)
+npm run lint         # Lint with Oxlint
+npm run format       # Check formatting with Biome
+npm run tsc          # Type-check all workspaces
+```
+
+### Deployment
+
+```bash
+npm run deploy:backend   # rsync backend source to EC2 and restart via pm2
+npm run deploy:frontend  # Build and sync frontend assets to S3/CloudFront
+npm run db:pull          # Download the production database to your local copy
+npm run db:push          # Overwrite the production database with your local copy (prompts for confirmation)
 ```

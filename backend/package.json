@@ -8,7 +8,9 @@
     "start": "tsx index.ts",
     "test": "vitest run --coverage",
     "tsc": "tsc --noEmit",
-    "deploy": "bash ./scripts/deploy-backend.sh"
+    "deploy": "bash ./scripts/deploy-backend.sh",
+    "db:pull": "bash ./scripts/db-pull.sh",
+    "db:push": "bash ./scripts/db-push.sh"
   },
   "dependencies": {
     "better-sqlite3": "12.10.0",
