@@ -21,6 +21,7 @@ rsync -avz \
   --exclude coverage \
   --exclude '.env*' \
   --exclude 'vitest.config.ts' \
+  --exclude 'jobman.db' \
   -e "ssh -i ${EC2_KEY}" \
   "${SCRIPT_ROOT}/../" ec2-user@${EC2_IP}:/opt/jobman/backend
 

@@ -14,7 +14,9 @@
     "tsc": "npm run tsc --workspaces",
     "setup:worktree": "bash scripts/setup-worktree.sh",
     "deploy:backend": "npm run deploy -w backend",
-    "deploy:frontend": "npm run deploy -w frontend"
+    "deploy:frontend": "npm run deploy -w frontend",
+    "db:pull": "npm run db:pull -w backend",
+    "db:push": "npm run db:push -w backend"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.16",
