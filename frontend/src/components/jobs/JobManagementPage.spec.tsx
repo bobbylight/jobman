@@ -12,27 +12,37 @@ import AppShell from "../shared/AppShell";
 import JobManagementPage from "./JobManagementPage";
 import StatsPage from "../stats/StatsPage";
 import KanbanBoard from "./KanbanBoard";
-import { api } from "../../api";
+import { ApiError, api } from "../../api";
 import { SnackbarProvider } from "../../useSnackbar";
 import type { Job, User } from "../../types";
-import { makeJob } from "../../testUtils";
+import { makeJob, makeJobSearch } from "../../testUtils";
 
-vi.mock(
-	import("../../api"),
-	() =>
-		({
-			api: {
-				createJob: vi.fn(),
-				deleteJob: vi.fn(),
-				getInterviews: vi.fn(),
-				getJob: vi.fn(),
-				getJobs: vi.fn(),
-				getQuestions: vi.fn(),
-				getStats: vi.fn(),
-				updateJob: vi.fn(),
-			},
-		}) as any,
-);
+vi.mock(import("../../api"), () => {
+	class MockApiError extends Error {
+		status: number;
+		body: unknown;
+
+		constructor(status: number, body: unknown) {
+			super(`API error ${status}`);
+			this.status = status;
+			this.body = body;
+		}
+	}
+	return {
+		ApiError: MockApiError,
+		api: {
+			createJob: vi.fn(),
+			deleteJob: vi.fn(),
+			getActiveSearch: vi.fn(),
+			getInterviews: vi.fn(),
+			getJob: vi.fn(),
+			getJobs: vi.fn(),
+			getQuestions: vi.fn(),
+			getStats: vi.fn(),
+			updateJob: vi.fn(),
+		},
+	} as any;
+});
 
 vi.mock(import("./KanbanBoard"), () => ({ default: vi.fn() }) as any);
 vi.mock(
@@ -86,6 +96,7 @@ vi.mock(
 
 const mockGetJobs = vi.mocked(api.getJobs);
 const mockGetJob = vi.mocked(api.getJob);
+const mockGetActiveSearch = vi.mocked(api.getActiveSearch);
 const MockKanbanBoard = vi.mocked(KanbanBoard);
 
 const MOCK_USER: User = {
@@ -121,6 +132,9 @@ describe("jobManagementPage", () => {
 		vi.clearAllMocks();
 		vi.mocked(api.getInterviews).mockResolvedValue([]);
 		vi.mocked(api.getQuestions).mockResolvedValue([]);
+		mockGetActiveSearch.mockRejectedValue(
+			new ApiError(404, { error: "No active job search" }),
+		);
 		MockKanbanBoard.mockImplementation(({ jobs }) => (
 			<>
 				{jobs.map((j) => (
@@ -797,6 +811,28 @@ describe("jobManagementPage", () => {
 			// State should not carry notes/job_description — board only needs summary fields
 			expect(boardJobs[0]).not.toHaveProperty("notes");
 			expect(boardJobs[0]).not.toHaveProperty("job_description");
+		});
+	});
+
+	describe("active search round", () => {
+		it("does not show a round chip when the user has no active round yet", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			renderPage();
+			await waitFor(() =>
+				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+			);
+			expect(screen.queryByText("Search 1")).not.toBeInTheDocument();
+		});
+
+		it("shows the active round name as a chip", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			mockGetActiveSearch.mockResolvedValue(
+				makeJobSearch({ name: "Search 1" }),
+			);
+			renderPage();
+			await waitFor(() => {
+				expect(screen.getByText("Search 1")).toBeInTheDocument();
+			});
 		});
 	});
 });

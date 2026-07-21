@@ -1,4 +1,4 @@
-import type { Job } from "./types";
+import type { Job, JobSearch } from "./types";
 
 export const BASE_JOB: Job = {
 	id: 1,
@@ -26,4 +26,17 @@ export const BASE_JOB: Job = {
 
 export function makeJob(overrides: Partial<Job> = {}): Job {
 	return { ...BASE_JOB, ...overrides };
+}
+
+export const BASE_JOB_SEARCH: JobSearch = {
+	id: 1,
+	user_id: 1,
+	name: "Search 1",
+	started_at: "2024-01-01T00:00:00.000Z",
+	closed_at: null,
+	notes: null,
+};
+
+export function makeJobSearch(overrides: Partial<JobSearch> = {}): JobSearch {
+	return { ...BASE_JOB_SEARCH, ...overrides };
 }

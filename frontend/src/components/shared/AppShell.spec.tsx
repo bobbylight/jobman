@@ -1,8 +1,11 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import AppShell from "./AppShell";
+import { ApiError, api } from "../../api";
+import { SnackbarProvider } from "../../useSnackbar";
 import type { User } from "../../types";
+import { makeJobSearch } from "../../testUtils";
 
 const mockNavigate = vi.fn();
 
@@ -15,6 +18,29 @@ vi.mock(import("react-router-dom"), async (importOriginal) => {
 		useNavigate: () => mockNavigate,
 	};
 });
+
+vi.mock(import("../../api"), () => {
+	class MockApiError extends Error {
+		status: number;
+		body: unknown;
+
+		constructor(status: number, body: unknown) {
+			super(`API error ${status}`);
+			this.status = status;
+			this.body = body;
+		}
+	}
+	return {
+		ApiError: MockApiError,
+		api: {
+			getActiveSearch: vi.fn(),
+			startNewSearch: vi.fn(),
+		},
+	} as any;
+});
+
+const mockGetActiveSearch = vi.mocked(api.getActiveSearch);
+const mockStartNewSearch = vi.mocked(api.startNewSearch);
 
 const MOCK_USER: User = {
 	avatarUrl: null,
@@ -30,14 +56,25 @@ const DEFAULT_PROPS = {
 
 function renderAppShell(props = DEFAULT_PROPS, initialPath = "/jobs") {
 	return render(
-		<MemoryRouter initialEntries={[initialPath]}>
-			<AppShell {...props} />
-		</MemoryRouter>,
+		<SnackbarProvider>
+			<MemoryRouter initialEntries={[initialPath]}>
+				<AppShell {...props} />
+			</MemoryRouter>
+		</SnackbarProvider>,
 	);
 }
 
+function openUserMenu() {
+	fireEvent.click(screen.getByRole("button", { name: "User menu" }));
+}
+
 describe("appShell", () => {
-	beforeEach(() => vi.clearAllMocks());
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockGetActiveSearch.mockRejectedValue(
+			new ApiError(404, { error: "No active job search" }),
+		);
+	});
 
 	it("renders the logo", () => {
 		renderAppShell();
@@ -125,5 +162,115 @@ describe("appShell", () => {
 		expect(
 			screen.queryByRole("menuitem", { name: /Sign Out/ }),
 		).not.toBeInTheDocument();
+	});
+
+	describe("new job search", () => {
+		it("shows a 'New Job Search' item in the user menu", () => {
+			renderAppShell();
+			openUserMenu();
+			expect(
+				screen.getByRole("menuitem", { name: /New Job Search/ }),
+			).toBeInTheDocument();
+		});
+
+		it("opens the name-entry dialog and closes the user menu when clicked", () => {
+			renderAppShell();
+			openUserMenu();
+			fireEvent.click(screen.getByRole("menuitem", { name: /New Job Search/ }));
+
+			expect(screen.getByText("Start a New Job Search")).toBeInTheDocument();
+			expect(
+				screen.queryByRole("menuitem", { name: /Sign Out/ }),
+			).not.toBeInTheDocument();
+		});
+
+		it("shows a second confirmation dialog after the name is entered, without calling the API yet", () => {
+			renderAppShell();
+			openUserMenu();
+			fireEvent.click(screen.getByRole("menuitem", { name: /New Job Search/ }));
+			fireEvent.change(screen.getByLabelText(/Job Search Name/i), {
+				target: { value: "Search 2" },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+			expect(screen.getByText("Start new job search?")).toBeInTheDocument();
+			expect(mockStartNewSearch).not.toHaveBeenCalled();
+		});
+
+		it("calls the API only after the second confirmation, and updates the round", async () => {
+			mockGetActiveSearch.mockResolvedValue(
+				makeJobSearch({ name: "Search 1" }),
+			);
+			mockStartNewSearch.mockResolvedValue(
+				makeJobSearch({ id: 2, name: "Search 2" }),
+			);
+			renderAppShell();
+			openUserMenu();
+			fireEvent.click(screen.getByRole("menuitem", { name: /New Job Search/ }));
+			fireEvent.change(screen.getByLabelText(/Job Search Name/i), {
+				target: { value: "Search 2" },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+			fireEvent.click(screen.getByRole("button", { name: "Start Job Search" }));
+
+			await waitFor(() =>
+				expect(mockStartNewSearch).toHaveBeenCalledWith("Search 2", null),
+			);
+			await waitFor(() =>
+				expect(
+					screen.getByText('Started new job search "Search 2"'),
+				).toBeInTheDocument(),
+			);
+			await waitFor(() =>
+				expect(
+					screen.queryByText("Start new job search?"),
+				).not.toBeInTheDocument(),
+			);
+		});
+
+		it("cancelling the confirmation dialog does not call the API", async () => {
+			renderAppShell();
+			openUserMenu();
+			fireEvent.click(screen.getByRole("menuitem", { name: /New Job Search/ }));
+			fireEvent.change(screen.getByLabelText(/Job Search Name/i), {
+				target: { value: "Search 2" },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+			fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+			await waitFor(() =>
+				expect(
+					screen.queryByText("Start new job search?"),
+				).not.toBeInTheDocument(),
+			);
+			expect(mockStartNewSearch).not.toHaveBeenCalled();
+		});
+
+		it("returns to the name-entry dialog with blocking jobs when the round can't be closed", async () => {
+			mockStartNewSearch.mockRejectedValue(
+				new ApiError(409, {
+					blockingJobs: [
+						{ id: 5, company: "Acme", role: "Engineer", status: "applied" },
+					],
+				}),
+			);
+			renderAppShell();
+			openUserMenu();
+			fireEvent.click(screen.getByRole("menuitem", { name: /New Job Search/ }));
+			fireEvent.change(screen.getByLabelText(/Job Search Name/i), {
+				target: { value: "Search 2" },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+			fireEvent.click(screen.getByRole("button", { name: "Start Job Search" }));
+
+			await waitFor(() => {
+				expect(screen.getByText(/Acme – Engineer/)).toBeInTheDocument();
+			});
+			await waitFor(() =>
+				expect(
+					screen.queryByText("Start new job search?"),
+				).not.toBeInTheDocument(),
+			);
+		});
 	});
 });
