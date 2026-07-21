@@ -23,6 +23,7 @@ interface JobDbRow {
 	created_at: string;
 	updated_at: string;
 	tags_csv: string | null;
+	search_id: number | null;
 }
 
 // SQLite stores booleans as 0/1 — convert for the client
@@ -63,6 +64,8 @@ export interface JobCreateData {
 	date_offer_extended: string | null;
 	favorite: boolean;
 	tags: string[];
+	/** Job search round this job belongs to; omitted/null files it outside any round. */
+	search_id?: number | null;
 }
 
 /**
@@ -90,10 +93,17 @@ function setTags(db: Database.Database, jobId: number | bigint, tags: string[]):
 	}
 }
 
-export function listJobs(db: Database.Database, userId: number, view: JobView = "summary"): Job[] {
+export function listJobs(
+	db: Database.Database,
+	userId: number,
+	view: JobView = "summary",
+	searchId?: number,
+): Job[] {
+	const searchFilter = searchId === undefined ? "" : "AND j.search_id = ?";
+	const params = searchId === undefined ? [userId] : [userId, searchId];
 	const rows = db
-		.prepare(`${JOBS_WITH_TAGS_SQL} WHERE j.user_id = ? GROUP BY j.id ORDER BY j.created_at DESC`)
-		.all(userId)
+		.prepare(`${JOBS_WITH_TAGS_SQL} WHERE j.user_id = ? ${searchFilter} GROUP BY j.id ORDER BY j.created_at DESC`)
+		.all(...params)
 		.map(toClient);
 	if (view === "summary") {
 		return rows.map(({ notes: _n, job_description: _jd, ...rest }) => rest);
@@ -134,8 +144,8 @@ export function createJob(
 			.prepare(
 				`INSERT INTO jobs (user_id, date_applied, company, role, link, salary, fit_score,
           referred_by, status, recruiter, notes, job_description, ending_substatus,
-          date_phone_screen, date_last_onsite, date_offer_extended, favorite)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          date_phone_screen, date_last_onsite, date_offer_extended, favorite, search_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			)
 			.run(
 				data.user_id,
@@ -155,6 +165,7 @@ export function createJob(
 				data.date_last_onsite,
 				data.date_offer_extended,
 				data.favorite ? 1 : 0,
+				data.search_id ?? null,
 			);
 		db.prepare(
 			"INSERT INTO job_status_history (job_id, status) VALUES (?, ?)",

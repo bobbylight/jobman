@@ -2,6 +2,7 @@ import type Database from "better-sqlite3";
 import { Router } from "express";
 import * as JobsDb from "../db/jobs.js";
 import type { JobView } from "../db/jobs.js";
+import * as JobSearchesDb from "../db/jobSearches.js";
 import { validateEndingSubstatus, validateJobFields, validateOfferDate } from "../validators.js";
 import * as OffersDb from "../db/offers.js";
 
@@ -10,7 +11,9 @@ export function createJobsRouter(db: Database.Database) {
 
 	router.get("/", (req, res) => {
 		const view: JobView = req.query.view === "full" ? "full" : "summary";
-		res.json(JobsDb.listJobs(db, req.session.userId!, view));
+		const userId = req.session.userId!;
+		const active = JobSearchesDb.getActiveSearch(db, userId);
+		res.json(active ? JobsDb.listJobs(db, userId, view, active.id) : []);
 	});
 
 	router.get("/:jobId", (req, res) => {
@@ -42,6 +45,8 @@ export function createJobsRouter(db: Database.Database) {
 			return res.status(409).json({ error: "Job already exists" });
 		}
 
+		const active = JobSearchesDb.getOrCreateActiveSearch(db, userId);
+
 		const job = JobsDb.createJob(db, {
 			company: f.company,
 			date_applied: f.date_applied ?? null,
@@ -58,6 +63,7 @@ export function createJobsRouter(db: Database.Database) {
 			referred_by: f.referred_by ?? null,
 			role: f.role,
 			salary: f.salary ?? null,
+			search_id: active.id,
 			status: f.status ?? "not_started",
 			tags: Array.isArray(f.tags) ? f.tags : [],
 			user_id: userId,

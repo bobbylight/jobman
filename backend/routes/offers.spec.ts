@@ -21,6 +21,10 @@ testDb.exec(`
 `);
 testDb.prepare("INSERT INTO users (id, email) VALUES (?, ?)").run(TEST_USER_ID, "test@test.com");
 testDb.prepare("INSERT INTO users (id, email) VALUES (?, ?)").run(OTHER_USER_ID, "other@test.com");
+const ACTIVE_SEARCH_ID = Number(
+	testDb.prepare("INSERT INTO job_searches (user_id, name) VALUES (?, 'Search 1')").run(TEST_USER_ID)
+		.lastInsertRowid,
+);
 testDb
 	.prepare("INSERT INTO sessions (sid, sess, expire) VALUES (?, ?, datetime('now', '+7 days'))")
 	.run(TEST_SESSION_ID, JSON.stringify({ cookie: { originalMaxAge: 604_800_000 }, userId: TEST_USER_ID }));
@@ -63,8 +67,15 @@ const BASE_OFFER = {
 
 function insertJob(overrides: Record<string, unknown> = {}) {
 	const result = testDb
-		.prepare("INSERT INTO jobs (user_id, company, role, link, status) VALUES (?, ?, ?, ?, ?)")
-		.run(TEST_USER_ID, "Acme", "Engineer", "https://example.com/job/1", overrides.status ?? "offer");
+		.prepare("INSERT INTO jobs (user_id, company, role, link, status, search_id) VALUES (?, ?, ?, ?, ?, ?)")
+		.run(
+			TEST_USER_ID,
+			"Acme",
+			"Engineer",
+			"https://example.com/job/1",
+			overrides.status ?? "offer",
+			ACTIVE_SEARCH_ID,
+		);
 	return Number(result.lastInsertRowid);
 }
 
