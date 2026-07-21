@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
 	AppBar,
 	Avatar,
@@ -12,6 +12,7 @@ import {
 	Toolbar,
 } from "@mui/material";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
+import AutorenewIcon from "@mui/icons-material/Autorenew";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
@@ -22,8 +23,12 @@ import RadarIcon from "@mui/icons-material/Radar";
 import ViewKanbanOutlinedIcon from "@mui/icons-material/ViewKanbanOutlined";
 import Tooltip from "@mui/material/Tooltip";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import type { User } from "../../types";
+import { ApiError, api } from "../../api";
+import { useNotify } from "../../useSnackbar";
+import type { BlockingJob, JobSearch, User } from "../../types";
 import Footer from "./Footer";
+import NewSearchRoundDialog from "./NewSearchRoundDialog";
+import NewSearchRoundConfirmDialog from "./NewSearchRoundConfirmDialog";
 
 const NAV_ITEMS = [
 	{ icon: <ViewKanbanOutlinedIcon />, label: "Board", path: "/jobs" },
@@ -50,9 +55,78 @@ interface Props {
 export default function AppShell({ currentUser, onLogout }: Props) {
 	const navigate = useNavigate();
 	const location = useLocation();
+	const notify = useNotify();
 	const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(
 		null,
 	);
+
+	const [activeSearch, setActiveSearch] = useState<JobSearch | null>(null);
+	// Bumped whenever a new job search starts, forcing routed pages to remount and refetch.
+	const [roundVersion, setRoundVersion] = useState(0);
+	const [newSearchOpen, setNewSearchOpen] = useState(false);
+	const [pendingSearch, setPendingSearch] = useState<{
+		name: string;
+		notes: string | null;
+	} | null>(null);
+	const [blockingJobs, setBlockingJobs] = useState<BlockingJob[] | null>(null);
+
+	useEffect(() => {
+		async function loadActiveSearch() {
+			try {
+				setActiveSearch(await api.getActiveSearch());
+			} catch (err) {
+				if (!(err instanceof ApiError && err.status === 404)) {
+					notify("Failed to load active job search", "error");
+				}
+			}
+		}
+		void loadActiveSearch();
+	}, [notify]);
+
+	const openNewSearch = useCallback(() => {
+		setUserMenuAnchor(null);
+		setBlockingJobs(null);
+		setNewSearchOpen(true);
+	}, []);
+
+	const closeNewSearch = useCallback(() => {
+		setNewSearchOpen(false);
+		setBlockingJobs(null);
+	}, []);
+
+	const handleNameEntered = useCallback(
+		(name: string, notes: string | null) => {
+			setPendingSearch({ name, notes });
+			setNewSearchOpen(false);
+		},
+		[],
+	);
+
+	const handleConfirmStart = useCallback(async () => {
+		if (!pendingSearch) {
+			return;
+		}
+		try {
+			const search = await api.startNewSearch(
+				pendingSearch.name,
+				pendingSearch.notes,
+			);
+			setActiveSearch(search);
+			setPendingSearch(null);
+			setRoundVersion((v) => v + 1);
+			notify(`Started new job search "${search.name}"`);
+		} catch (err) {
+			if (err instanceof ApiError && err.status === 409) {
+				const body = err.body as { blockingJobs?: BlockingJob[] } | undefined;
+				setBlockingJobs(body?.blockingJobs ?? []);
+				setPendingSearch(null);
+				setNewSearchOpen(true);
+			} else {
+				notify("Failed to start new job search", "error");
+				setPendingSearch(null);
+			}
+		}
+	}, [pendingSearch, notify]);
 
 	return (
 		<Box
@@ -103,6 +177,13 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 								<SettingsOutlinedIcon fontSize="small" />
 							</ListItemIcon>
 							<ListItemText>Settings</ListItemText>
+						</MenuItem>
+						<Divider />
+						<MenuItem onClick={openNewSearch}>
+							<ListItemIcon>
+								<AutorenewIcon fontSize="small" />
+							</ListItemIcon>
+							<ListItemText>New Job Search</ListItemText>
 						</MenuItem>
 						<Divider />
 						<MenuItem
@@ -182,11 +263,26 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 					}}
 				>
 					<Box sx={{ flex: 1 }}>
-						<Outlet />
+						<Outlet key={roundVersion} />
 					</Box>
 					<Footer />
 				</Box>
 			</Box>
+
+			<NewSearchRoundDialog
+				open={newSearchOpen}
+				blockingJobs={blockingJobs}
+				onConfirm={handleNameEntered}
+				onCancel={closeNewSearch}
+			/>
+
+			<NewSearchRoundConfirmDialog
+				open={pendingSearch !== null}
+				currentSearchName={activeSearch?.name ?? null}
+				newSearchName={pendingSearch?.name ?? ""}
+				onConfirm={handleConfirmStart}
+				onCancel={() => setPendingSearch(null)}
+			/>
 		</Box>
 	);
 }

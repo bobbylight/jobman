@@ -7,6 +7,7 @@ import type {
 	InterviewQuestionFormData,
 	Job,
 	JobFormData,
+	JobSearch,
 	LinkJob,
 	Offer,
 	OfferComparisonEntry,
@@ -27,6 +28,18 @@ export function setUnauthorizedHandler(handler: () => void): void {
 	unauthorizedHandler = handler;
 }
 
+/** Thrown on non-2xx responses; carries the parsed JSON body (if any) for callers that need it. */
+export class ApiError extends Error {
+	status: number;
+	body: unknown;
+
+	constructor(status: number, body: unknown) {
+		super(`API error ${status}`);
+		this.status = status;
+		this.body = body;
+	}
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 	const res = await fetch(`${BASE}${path}`, {
 		credentials: "include",
@@ -37,7 +50,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 		unauthorizedHandler?.();
 	}
 	if (!res.ok) {
-		throw new Error(`API error ${res.status}`);
+		const body = await res.json().catch(() => undefined);
+		throw new ApiError(res.status, body);
 	}
 	if (res.status === 204) {
 		return undefined as T;
@@ -69,6 +83,14 @@ export const api = {
 		request<Job>(`/jobs/${id}`, { body: JSON.stringify(data), method: "PUT" }),
 	deleteJob: (id: number) =>
 		request<{ success: boolean }>(`/jobs/${id}`, { method: "DELETE" }),
+
+	// Job searches (rounds)
+	getActiveSearch: () => request<JobSearch>("/job-searches/active"),
+	startNewSearch: (name: string, notes: string | null) =>
+		request<JobSearch>("/job-searches", {
+			body: JSON.stringify({ name, notes }),
+			method: "POST",
+		}),
 
 	// Radar
 	getRadar: (includeHidden = false) =>

@@ -30,13 +30,14 @@ import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import TuneIcon from "@mui/icons-material/Tune";
 import { useNavigate, useParams } from "react-router-dom";
-import { api } from "../../api";
+import { ApiError, api } from "../../api";
 import { useNotify } from "../../useSnackbar";
 import type {
 	EndingSubstatus,
 	FitScore,
 	Job,
 	JobFormData,
+	JobSearch,
 	JobStatus,
 	JobTag,
 } from "../../types";
@@ -80,6 +81,7 @@ export default function JobManagementPage() {
 	const [filterTags, setFilterTags] = useState<JobTag[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [filterAnchor, setFilterAnchor] = useState<HTMLElement | null>(null);
+	const [activeSearch, setActiveSearch] = useState<JobSearch | null>(null);
 
 	// "add" dialog is purely local; "edit" dialog is driven by the URL
 	const [addOpen, setAddOpen] = useState(false);
@@ -103,9 +105,21 @@ export default function JobManagementPage() {
 		}
 	}, [notify]);
 
+	const loadActiveSearch = useCallback(async () => {
+		try {
+			const search = await api.getActiveSearch();
+			setActiveSearch(search);
+		} catch (err) {
+			if (!(err instanceof ApiError && err.status === 404)) {
+				notify("Failed to load active search round", "error");
+			}
+		}
+	}, [notify]);
+
 	useEffect(() => {
 		void loadJobs();
-	}, [loadJobs]);
+		void loadActiveSearch();
+	}, [loadJobs, loadActiveSearch]);
 
 	// Sync the edit dialog with the URL param once jobs are loaded
 	useEffect(() => {
@@ -378,6 +392,19 @@ export default function JobManagementPage() {
 				/>
 
 				<Box sx={{ alignItems: "center", display: "flex", gap: 1, ml: "auto" }}>
+					{activeSearch && (
+						<Tooltip title="Current job search">
+							<Chip
+								label={activeSearch.name}
+								size="small"
+								sx={{
+									bgcolor: "rgba(255,255,255,0.15)",
+									color: "white",
+									fontWeight: 500,
+								}}
+							/>
+						</Tooltip>
+					)}
 					<Tooltip
 						title={favoritesOnly ? "Showing favorites only" : "Favorites only"}
 					>
