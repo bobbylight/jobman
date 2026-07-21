@@ -21,6 +21,11 @@ export const JOB_MAX_LENGTHS = {
 	salary: 64,
 } as const;
 
+export const JOB_SEARCH_MAX_LENGTHS = {
+	name: 128,
+	notes: 4096,
+} as const;
+
 export const INTERVIEW_MAX_LENGTHS = {
 	interview_interviewers: 128,
 	interview_notes: 4096,
@@ -133,6 +138,21 @@ export function validateOfferDate(
 		}
 	} else if (date_offer_extended != null) {
 		return `date_offer_extended must be null when status is not "${STATUS_LABELS["offer"]}"`;
+	}
+	return null;
+}
+
+export function validateJobSearchFields(
+	body: Record<string, unknown>,
+): string | null {
+	if (!body.name || typeof body.name !== "string") {
+		return "name is required";
+	}
+	for (const [field, max] of Object.entries(JOB_SEARCH_MAX_LENGTHS)) {
+		const err = checkLength(body[field], field, max);
+		if (err) {
+			return err;
+		}
 	}
 	return null;
 }
