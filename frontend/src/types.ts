@@ -52,6 +52,22 @@ export interface LinkJob {
 	link: string;
 }
 
+export interface JobSearch {
+	id: number;
+	user_id: number;
+	name: string;
+	started_at: string;
+	closed_at: string | null;
+	notes: string | null;
+}
+
+export interface BlockingJob {
+	id: number;
+	company: string;
+	role: string;
+	status: string;
+}
+
 export interface Job {
 	id: number;
 	date_applied: string | null;
