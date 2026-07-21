@@ -49,6 +49,18 @@ export function getActiveSearch(
 		.get(userId) as JobSearchRow | undefined;
 }
 
+/** Returns the user's active round, opening a first one if they don't have one yet. */
+export function getOrCreateActiveSearch(
+	db: Database.Database,
+	userId: number,
+): JobSearchRow {
+	const active = getActiveSearch(db, userId);
+	if (active) {
+		return active;
+	}
+	return startNewSearch(db, userId, "Search 1", null);
+}
+
 /** Jobs in the given round that aren't in a terminal status — these block closing the round. */
 export function listBlockingJobs(
 	db: Database.Database,
