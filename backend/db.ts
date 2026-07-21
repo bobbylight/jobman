@@ -47,7 +47,8 @@ export function applySchema(db: Database.Database): void {
     date_phone_screen TEXT     CHECK(length(date_phone_screen) <= 16),
     date_last_onsite  TEXT     CHECK(length(date_last_onsite) <= 16),
     date_offer_extended TEXT   CHECK(length(date_offer_extended) <= 16),
-    updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
+    updated_at        TEXT NOT NULL DEFAULT (datetime('now')),
+    search_id          INTEGER REFERENCES job_searches(id)
   );
 
   CREATE TRIGGER IF NOT EXISTS jobs_updated_at

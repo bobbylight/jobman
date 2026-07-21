@@ -10,6 +10,7 @@ import {
 	createInterviewSearchRouter,
 	createInterviewsRouter,
 } from "./routes/interviews.js";
+import { createJobSearchesRouter } from "./routes/jobSearches.js";
 import { createJobsRouter } from "./routes/jobs.js";
 import { createOffersListRouter, createOffersRouter } from "./routes/offers.js";
 import { createRadarRouter } from "./routes/radar.js";
@@ -66,6 +67,7 @@ export function createApp(db: Database.Database) {
 	app.use("/api/auth", createAuthRouter(db));
 	app.use("/api/interviews", requireAuth, createInterviewSearchRouter(db));
 	app.use("/api/jobs", requireAuth, createJobsRouter(db));
+	app.use("/api/job-searches", requireAuth, createJobSearchesRouter(db));
 	app.use(
 		"/api/jobs/:jobId/interviews",
 		requireAuth,
