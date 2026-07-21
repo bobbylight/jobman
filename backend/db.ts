@@ -127,6 +127,18 @@ export function applySchema(db: Database.Database): void {
     UPDATE offers SET updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = OLD.id;
   END;
 
+  CREATE TABLE IF NOT EXISTS job_searches (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id    INTEGER NOT NULL REFERENCES users(id),
+    name       TEXT NOT NULL CHECK(length(name) <= 128),
+    started_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    closed_at  TEXT,
+    notes      TEXT     CHECK(length(notes) <= 4096)
+  );
+
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_job_searches_active_per_user
+    ON job_searches(user_id) WHERE closed_at IS NULL;
+
   CREATE TABLE IF NOT EXISTS target_companies (
     id                         INTEGER PRIMARY KEY AUTOINCREMENT,
     name                       TEXT    NOT NULL UNIQUE,
@@ -148,11 +160,56 @@ export function applySchema(db: Database.Database): void {
 `);
 }
 
+/**
+ * Adds jobs.search_id (idempotent — better-sqlite3 has no "ADD COLUMN IF NOT EXISTS")
+ * and backfills every pre-existing job into a new "Search 1" job_searches row per user.
+ * Runs against both fresh and pre-existing databases; a fresh DB simply has no rows to backfill.
+ */
+export function migrateJobSearches(db: Database.Database): void {
+	const columns = db.prepare("PRAGMA table_info(jobs)").all() as {
+		name: string;
+	}[];
+	if (!columns.some((c) => c.name === "search_id")) {
+		db.exec(
+			"ALTER TABLE jobs ADD COLUMN search_id INTEGER REFERENCES job_searches(id)",
+		);
+	}
+
+	const usersNeedingBackfill = db
+		.prepare("SELECT DISTINCT user_id FROM jobs WHERE search_id IS NULL")
+		.all() as { user_id: number }[];
+
+	const earliestJobDate = db.prepare(
+		"SELECT MIN(created_at) AS earliest FROM jobs WHERE user_id = ? AND search_id IS NULL",
+	);
+	const insertSearch = db.prepare(
+		"INSERT INTO job_searches (user_id, name, started_at) VALUES (?, 'Search 1', ?)",
+	);
+	const backfillJobs = db.prepare(
+		"UPDATE jobs SET search_id = ? WHERE user_id = ? AND search_id IS NULL",
+	);
+
+	const backfill = db.transaction(() => {
+		for (const { user_id } of usersNeedingBackfill) {
+			const { earliest } = earliestJobDate.get(user_id) as {
+				earliest: string | null;
+			};
+			const { lastInsertRowid: searchId } = insertSearch.run(
+				user_id,
+				earliest ?? new Date().toISOString(),
+			);
+			backfillJobs.run(searchId, user_id);
+		}
+	});
+	backfill();
+}
+
 const db = new Database(join(import.meta.dirname, "jobman.db"));
 
 // Enable foreign key enforcement
 db.pragma("foreign_keys = ON");
 applySchema(db);
+migrateJobSearches(db);
 
 // Seed target companies (INSERT OR IGNORE — safe to re-run)
 db.exec(`
