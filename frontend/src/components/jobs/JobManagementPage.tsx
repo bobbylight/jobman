@@ -107,10 +107,9 @@ export default function JobManagementPage() {
 
 	const loadActiveSearch = useCallback(async () => {
 		try {
-			const search = await api.getActiveSearch();
-			setActiveSearch(search);
-		} catch (err) {
-			if (!(err instanceof ApiError && err.status === 404)) {
+			setActiveSearch(await api.getActiveSearch());
+		} catch (error) {
+			if (!(error instanceof ApiError && error.status === 404)) {
 				notify("Failed to load active search round", "error");
 			}
 		}
