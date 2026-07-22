@@ -14,6 +14,7 @@ jobman/
 │   ├── validators.ts        # Request field validators (length, substatus rules)
 │   ├── db/                  # DB query modules (one per domain)
 │   │   ├── jobs.ts
+│   │   ├── jobSearches.ts   # Job search rounds (start/close/list, active round)
 │   │   ├── interviews.ts
 │   │   ├── interviewInsights.ts
 │   │   ├── radar.ts
@@ -22,6 +23,7 @@ jobman/
 │   └── routes/              # Express routers (one per domain)
 │       ├── auth.ts          # Google OAuth + session login/logout
 │       ├── jobs.ts
+│       ├── jobSearches.ts
 │       ├── interviews.ts
 │       ├── interviewInsights.ts
 │       ├── radar.ts
@@ -37,9 +39,11 @@ jobman/
         ├── logoCache.ts             # Company logo URL cache
         ├── useCompanyLogo.ts        # Hook for logo fetch
         └── components/
-            ├── AppShell.tsx         # Nav drawer + top bar
+            ├── AppShell.tsx         # Nav drawer + top bar; owns the New Job Search flow
+            ├── NewSearchRoundDialog.tsx # Step 1: name/notes for a new job search round
+            ├── NewSearchRoundConfirmDialog.tsx # Step 2: confirm closing the active round
             ├── LoginPage.tsx        # Google OAuth login screen
-            ├── JobManagementPage.tsx# Kanban board page
+            ├── JobManagementPage.tsx# Kanban board page; shows active round as a chip
             ├── KanbanBoard.tsx      # DnD context, drag overlay
             ├── KanbanColumn.tsx     # Droppable column
             ├── JobCard.tsx          # Draggable card (drag handle only)
@@ -102,11 +106,15 @@ All routes except `/api/auth/*` require an active session (`requireAuth` middlew
 | GET    | /api/auth/google                   | Initiate Google OAuth              |
 | GET    | /api/auth/google/callback          | OAuth callback                     |
 | POST   | /api/auth/logout                   | Destroy session                    |
-| GET    | /api/jobs                          | List jobs (`?view=summary` or `full`) |
+| GET    | /api/jobs                          | List jobs in the active search round (`?view=summary` or `full`) |
 | GET    | /api/jobs/:id                      | Fetch single job (full view)       |
-| POST   | /api/jobs                          | Create job (201)                   |
+| POST   | /api/jobs                          | Create job in the active round (201); opens one if none exists |
 | PUT    | /api/jobs/:id                      | Update job                         |
 | DELETE | /api/jobs/:id                      | Delete job                         |
+| GET    | /api/job-searches                  | List all search rounds, newest first |
+| GET    | /api/job-searches/active            | Current user's active round, or 404 |
+| POST   | /api/job-searches                  | Close the active round and open a new one (201); 409 with `blockingJobs` if unresolved jobs remain |
+| PATCH  | /api/job-searches/:id              | Rename a round / edit its notes    |
 | GET    | /api/jobs/:jobId/interviews        | List interviews for a job          |
 | POST   | /api/jobs/:jobId/interviews        | Add interview                      |
 | PUT    | /api/jobs/:jobId/interviews/:id    | Update interview                   |
@@ -144,6 +152,17 @@ interface Job {
 }
 ```
 
+```typescript
+interface JobSearch {
+  id: number;
+  user_id: number;
+  name: string;
+  started_at: string;
+  closed_at: string | null;     // null while active; a user has at most one active round
+  notes: string | null;
+}
+```
+
 **JobStatus values:** `"Not started"` | `"Applied"` | `"Phone screen"` | `"Interviewing"` | `"Offer!"` | `"Rejected/Withdrawn"`
 
 **EndingSubstatus:** `"Withdrawn"` | `"Rejected"` | `"Ghosted"` | `"No response"` | `"Job closed"` | `"Not a good fit"` | `"Offer accepted"` | `"Offer declined"`
@@ -157,7 +176,8 @@ interface Job {
 - **Drag handle:** Only the `DragIndicatorIcon` on each card is draggable — not the full card — to avoid conflicts with the click-to-edit behavior.
 - **Search:** Case-insensitive substring match on company or role, applied before passing jobs to KanbanBoard.
 - **Job summary vs full view:** `GET /api/jobs` returns a summary view by default (omits `notes` and `job_description`). Pass `?view=full` or fetch `GET /api/jobs/:id` for the complete record.
-- **Schema:** Defined inline in `db.ts` using `CREATE TABLE IF NOT EXISTS`. No migration files.
+- **Job search rounds:** Every job belongs to a `job_searches` round (`jobs.search_id`); a user has at most one active round at a time (`closed_at IS NULL`, enforced by a unique index). `GET`/`POST /api/jobs` only see/create jobs in the *active* round — closed rounds' jobs stay in the DB but drop off the board. `POST /api/job-searches` closes the active round and opens a new one, but 409s with a `blockingJobs` list if the active round still has non-terminal jobs. The frontend surfaces this as a two-step "New Job Search" flow in the `AppShell` user menu (name/notes entry, then an explicit confirmation) since it's an infrequent, consequential action.
+- **Schema:** Defined inline in `db.ts` using `CREATE TABLE IF NOT EXISTS`. One-off migrations (e.g. `migrateJobSearches`) use idempotent `ALTER TABLE`/backfill logic since better-sqlite3 has no "ADD COLUMN IF NOT EXISTS".
 - **Environment:** Backend reads `.env.development` (or `.env.production`). Required vars: `SESSION_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`.
 
 ## Frontend Unit Test Conventions
