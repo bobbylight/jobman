@@ -31,6 +31,7 @@ There are *several* usability issues in the app, but overall it works, and track
 - **Interview insights** — aggregated analytics across all logged interview questions and difficulty
 - **Pipeline stats** — charts on application volume, conversion rates, and time-in-stage over configurable windows
 - **Company radar** — see which companies you've already applied to before re-applying, with notes and policy tracking
+- **Job search rounds** — close out a finished search and start a fresh board without losing history; old rounds' jobs stay recorded, just off the active board
 - **Google OAuth login** — sign in with your Google account; sessions persisted in SQLite
 
 ## Tech stack
