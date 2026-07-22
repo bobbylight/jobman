@@ -22,6 +22,20 @@ export function createJobSearchesRouter(db: Database.Database) {
 		return res.json(active);
 	});
 
+	// GET /api/job-searches/:id — a specific round (active or closed), scoped to the user
+	router.get("/:id", (req, res) => {
+		const userId = req.session.userId!;
+		const id = Number(req.params.id);
+		if (isNaN(id)) {
+			return res.status(400).json({ error: "Invalid id" });
+		}
+		const search = JobSearchesDb.getSearch(db, id, userId);
+		if (!search) {
+			return res.status(404).json({ error: "Job search not found" });
+		}
+		return res.json(search);
+	});
+
 	// POST /api/job-searches — closes the current active round and starts a new one
 	router.post("/", (req, res) => {
 		const userId = req.session.userId!;

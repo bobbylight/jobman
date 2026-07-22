@@ -12,8 +12,21 @@ export function createJobsRouter(db: Database.Database) {
 	router.get("/", (req, res) => {
 		const view: JobView = req.query.view === "full" ? "full" : "summary";
 		const userId = req.session.userId!;
+
+		if (req.query.search_id !== undefined) {
+			const searchId = Number(req.query.search_id);
+			if (isNaN(searchId)) {
+				return res.status(400).json({ error: "Invalid search_id" });
+			}
+			const search = JobSearchesDb.getSearch(db, searchId, userId);
+			if (!search) {
+				return res.status(404).json({ error: "Job search not found" });
+			}
+			return res.json(JobsDb.listJobs(db, userId, view, search.id));
+		}
+
 		const active = JobSearchesDb.getActiveSearch(db, userId);
-		res.json(active ? JobsDb.listJobs(db, userId, view, active.id) : []);
+		return res.json(active ? JobsDb.listJobs(db, userId, view, active.id) : []);
 	});
 
 	router.get("/:jobId", (req, res) => {

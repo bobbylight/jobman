@@ -11,7 +11,9 @@ import {
 import { applySchema } from "../db.js";
 
 const TEST_USER_ID = 1;
+const OTHER_USER_ID = 2;
 const TEST_SESSION_ID = "test-session-jobs-routes";
+const OTHER_SESSION_ID = "test-session-jobs-routes-other";
 const SESSION_SECRET = "dev-secret";
 
 const testDb = new Database(":memory:");
@@ -24,24 +26,32 @@ testDb.exec(`
   );
 `);
 testDb.prepare("INSERT INTO users (id, email) VALUES (?, ?)").run(TEST_USER_ID, "test@test.com");
+testDb.prepare("INSERT INTO users (id, email) VALUES (?, ?)").run(OTHER_USER_ID, "other@test.com");
 testDb
 	.prepare("INSERT INTO sessions (sid, sess, expire) VALUES (?, ?, datetime('now', '+7 days'))")
 	.run(TEST_SESSION_ID, JSON.stringify({ cookie: { originalMaxAge: 604_800_000 }, userId: TEST_USER_ID }));
+testDb
+	.prepare("INSERT INTO sessions (sid, sess, expire) VALUES (?, ?, datetime('now', '+7 days'))")
+	.run(OTHER_SESSION_ID, JSON.stringify({ cookie: { originalMaxAge: 604_800_000 }, userId: OTHER_USER_ID }));
 
-const sig = createHmac("sha256", SESSION_SECRET)
-	.update(TEST_SESSION_ID)
-	.digest("base64")
-	.replace(/=+$/, "");
-const AUTH_COOKIE = `connect.sid=${encodeURIComponent(`s:${TEST_SESSION_ID}.${sig}`)}`;
+function makeCookie(sessionId: string): string {
+	const sig = createHmac("sha256", SESSION_SECRET)
+		.update(sessionId)
+		.digest("base64")
+		.replace(/=+$/, "");
+	return `connect.sid=${encodeURIComponent(`s:${sessionId}.${sig}`)}`;
+}
+const AUTH_COOKIE = makeCookie(TEST_SESSION_ID);
+const OTHER_AUTH_COOKIE = makeCookie(OTHER_SESSION_ID);
 
 const app = createApp(testDb);
 
-function req(method: "get" | "post" | "put" | "delete", url: string) {
-	return request(app)[method](url).set("Cookie", AUTH_COOKIE);
+function req(method: "get" | "post" | "put" | "delete", url: string, cookie = AUTH_COOKIE) {
+	return request(app)[method](url).set("Cookie", cookie);
 }
 
 afterEach(() => {
-	testDb.exec("DELETE FROM jobs");
+	testDb.exec("DELETE FROM jobs; DELETE FROM job_searches;");
 });
 
 const BASE_JOB = {
@@ -112,6 +122,51 @@ describe("gET /api/jobs", () => {
 			const res = await req("get", "/api/jobs?view=unknown");
 			expect(res.status).toBe(200);
 			expect(res.body[0]).not.toHaveProperty("notes");
+		});
+	});
+
+	describe("search_id param", () => {
+		it("returns 400 for a non-numeric search_id", async () => {
+			const res = await req("get", "/api/jobs?search_id=not-a-number");
+			expect(res.status).toBe(400);
+		});
+
+		it("returns 404 for a search_id that doesn't exist", async () => {
+			const res = await req("get", "/api/jobs?search_id=9999");
+			expect(res.status).toBe(404);
+		});
+
+		it("returns 404 for a search_id owned by a different user", async () => {
+			const created = await req("post", "/api/job-searches").send({
+				name: "Search 1",
+			});
+			const res = await req(
+				"get",
+				`/api/jobs?search_id=${created.body.id}`,
+				OTHER_AUTH_COOKIE,
+			);
+			expect(res.status).toBe(404);
+		});
+
+		it("returns jobs scoped to a closed round, not the active one", async () => {
+			const firstJob = await req("post", "/api/jobs").send({
+				...BASE_JOB,
+				ending_substatus: "Withdrawn",
+				status: "rejected_or_withdrawn",
+			});
+			const firstSearchId = firstJob.body.search_id;
+
+			await req("post", "/api/job-searches").send({ name: "Search 2" });
+			await req("post", "/api/jobs").send({ ...BASE_JOB, company: "Second Co" });
+
+			const historical = await req("get", `/api/jobs?search_id=${firstSearchId}`);
+			expect(historical.status).toBe(200);
+			expect(historical.body).toHaveLength(1);
+			expect(historical.body[0].company).toBe("Acme Corp");
+
+			const current = await req("get", "/api/jobs");
+			expect(current.body).toHaveLength(1);
+			expect(current.body[0].company).toBe("Second Co");
 		});
 	});
 });

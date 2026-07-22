@@ -6,7 +6,9 @@ import { applySchema } from "../db.js";
 
 const SESSION_SECRET = "dev-secret";
 const TEST_USER_ID = 1;
+const OTHER_USER_ID = 2;
 const TEST_SESSION_ID = "test-session-job-searches-routes";
+const OTHER_SESSION_ID = "test-session-job-searches-routes-other";
 
 const testDb = new Database(":memory:");
 applySchema(testDb);
@@ -21,6 +23,9 @@ testDb
 	.prepare("INSERT INTO users (id, email) VALUES (?, ?)")
 	.run(TEST_USER_ID, "test@test.com");
 testDb
+	.prepare("INSERT INTO users (id, email) VALUES (?, ?)")
+	.run(OTHER_USER_ID, "other@test.com");
+testDb
 	.prepare(
 		"INSERT INTO sessions (sid, sess, expire) VALUES (?, ?, datetime('now', '+7 days'))",
 	)
@@ -31,17 +36,32 @@ testDb
 			userId: TEST_USER_ID,
 		}),
 	);
+testDb
+	.prepare(
+		"INSERT INTO sessions (sid, sess, expire) VALUES (?, ?, datetime('now', '+7 days'))",
+	)
+	.run(
+		OTHER_SESSION_ID,
+		JSON.stringify({
+			cookie: { originalMaxAge: 604_800_000 },
+			userId: OTHER_USER_ID,
+		}),
+	);
 
-const sig = createHmac("sha256", SESSION_SECRET)
-	.update(TEST_SESSION_ID)
-	.digest("base64")
-	.replace(/=+$/, "");
-const AUTH_COOKIE = `connect.sid=${encodeURIComponent(`s:${TEST_SESSION_ID}.${sig}`)}`;
+function makeCookie(sessionId: string): string {
+	const sig = createHmac("sha256", SESSION_SECRET)
+		.update(sessionId)
+		.digest("base64")
+		.replace(/=+$/, "");
+	return `connect.sid=${encodeURIComponent(`s:${sessionId}.${sig}`)}`;
+}
+const AUTH_COOKIE = makeCookie(TEST_SESSION_ID);
+const OTHER_AUTH_COOKIE = makeCookie(OTHER_SESSION_ID);
 
 const app = createApp(testDb);
 
-function req(method: "get" | "post" | "patch", url: string) {
-	return request(app)[method](url).set("Cookie", AUTH_COOKIE);
+function req(method: "get" | "post" | "patch", url: string, cookie = AUTH_COOKIE) {
+	return request(app)[method](url).set("Cookie", cookie);
 }
 
 function insertJob(
@@ -92,6 +112,48 @@ describe("gET /api/job-searches/active", () => {
 		const res = await req("get", "/api/job-searches/active");
 		expect(res.status).toBe(200);
 		expect(res.body.name).toBe("Search 1");
+	});
+});
+
+describe("gET /api/job-searches/:id", () => {
+	it("returns 401 when not authenticated", async () => {
+		const res = await request(app).get("/api/job-searches/1");
+		expect(res.status).toBe(401);
+	});
+
+	it("returns 400 for a non-numeric id", async () => {
+		const res = await req("get", "/api/job-searches/not-a-number");
+		expect(res.status).toBe(400);
+	});
+
+	it("returns 404 when the round does not exist", async () => {
+		const res = await req("get", "/api/job-searches/9999");
+		expect(res.status).toBe(404);
+	});
+
+	it("returns a closed round by id", async () => {
+		const first = await req("post", "/api/job-searches").send({
+			name: "Search 1",
+		});
+		insertJob({ status: "offer", search_id: first.body.id });
+		await req("post", "/api/job-searches").send({ name: "Search 2" });
+
+		const res = await req("get", `/api/job-searches/${first.body.id}`);
+		expect(res.status).toBe(200);
+		expect(res.body.name).toBe("Search 1");
+		expect(res.body.closed_at).not.toBeNull();
+	});
+
+	it("returns 404 for a round owned by a different user", async () => {
+		const created = await req("post", "/api/job-searches").send({
+			name: "Search 1",
+		});
+		const res = await req(
+			"get",
+			`/api/job-searches/${created.body.id}`,
+			OTHER_AUTH_COOKIE,
+		);
+		expect(res.status).toBe(404);
 	});
 });
 
