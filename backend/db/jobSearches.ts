@@ -49,6 +49,23 @@ export function getActiveSearch(
 		.get(userId) as JobSearchRow | undefined;
 }
 
+/** True if the job exists, belongs to the user, and sits in their currently active (not closed) round. */
+export function isJobInActiveSearch(
+	db: Database.Database,
+	jobId: number,
+	userId: number,
+): boolean {
+	return Boolean(
+		db
+			.prepare(
+				`SELECT 1 FROM jobs j
+				 JOIN job_searches s ON s.id = j.search_id
+				 WHERE j.id = ? AND j.user_id = ? AND s.closed_at IS NULL`,
+			)
+			.get(jobId, userId),
+	);
+}
+
 /** Returns the user's active round, opening a first one if they don't have one yet. */
 export function getOrCreateActiveSearch(
 	db: Database.Database,

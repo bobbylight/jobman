@@ -74,9 +74,21 @@ function insertJob(overrides: Record<string, unknown> = {}) {
 			"Engineer",
 			"https://example.com/job/1",
 			overrides.status ?? "offer",
-			ACTIVE_SEARCH_ID,
+			overrides.search_id ?? ACTIVE_SEARCH_ID,
 		);
 	return Number(result.lastInsertRowid);
+}
+
+// Inserts a job in offer status that belongs to an already-closed round.
+function insertJobInClosedSearch() {
+	const closedSearchId = Number(
+		testDb
+			.prepare(
+				"INSERT INTO job_searches (user_id, name, closed_at) VALUES (?, 'Closed Search', datetime('now'))",
+			)
+			.run(TEST_USER_ID).lastInsertRowid,
+	);
+	return insertJob({ search_id: closedSearchId });
 }
 
 afterEach(() => {
@@ -158,6 +170,12 @@ describe("pOST /api/jobs/:jobId/offer", () => {
 		const second = await req("post", `/api/jobs/${jobId}/offer`).send(BASE_OFFER);
 		expect(second.status).toBe(409);
 		expect(second.body.error).toMatch(/already exists/);
+	});
+
+	it("returns 403 when the job is in a closed search round", async () => {
+		const jobId = insertJobInClosedSearch();
+		const res = await req("post", `/api/jobs/${jobId}/offer`).send(BASE_OFFER);
+		expect(res.status).toBe(403);
 	});
 
 	it("creates the offer and returns 201", async () => {
@@ -298,6 +316,13 @@ describe("pUT /api/jobs/:jobId/offer", () => {
 		expect(res.status).toBe(200);
 		expect(res.body.other_is_recurring).toBeTruthy();
 	});
+
+	it("returns 403 when the job is in a closed search round", async () => {
+		const jobId = insertJobInClosedSearch();
+		testDb.prepare("INSERT INTO offers (job_id) VALUES (?)").run(jobId);
+		const res = await req("put", `/api/jobs/${jobId}/offer`).send(BASE_OFFER);
+		expect(res.status).toBe(403);
+	});
 });
 
 describe("dELETE /api/jobs/:jobId/offer", () => {
@@ -337,6 +362,13 @@ describe("dELETE /api/jobs/:jobId/offer", () => {
 		// Confirm it's gone
 		const getRes = await req("get", `/api/jobs/${jobId}/offer`);
 		expect(getRes.status).toBe(404);
+	});
+
+	it("returns 403 when the job is in a closed search round", async () => {
+		const jobId = insertJobInClosedSearch();
+		testDb.prepare("INSERT INTO offers (job_id) VALUES (?)").run(jobId);
+		const res = await req("delete", `/api/jobs/${jobId}/offer`);
+		expect(res.status).toBe(403);
 	});
 });
 

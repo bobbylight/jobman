@@ -1,6 +1,7 @@
 import type Database from "better-sqlite3";
 import { Router, type Response } from "express";
 import * as InterviewsDb from "../db/interviews.js";
+import * as JobSearchesDb from "../db/jobSearches.js";
 import { validateInterview, validateInterviewQuestion } from "../validators.js";
 
 const PAGE_SIZE = 10;
@@ -63,6 +64,22 @@ export function createInterviewSearchRouter(db: Database.Database) {
 	return router;
 }
 
+// Rejects writes against a job in a closed (non-active) search round (sends 403). Caller should already have verified the job belongs to the user.
+function checkActiveRound(
+	db: Database.Database,
+	jobId: string,
+	userId: number,
+	res: Response,
+): boolean {
+	if (!JobSearchesDb.isJobInActiveSearch(db, Number(jobId), userId)) {
+		res
+			.status(403)
+			.json({ error: "Cannot modify interviews for a job in a closed search round" });
+		return false;
+	}
+	return true;
+}
+
 // Verifies the job belongs to the user and the interview belongs to the job.
 // Sends 404 and returns null if either check fails.
 function resolveInterview(
@@ -108,6 +125,7 @@ export function createInterviewsRouter(db: Database.Database) {
 		if (!InterviewsDb.jobBelongsToUser(db, Number(jobId), req.session.userId!)) {
 			return res.status(404).json({ error: "Job not found" });
 		}
+		if (!checkActiveRound(db, jobId, req.session.userId!, res)) {return;}
 		if (f.job_id != null && String(f.job_id) !== jobId) {
 			return res
 				.status(422)
@@ -138,6 +156,7 @@ export function createInterviewsRouter(db: Database.Database) {
 		if (!InterviewsDb.jobBelongsToUser(db, Number(jobId), req.session.userId!)) {
 			return res.status(404).json({ error: "Job not found" });
 		}
+		if (!checkActiveRound(db, jobId, req.session.userId!, res)) {return;}
 		if (f.job_id != null && String(f.job_id) !== jobId) {
 			return res
 				.status(422)
@@ -171,6 +190,7 @@ export function createInterviewsRouter(db: Database.Database) {
 		if (!InterviewsDb.jobBelongsToUser(db, Number(jobId), req.session.userId!)) {
 			return res.status(404).json({ error: "Job not found" });
 		}
+		if (!checkActiveRound(db, jobId, req.session.userId!, res)) {return;}
 		const deleted = InterviewsDb.deleteInterview(
 			db,
 			Number(interviewId),
@@ -206,6 +226,7 @@ export function createInterviewsRouter(db: Database.Database) {
 		const { jobId, interviewId } = req.params as { jobId: string; interviewId: string };
 		if (!resolveInterview(db, jobId, interviewId, req.session.userId!, res))
 			{return;}
+		if (!checkActiveRound(db, jobId, req.session.userId!, res)) {return;}
 		const f = req.body as Record<string, unknown>;
 		const validationError = validateInterviewQuestion(f);
 		if (validationError) {return res.status(422).json({ error: validationError });}
@@ -224,6 +245,7 @@ export function createInterviewsRouter(db: Database.Database) {
 		const { jobId, interviewId, questionId } = req.params as { jobId: string; interviewId: string; questionId: string };
 		if (!resolveInterview(db, jobId, interviewId, req.session.userId!, res))
 			{return;}
+		if (!checkActiveRound(db, jobId, req.session.userId!, res)) {return;}
 		const f = req.body as Record<string, unknown>;
 		const validationError = validateInterviewQuestion(f);
 		if (validationError) {return res.status(422).json({ error: validationError });}
@@ -247,6 +269,7 @@ export function createInterviewsRouter(db: Database.Database) {
 		const { jobId, interviewId, questionId } = req.params as { jobId: string; interviewId: string; questionId: string };
 		if (!resolveInterview(db, jobId, interviewId, req.session.userId!, res))
 			{return;}
+		if (!checkActiveRound(db, jobId, req.session.userId!, res)) {return;}
 		const deleted = InterviewsDb.deleteQuestion(
 			db,
 			Number(questionId),
