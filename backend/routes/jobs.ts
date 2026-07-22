@@ -3,7 +3,13 @@ import { Router } from "express";
 import * as JobsDb from "../db/jobs.js";
 import type { JobView } from "../db/jobs.js";
 import * as JobSearchesDb from "../db/jobSearches.js";
-import { validateEndingSubstatus, validateJobFields, validateOfferDate } from "../validators.js";
+import {
+	normalizeOptionalUrl,
+	validateEndingSubstatus,
+	validateJobFields,
+	validateOfferDate,
+	validateUrlStructure,
+} from "../validators.js";
 import * as OffersDb from "../db/offers.js";
 
 export function createJobsRouter(db: Database.Database) {
@@ -38,9 +44,13 @@ export function createJobsRouter(db: Database.Database) {
 	router.post("/", (req, res) => {
 		const f = req.body;
 		const userId = req.session.userId!;
+		const coverLetterUrl = normalizeOptionalUrl(f.cover_letter_url);
 
-		const lengthError = validateJobFields(f);
+		const lengthError = validateJobFields({ ...f, cover_letter_url: coverLetterUrl });
 		if (lengthError) {return res.status(422).json({ error: lengthError });}
+
+		const urlError = validateUrlStructure(coverLetterUrl, "cover_letter_url");
+		if (urlError) {return res.status(422).json({ error: urlError });}
 
 		const substatusError = validateEndingSubstatus(
 			f.status ?? "not_started",
@@ -62,6 +72,7 @@ export function createJobsRouter(db: Database.Database) {
 
 		const job = JobsDb.createJob(db, {
 			company: f.company,
+			cover_letter_url: coverLetterUrl,
 			date_applied: f.date_applied ?? null,
 			date_last_onsite: f.date_last_onsite ?? null,
 			date_offer_extended: f.date_offer_extended ?? null,
@@ -86,9 +97,13 @@ export function createJobsRouter(db: Database.Database) {
 
 	router.put("/:id", (req, res) => {
 		const f = req.body;
+		const coverLetterUrl = normalizeOptionalUrl(f.cover_letter_url);
 
-		const lengthError = validateJobFields(f);
+		const lengthError = validateJobFields({ ...f, cover_letter_url: coverLetterUrl });
 		if (lengthError) {return res.status(422).json({ error: lengthError });}
+
+		const urlError = validateUrlStructure(coverLetterUrl, "cover_letter_url");
+		if (urlError) {return res.status(422).json({ error: urlError });}
 
 		const substatusError = validateEndingSubstatus(
 			f.status,
@@ -124,6 +139,7 @@ export function createJobsRouter(db: Database.Database) {
 				company: f.company,
 				role: f.role,
 				link: f.link,
+				cover_letter_url: coverLetterUrl,
 				salary: f.salary ?? null,
 				fit_score: f.fit_score ?? null,
 				referred_by: f.referred_by ?? null,

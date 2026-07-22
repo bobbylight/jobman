@@ -1,6 +1,8 @@
 import {
+	normalizeOptionalUrl,
 	validateEndingSubstatus,
 	validateOfferDate,
+	validateUrlStructure,
 	VALID_OFFER_SUBSTATUSES,
 	VALID_REJECTED_SUBSTATUSES,
 } from "./validators.js";
@@ -130,5 +132,70 @@ describe("validateOfferDate", () => {
 		)("rejects a non-null date for status '%s'", (status) => {
 			expect(validateOfferDate(status, "2026-05-15")).not.toBeNull();
 		});
+	});
+});
+
+describe("validateUrlStructure", () => {
+	it("accepts a well-formed https URL", () => {
+		expect(
+			validateUrlStructure(
+				"https://docs.google.com/document/d/abc",
+				"cover_letter_url",
+			),
+		).toBeNull();
+	});
+
+	it("accepts null (optional field)", () => {
+		expect(validateUrlStructure(null, "cover_letter_url")).toBeNull();
+	});
+
+	it("accepts undefined (optional field)", () => {
+		expect(validateUrlStructure(undefined, "cover_letter_url")).toBeNull();
+	});
+
+	it("accepts an empty string (optional field)", () => {
+		expect(validateUrlStructure("", "cover_letter_url")).toBeNull();
+	});
+
+	it("rejects a malformed string", () => {
+		expect(
+			validateUrlStructure("not a url", "cover_letter_url"),
+		).not.toBeNull();
+	});
+
+	it("rejects a non-string value", () => {
+		expect(validateUrlStructure(42, "cover_letter_url")).not.toBeNull();
+	});
+
+	it("returns an error mentioning the field name", () => {
+		const err = validateUrlStructure("not a url", "cover_letter_url");
+		expect(err).toMatch(/cover_letter_url/);
+	});
+});
+
+describe("normalizeOptionalUrl", () => {
+	it("trims surrounding whitespace", () => {
+		expect(normalizeOptionalUrl("  https://example.com  ")).toBe(
+			"https://example.com",
+		);
+	});
+
+	it("converts an empty string to null", () => {
+		expect(normalizeOptionalUrl("")).toBeNull();
+	});
+
+	it("converts a whitespace-only string to null", () => {
+		expect(normalizeOptionalUrl("   ")).toBeNull();
+	});
+
+	it("converts a non-string value to null", () => {
+		expect(normalizeOptionalUrl(null)).toBeNull();
+		expect(normalizeOptionalUrl(undefined)).toBeNull();
+	});
+
+	it("leaves a well-formed URL untouched", () => {
+		expect(normalizeOptionalUrl("https://example.com")).toBe(
+			"https://example.com",
+		);
 	});
 });

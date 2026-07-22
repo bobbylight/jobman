@@ -12,6 +12,7 @@ const STATUS_LABELS: Record<string, string> = {
 // ── Max-length constants ───────────────────────────────────────────────────────
 export const JOB_MAX_LENGTHS = {
 	company: 128,
+	cover_letter_url: 4096,
 	job_description: 20_000,
 	link: 4096,
 	notes: 20_000,
@@ -232,4 +233,36 @@ export function validateInterviewQuestion(
 		}
 	}
 	return null;
+}
+
+/**
+ * Checks that a value is a well-formed URL — structure only, no network request,
+ * so a private/unlisted/404 document is still valid. Optional: null/undefined/""
+ * pass without error.
+ */
+export function validateUrlStructure(
+	value: unknown,
+	field: string,
+): string | null {
+	if (value === null || value === undefined || value === "") {
+		return null;
+	}
+	if (typeof value !== "string") {
+		return `${field} must be a string`;
+	}
+	try {
+		void new URL(value);
+		return null;
+	} catch {
+		return `${field} must be a valid URL`;
+	}
+}
+
+/** Converts empty/whitespace-only strings to null; trims surrounding whitespace otherwise. */
+export function normalizeOptionalUrl(value: unknown): string | null {
+	if (typeof value !== "string") {
+		return null;
+	}
+	const trimmed = value.trim();
+	return trimmed === "" ? null : trimmed;
 }
