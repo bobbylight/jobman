@@ -76,7 +76,10 @@ export const api = {
 		request<{ success: boolean }>("/auth/logout", { method: "POST" }),
 
 	// Jobs
-	getJobs: () => request<Job[]>("/jobs?view=summary"),
+	getJobs: (searchId?: number) =>
+		request<Job[]>(
+			`/jobs?view=summary${searchId !== undefined ? `&search_id=${searchId}` : ""}`,
+		),
 	getJob: (id: number) => request<Job>(`/jobs/${id}`),
 	createJob: (data: JobFormData) =>
 		request<Job>("/jobs", { body: JSON.stringify(data), method: "POST" }),
@@ -87,6 +90,8 @@ export const api = {
 
 	// Job searches (rounds)
 	getActiveSearch: () => request<JobSearch>("/job-searches/active"),
+	listSearches: () => request<JobSearch[]>("/job-searches"),
+	getSearch: (id: number) => request<JobSearch>(`/job-searches/${id}`),
 	startNewSearch: (name: string, notes: string | null) =>
 		request<JobSearch>("/job-searches", {
 			body: JSON.stringify({ name, notes }),

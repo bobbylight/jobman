@@ -71,7 +71,14 @@ const MIN_FIT_SCORE_OPTIONS: { label: string; value: FitScore | null }[] = [
 
 export default function JobManagementPage() {
 	const navigate = useNavigate();
-	const { jobId } = useParams<{ jobId?: string }>();
+	const { jobId, searchId: searchIdParam } = useParams<{
+		jobId?: string;
+		searchId?: string;
+	}>();
+	const searchId =
+		searchIdParam !== undefined ? Number(searchIdParam) : undefined;
+	const basePath =
+		searchId !== undefined ? `/jobs/history/${searchId}` : "/jobs";
 
 	const [jobs, setJobs] = useState<Job[]>([]);
 	const [search, setSearch] = useState("");
@@ -96,29 +103,34 @@ export default function JobManagementPage() {
 
 	const loadJobs = useCallback(async () => {
 		try {
-			const data = await api.getJobs();
+			const data = await api.getJobs(searchId);
 			setJobs(data);
 		} catch {
 			notify("Failed to load jobs", "error");
 		} finally {
 			setLoading(false);
 		}
-	}, [notify]);
+	}, [notify, searchId]);
 
-	const loadActiveSearch = useCallback(async () => {
+	// Loads the active round, or the specific historical round named by the URL
+	const loadSearchRound = useCallback(async () => {
 		try {
-			setActiveSearch(await api.getActiveSearch());
+			setActiveSearch(
+				searchId !== undefined
+					? await api.getSearch(searchId)
+					: await api.getActiveSearch(),
+			);
 		} catch (error) {
 			if (!(error instanceof ApiError && error.status === 404)) {
-				notify("Failed to load active search round", "error");
+				notify("Failed to load search round", "error");
 			}
 		}
-	}, [notify]);
+	}, [notify, searchId]);
 
 	useEffect(() => {
 		void loadJobs();
-		void loadActiveSearch();
-	}, [loadJobs, loadActiveSearch]);
+		void loadSearchRound();
+	}, [loadJobs, loadSearchRound]);
 
 	// Sync the edit dialog with the URL param once jobs are loaded
 	useEffect(() => {
@@ -132,11 +144,11 @@ export default function JobManagementPage() {
 		const id = parseInt(jobId, 10);
 		const found = jobs.find((j) => j.id === id) ?? null;
 		if (!found) {
-			navigate("/jobs", { replace: true });
+			navigate(basePath, { replace: true });
 			return;
 		}
 		setEditJob(found);
-	}, [jobId, jobs, loading, navigate]);
+	}, [jobId, jobs, loading, navigate, basePath]);
 
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
@@ -160,16 +172,16 @@ export default function JobManagementPage() {
 
 	const openAdd = useCallback(() => setAddOpen(true), []);
 	const openEdit = useCallback(
-		(job: Job) => navigate(`/jobs/${job.id}`),
-		[navigate],
+		(job: Job) => navigate(`${basePath}/${job.id}`),
+		[navigate, basePath],
 	);
 	const closeDialog = useCallback(() => {
 		if (addOpen) {
 			setAddOpen(false);
 		} else {
-			navigate("/jobs");
+			navigate(basePath);
 		}
-	}, [addOpen, navigate]);
+	}, [addOpen, navigate, basePath]);
 
 	// The job being edited (null when in "add" mode)
 	const dialogJob = addOpen ? null : editJob;

@@ -152,6 +152,66 @@ describe("aPI module", () => {
 			);
 			await expect(api.getJobs()).rejects.toThrow("API error 400");
 		});
+
+		it("appends search_id when scoping to a specific round", async () => {
+			mockFetch.mockResolvedValue(makeResponse([MOCK_JOB]));
+			await api.getJobs(7);
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/jobs?view=summary&search_id=7",
+				expect.objectContaining({
+					headers: { "Content-Type": "application/json" },
+				}),
+			);
+		});
+	});
+
+	describe("listSearches", () => {
+		it("fetches GET /api/job-searches and returns the parsed JSON", async () => {
+			const MOCK_SEARCH = {
+				closed_at: null,
+				id: 1,
+				name: "Search 1",
+				notes: null,
+				started_at: "2024-01-01T00:00:00.000Z",
+				user_id: 1,
+			};
+			mockFetch.mockResolvedValue(makeResponse([MOCK_SEARCH]));
+			const result = await api.listSearches();
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/job-searches",
+				expect.objectContaining({
+					headers: { "Content-Type": "application/json" },
+				}),
+			);
+			expect(result).toStrictEqual([MOCK_SEARCH]);
+		});
+	});
+
+	describe("getSearch", () => {
+		it("fetches GET /api/job-searches/:id and returns the parsed JSON", async () => {
+			const MOCK_SEARCH = {
+				closed_at: "2024-02-01T00:00:00.000Z",
+				id: 3,
+				name: "Old Search",
+				notes: null,
+				started_at: "2024-01-01T00:00:00.000Z",
+				user_id: 1,
+			};
+			mockFetch.mockResolvedValue(makeResponse(MOCK_SEARCH));
+			const result = await api.getSearch(3);
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/job-searches/3",
+				expect.objectContaining({
+					headers: { "Content-Type": "application/json" },
+				}),
+			);
+			expect(result).toStrictEqual(MOCK_SEARCH);
+		});
+
+		it("throws when the response is not ok", async () => {
+			mockFetch.mockResolvedValue(makeResponse({ error: "Not found" }, false));
+			await expect(api.getSearch(999)).rejects.toThrow("API error 400");
+		});
 	});
 
 	describe("createJob", () => {
