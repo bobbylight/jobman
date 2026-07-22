@@ -898,6 +898,59 @@ describe("jobManagementPage", () => {
 			await waitFor(() => expect(mockGetJob).toHaveBeenCalledWith(3));
 		});
 
+		it("shows a read-only banner with the round name and closed date", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			mockGetSearch.mockResolvedValue(
+				makeJobSearch({
+					// No trailing Z: parsed as local time so the date doesn't shift across the UTC boundary
+					closed_at: "2026-02-15T12:00:00",
+					id: 7,
+					name: "Old Search",
+				}),
+			);
+			renderPage("/jobs/history/7");
+			await waitFor(() => {
+				expect(screen.getByRole("alert")).toBeInTheDocument();
+			});
+			const banner = screen.getByRole("alert");
+			expect(banner).toHaveTextContent("Viewing");
+			expect(banner).toHaveTextContent("Old Search");
+			expect(banner).toHaveTextContent("closed Feb 15, 2026");
+			expect(banner).toHaveTextContent("read-only");
+		});
+
+		it("navigates to /jobs when 'Back to current search' is clicked", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			mockGetSearch.mockResolvedValue(
+				makeJobSearch({ id: 7, name: "Old Search" }),
+			);
+			renderPage("/jobs/history/7");
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: "Back to current search" }),
+				).toBeInTheDocument();
+			});
+			fireEvent.click(
+				screen.getByRole("button", { name: "Back to current search" }),
+			);
+			await waitFor(() => {
+				expect(mockGetJobs).toHaveBeenCalledWith(undefined);
+			});
+		});
+
+		it("shows the round chip with a history icon and read-only tooltip", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			mockGetSearch.mockResolvedValue(
+				makeJobSearch({ id: 7, name: "Old Search" }),
+			);
+			renderPage("/jobs/history/7");
+			await waitFor(() => {
+				expect(screen.getByText("Old Search")).toBeInTheDocument();
+			});
+			// One HistoryIcon in the banner, one in the round chip
+			expect(screen.getAllByTestId("HistoryIcon")).toHaveLength(2);
+		});
+
 		it("passes readOnly=true to KanbanBoard", async () => {
 			mockGetJobs.mockResolvedValue([]);
 			mockGetSearch.mockResolvedValue(
@@ -950,6 +1003,30 @@ describe("jobManagementPage", () => {
 			expect(
 				screen.getByRole("button", { name: "Add Job" }),
 			).toBeInTheDocument();
+		});
+
+		it("does not show the read-only banner", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			mockGetActiveSearch.mockResolvedValue(
+				makeJobSearch({ name: "Search 1" }),
+			);
+			renderPage();
+			await waitFor(() =>
+				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+			);
+			expect(screen.queryByText(/read-only/)).not.toBeInTheDocument();
+		});
+
+		it("does not show a history icon on the round chip", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			mockGetActiveSearch.mockResolvedValue(
+				makeJobSearch({ name: "Search 1" }),
+			);
+			renderPage();
+			await waitFor(() => {
+				expect(screen.getByText("Search 1")).toBeInTheDocument();
+			});
+			expect(screen.queryByTestId("HistoryIcon")).not.toBeInTheDocument();
 		});
 	});
 });

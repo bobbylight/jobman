@@ -7,6 +7,7 @@ import React, {
 	useState,
 } from "react";
 import {
+	Alert,
 	Badge,
 	Box,
 	Button,
@@ -25,6 +26,7 @@ import {
 	Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import HistoryIcon from "@mui/icons-material/History";
 import SearchIcon from "@mui/icons-material/Search";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
@@ -57,6 +59,21 @@ import EndingStatusDialog from "./EndingStatusDialog";
 function toSummaryJob(job: Job): Job {
 	const { notes: _n, job_description: _jd, ...rest } = job;
 	return rest;
+}
+
+function formatClosedDate(closedAt: string | null): string | null {
+	if (!closedAt) {
+		return null;
+	}
+	const d = new Date(closedAt);
+	if (isNaN(d.getTime())) {
+		return null;
+	}
+	return d.toLocaleDateString("en-US", {
+		day: "numeric",
+		month: "short",
+		year: "numeric",
+	});
 }
 
 // Minimum fit score filter: show jobs at or above this threshold
@@ -355,6 +372,29 @@ export default function JobManagementPage() {
 
 	return (
 		<>
+			{searchId !== undefined && activeSearch && (
+				<Alert
+					severity="info"
+					icon={<HistoryIcon fontSize="inherit" />}
+					action={
+						<Button
+							color="inherit"
+							size="small"
+							onClick={() => navigate("/jobs")}
+						>
+							Back to current search
+						</Button>
+					}
+					sx={{ alignItems: "center", borderRadius: 0 }}
+				>
+					Viewing &ldquo;{activeSearch.name}&rdquo;
+					{formatClosedDate(activeSearch.closed_at)
+						? ` — closed ${formatClosedDate(activeSearch.closed_at)}`
+						: ""}
+					. This search is read-only.
+				</Alert>
+			)}
+
 			{/* Board toolbar: Add Job button + filters */}
 			<Box
 				sx={{
@@ -405,7 +445,7 @@ export default function JobManagementPage() {
 				/>
 
 				<Box sx={{ alignItems: "center", display: "flex", gap: 1, ml: "auto" }}>
-					{activeSearch && (
+					{activeSearch && searchId === undefined && (
 						<Tooltip title="Current job search">
 							<Chip
 								label={activeSearch.name}
@@ -413,6 +453,22 @@ export default function JobManagementPage() {
 								sx={{
 									bgcolor: "rgba(255,255,255,0.15)",
 									color: "white",
+									fontWeight: 500,
+								}}
+							/>
+						</Tooltip>
+					)}
+					{activeSearch && searchId !== undefined && (
+						<Tooltip title="Past job search (read-only)">
+							<Chip
+								icon={
+									<HistoryIcon sx={{ color: "text.secondary !important" }} />
+								}
+								label={activeSearch.name}
+								size="small"
+								sx={{
+									bgcolor: "rgba(255,255,255,0.85)",
+									color: "text.primary",
 									fontWeight: 500,
 								}}
 							/>
