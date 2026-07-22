@@ -1,6 +1,7 @@
 import type Database from "better-sqlite3";
 import { Router } from "express";
 import * as JobsDb from "../db/jobs.js";
+import * as JobSearchesDb from "../db/jobSearches.js";
 import * as OffersDb from "../db/offers.js";
 
 function getJobInOfferStatus(
@@ -16,6 +17,12 @@ function getJobInOfferStatus(
 	}
 	if (job.status !== "offer") {
 		res.status(400).json({ error: "Job is not in offer status" });
+		return false;
+	}
+	if (!JobSearchesDb.isJobInActiveSearch(db, jobId, userId)) {
+		res
+			.status(403)
+			.json({ error: "Cannot modify an offer for a job in a closed search round" });
 		return false;
 	}
 	return true;
@@ -102,6 +109,11 @@ export function createOffersRouter(db: Database.Database) {
 
 		const job = JobsDb.findJob(db, Number(jobId), userId);
 		if (!job) {return res.status(404).json({ error: "Job not found" });}
+		if (!JobSearchesDb.isJobInActiveSearch(db, Number(jobId), userId)) {
+			return res
+				.status(403)
+				.json({ error: "Cannot modify an offer for a job in a closed search round" });
+		}
 
 		const deleted = OffersDb.deleteOffer(db, Number(jobId));
 		if (!deleted) {return res.status(404).json({ error: "Offer not found" });}

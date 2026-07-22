@@ -103,17 +103,22 @@ export function createJobsRouter(db: Database.Database) {
 		if (offerDateError) {return res.status(422).json({ error: offerDateError });}
 
 		const jobId = Number(req.params.id);
-		const currentJob = db
-			.prepare("SELECT status FROM jobs WHERE id = ? AND user_id = ?")
-			.get(jobId, req.session.userId!) as { status: string } | undefined;
-		if (f.status !== undefined && currentJob?.status === "offer" && f.status !== "offer") {
+		const userId = req.session.userId!;
+		const currentJob = JobsDb.findJob(db, jobId, userId);
+		if (!currentJob) {return res.status(404).json({ error: "Job not found" });}
+		if (!JobSearchesDb.isJobInActiveSearch(db, jobId, userId)) {
+			return res
+				.status(403)
+				.json({ error: "Cannot modify a job in a closed search round" });
+		}
+		if (f.status !== undefined && currentJob.status === "offer" && f.status !== "offer") {
 			OffersDb.deleteOffer(db, jobId);
 		}
 
 		const job = JobsDb.updateJob(
 			db,
 			jobId,
-			req.session.userId!,
+			userId,
 			{
 				date_applied: f.date_applied ?? null,
 				company: f.company,
@@ -141,11 +146,17 @@ export function createJobsRouter(db: Database.Database) {
 	});
 
 	router.delete("/:id", (req, res) => {
-		const deleted = JobsDb.deleteJob(
-			db,
-			Number(req.params.id),
-			req.session.userId!,
-		);
+		const jobId = Number(req.params.id);
+		const userId = req.session.userId!;
+		if (!JobsDb.findJob(db, jobId, userId)) {
+			return res.status(404).json({ error: "Job not found" });
+		}
+		if (!JobSearchesDb.isJobInActiveSearch(db, jobId, userId)) {
+			return res
+				.status(403)
+				.json({ error: "Cannot modify a job in a closed search round" });
+		}
+		const deleted = JobsDb.deleteJob(db, jobId, userId);
 		if (!deleted) {return res.status(404).json({ error: "Job not found" });}
 		return res.json({ success: true });
 	});

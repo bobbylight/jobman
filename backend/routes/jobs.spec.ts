@@ -304,6 +304,25 @@ describe("pUT /api/jobs/:id", () => {
 		expect(res.status).toBe(404);
 		expect(res.body.error).toBe("Job not found");
 	});
+
+	it("returns 403 when the job is in a closed search round", async () => {
+		const createRes = await req("post", "/api/jobs").send({
+			...BASE_JOB,
+			ending_substatus: "Withdrawn",
+			status: "rejected_or_withdrawn",
+		});
+		const { id } = createRes.body;
+		await req("post", "/api/job-searches").send({ name: "Search 2" });
+
+		const res = await req("put", `/api/jobs/${id}`).send({
+			...BASE_JOB,
+			company: "Should Not Apply",
+		});
+		expect(res.status).toBe(403);
+
+		const unchanged = await req("get", `/api/jobs/${id}`);
+		expect(unchanged.body.company).toBe("Acme Corp");
+	});
 });
 
 describe("dELETE /api/jobs/:id", () => {
@@ -320,6 +339,22 @@ describe("dELETE /api/jobs/:id", () => {
 		const res = await req("delete", "/api/jobs/99999");
 		expect(res.status).toBe(404);
 		expect(res.body.error).toBe("Job not found");
+	});
+
+	it("returns 403 when the job is in a closed search round", async () => {
+		const createRes = await req("post", "/api/jobs").send({
+			...BASE_JOB,
+			ending_substatus: "Withdrawn",
+			status: "rejected_or_withdrawn",
+		});
+		const { id } = createRes.body;
+		await req("post", "/api/job-searches").send({ name: "Search 2" });
+
+		const res = await req("delete", `/api/jobs/${id}`);
+		expect(res.status).toBe(403);
+
+		const stillThere = await req("get", `/api/jobs/${id}`);
+		expect(stillThere.status).toBe(200);
 	});
 });
 
