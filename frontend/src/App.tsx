@@ -62,6 +62,14 @@ export default function App() {
 							<Route path="/" element={<Navigate to="/jobs" replace />} />
 							<Route path="/jobs" element={<JobManagementPage />} />
 							<Route path="/jobs/:jobId" element={<JobManagementPage />} />
+							<Route
+								path="/jobs/history/:searchId"
+								element={<JobManagementPage />}
+							/>
+							<Route
+								path="/jobs/history/:searchId/:jobId"
+								element={<JobManagementPage />}
+							/>
 							<Route path="/calendar" element={<InterviewsPage />} />
 							<Route path="/stats" element={<StatsPage />} />
 							<Route path="/insights" element={<InsightsPage />} />

@@ -39,7 +39,9 @@ vi.mock(import("../../api"), () => {
 			getJob: vi.fn(),
 			getJobs: vi.fn(),
 			getQuestions: vi.fn(),
+			getSearch: vi.fn(),
 			getStats: vi.fn(),
+			listSearches: vi.fn(),
 			updateJob: vi.fn(),
 		},
 	} as any;
@@ -98,6 +100,7 @@ vi.mock(
 const mockGetJobs = vi.mocked(api.getJobs);
 const mockGetJob = vi.mocked(api.getJob);
 const mockGetActiveSearch = vi.mocked(api.getActiveSearch);
+const mockGetSearch = vi.mocked(api.getSearch);
 const MockKanbanBoard = vi.mocked(KanbanBoard);
 
 const MOCK_USER: User = {
@@ -120,6 +123,14 @@ function renderPage(initialPath = "/jobs", onLogout = MOCK_ON_LOGOUT) {
 					>
 						<Route path="/jobs" element={<JobManagementPage />} />
 						<Route path="/jobs/:jobId" element={<JobManagementPage />} />
+						<Route
+							path="/jobs/history/:searchId"
+							element={<JobManagementPage />}
+						/>
+						<Route
+							path="/jobs/history/:searchId/:jobId"
+							element={<JobManagementPage />}
+						/>
 						<Route path="/stats" element={<StatsPage />} />
 					</Route>
 				</Routes>
@@ -834,6 +845,57 @@ describe("jobManagementPage", () => {
 			await waitFor(() => {
 				expect(screen.getByText("Search 1")).toBeInTheDocument();
 			});
+		});
+	});
+
+	describe("historical round route (/jobs/history/:searchId)", () => {
+		it("fetches jobs scoped to the search_id from the URL, not the active round", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			mockGetSearch.mockResolvedValue(
+				makeJobSearch({ id: 7, name: "Old Search" }),
+			);
+			renderPage("/jobs/history/7");
+			await waitFor(() =>
+				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+			);
+			expect(mockGetJobs).toHaveBeenCalledWith(7);
+			expect(mockGetSearch).toHaveBeenCalledWith(7);
+		});
+
+		it("loads the round via getSearch and shows its name as the chip", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			mockGetSearch.mockResolvedValue(
+				makeJobSearch({ id: 7, name: "Old Search" }),
+			);
+			renderPage("/jobs/history/7");
+			await waitFor(() => {
+				expect(mockGetSearch).toHaveBeenCalledWith(7);
+				expect(screen.getByText("Old Search")).toBeInTheDocument();
+			});
+		});
+
+		it("navigates to the history base path (not /jobs) when opening a job", async () => {
+			const job = makeJob({ company: "Acme", id: 3 });
+			mockGetJobs.mockResolvedValue([job]);
+			mockGetSearch.mockResolvedValue(
+				makeJobSearch({ id: 7, name: "Old Search" }),
+			);
+			mockGetJob.mockResolvedValue(job);
+
+			let onCardClick: ((job: Job) => void) | undefined;
+			MockKanbanBoard.mockImplementation(({ onCardClick: cb }) => {
+				onCardClick = cb;
+				return null;
+			});
+
+			renderPage("/jobs/history/7");
+			await waitFor(() =>
+				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+			);
+
+			await act(async () => onCardClick?.(job));
+
+			await waitFor(() => expect(mockGetJob).toHaveBeenCalledWith(3));
 		});
 	});
 });
