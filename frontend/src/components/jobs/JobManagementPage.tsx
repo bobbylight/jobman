@@ -370,9 +370,11 @@ export default function JobManagementPage() {
 					zIndex: (theme) => theme.zIndex.appBar - 1,
 				}}
 			>
-				<Button variant="contained" startIcon={<AddIcon />} onClick={openAdd}>
-					Add Job
-				</Button>
+				{searchId === undefined && (
+					<Button variant="contained" startIcon={<AddIcon />} onClick={openAdd}>
+						Add Job
+					</Button>
+				)}
 
 				<TextField
 					placeholder="Search company or role… ( / )"
@@ -595,6 +597,7 @@ export default function JobManagementPage() {
 						onStatusChange={handleStatusChange}
 						onCardClick={openEdit}
 						onToggleFavorite={handleToggleFavorite}
+						readOnly={searchId !== undefined}
 					/>
 				</Box>
 			)}
@@ -604,6 +607,7 @@ export default function JobManagementPage() {
 				onClose={closeDialog}
 				onSave={handleSave}
 				onDelete={handleDelete}
+				readOnly={searchId !== undefined}
 				jobId={dialogJob?.id ?? null}
 			/>
 

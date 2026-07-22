@@ -38,6 +38,7 @@ export default function InterviewCard({
 	onEdit,
 	onDelete,
 	onViewQuestions,
+	readOnly = false,
 }: {
 	interview: Interview;
 	questionCount: number;
@@ -45,6 +46,7 @@ export default function InterviewCard({
 	onEdit: () => void;
 	onDelete: () => void;
 	onViewQuestions: () => void;
+	readOnly?: boolean;
 }) {
 	const TypeIcon =
 		interview.interview_stage === "phone_screen" ? PhoneIcon : BusinessIcon;
@@ -161,26 +163,28 @@ export default function InterviewCard({
 						{questionCount > 0 ? `Questions (${questionCount})` : "Questions"}
 					</Button>
 				</Box>
-				<Box sx={{ display: "flex", flexShrink: 0 }}>
-					<Tooltip title="Edit interview">
-						<IconButton
-							size="small"
-							onClick={onEdit}
-							aria-label="Edit interview"
-						>
-							<EditIcon fontSize="small" />
-						</IconButton>
-					</Tooltip>
-					<Tooltip title="Delete interview">
-						<IconButton
-							size="small"
-							onClick={onDelete}
-							aria-label="Delete interview"
-						>
-							<DeleteIcon fontSize="small" />
-						</IconButton>
-					</Tooltip>
-				</Box>
+				{!readOnly && (
+					<Box sx={{ display: "flex", flexShrink: 0 }}>
+						<Tooltip title="Edit interview">
+							<IconButton
+								size="small"
+								onClick={onEdit}
+								aria-label="Edit interview"
+							>
+								<EditIcon fontSize="small" />
+							</IconButton>
+						</Tooltip>
+						<Tooltip title="Delete interview">
+							<IconButton
+								size="small"
+								onClick={onDelete}
+								aria-label="Delete interview"
+							>
+								<DeleteIcon fontSize="small" />
+							</IconButton>
+						</Tooltip>
+					</Box>
+				)}
 			</Box>
 		</Box>
 	);

@@ -897,5 +897,59 @@ describe("jobManagementPage", () => {
 
 			await waitFor(() => expect(mockGetJob).toHaveBeenCalledWith(3));
 		});
+
+		it("passes readOnly=true to KanbanBoard", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			mockGetSearch.mockResolvedValue(
+				makeJobSearch({ id: 7, name: "Old Search" }),
+			);
+			renderPage("/jobs/history/7");
+			await waitFor(() =>
+				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+			);
+			expect(MockKanbanBoard).toHaveBeenCalledWith(
+				expect.objectContaining({ readOnly: true }),
+				undefined,
+			);
+		});
+
+		it("does not show the Add Job button", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			mockGetSearch.mockResolvedValue(
+				makeJobSearch({ id: 7, name: "Old Search" }),
+			);
+			renderPage("/jobs/history/7");
+			await waitFor(() =>
+				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+			);
+			expect(
+				screen.queryByRole("button", { name: "Add Job" }),
+			).not.toBeInTheDocument();
+		});
+	});
+
+	describe("live round route (/jobs)", () => {
+		it("passes readOnly=false to KanbanBoard", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			renderPage();
+			await waitFor(() =>
+				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+			);
+			expect(MockKanbanBoard).toHaveBeenCalledWith(
+				expect.objectContaining({ readOnly: false }),
+				undefined,
+			);
+		});
+
+		it("shows the Add Job button", async () => {
+			mockGetJobs.mockResolvedValue([]);
+			renderPage();
+			await waitFor(() =>
+				expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+			);
+			expect(
+				screen.getByRole("button", { name: "Add Job" }),
+			).toBeInTheDocument();
+		});
 	});
 });

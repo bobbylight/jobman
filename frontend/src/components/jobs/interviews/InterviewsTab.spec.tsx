@@ -663,4 +663,42 @@ describe("interviewsTab", () => {
 			});
 		});
 	});
+
+	describe("readOnly", () => {
+		it("does not show an Add Interview button", async () => {
+			vi.mocked(api.getInterviews).mockResolvedValue([]);
+			render(<InterviewsTab {...DEFAULT_PROPS} readOnly />);
+			await waitFor(() => {
+				expect(screen.getByText(/No interviews yet/i)).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByRole("button", { name: "Add Interview" }),
+			).not.toBeInTheDocument();
+		});
+
+		it("does not show Edit/Delete affordances on interview cards", async () => {
+			vi.mocked(api.getInterviews).mockResolvedValue([INTERVIEW_A]);
+			render(<InterviewsTab {...DEFAULT_PROPS} readOnly />);
+			await waitFor(() => {
+				expect(screen.getByText("Jane Smith")).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByRole("button", { name: "Edit interview" }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: "Delete interview" }),
+			).not.toBeInTheDocument();
+		});
+
+		it("still allows viewing questions for an interview", async () => {
+			vi.mocked(api.getInterviews).mockResolvedValue([INTERVIEW_A]);
+			render(<InterviewsTab {...DEFAULT_PROPS} readOnly />);
+			await waitFor(() => {
+				expect(screen.getByText("Jane Smith")).toBeInTheDocument();
+			});
+			expect(
+				screen.getByRole("button", { name: /Questions/ }),
+			).not.toBeDisabled();
+		});
+	});
 });

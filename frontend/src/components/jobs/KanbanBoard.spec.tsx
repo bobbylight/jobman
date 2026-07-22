@@ -178,4 +178,24 @@ describe("kanbanBoard", () => {
 			expect(DEFAULT_PROPS.onStatusChange).not.toHaveBeenCalled();
 		});
 	});
+
+	describe("readOnly", () => {
+		it("does not render drag handles on any card", () => {
+			const jobs: Job[] = [
+				makeJob({ company: "Alpha", id: 1, status: "not_started" }),
+			];
+			render(<KanbanBoard {...DEFAULT_PROPS} jobs={jobs} readOnly />);
+			expect(screen.queryByTestId("DragIndicatorIcon")).not.toBeInTheDocument();
+		});
+
+		it("ignores a drag-end event and never calls onStatusChange", () => {
+			vi.clearAllMocks();
+			const job = makeJob({ company: "Acme", id: 1, status: "not_started" });
+			render(<KanbanBoard {...DEFAULT_PROPS} jobs={[job]} readOnly />);
+
+			dragJobTo(job, "applied");
+
+			expect(DEFAULT_PROPS.onStatusChange).not.toHaveBeenCalled();
+		});
+	});
 });

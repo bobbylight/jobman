@@ -1235,4 +1235,69 @@ describe("jobDialog", () => {
 			});
 		});
 	});
+
+	describe("readOnly", () => {
+		it("disables the Company field", async () => {
+			render(<JobDialog {...DEFAULT_PROPS} jobId={BASE_JOB.id} readOnly />);
+			await waitFor(() => {
+				expect(screen.getByLabelText(/Company/)).toBeDisabled();
+			});
+		});
+
+		it("shows only a Close button, no Save/Delete/Cancel", async () => {
+			render(<JobDialog {...DEFAULT_PROPS} jobId={BASE_JOB.id} readOnly />);
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: "Close" }),
+				).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByRole("button", { name: "Delete" }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: "Save" }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: "Cancel" }),
+			).not.toBeInTheDocument();
+		});
+
+		it("calls onClose when Close is clicked", async () => {
+			render(<JobDialog {...DEFAULT_PROPS} jobId={BASE_JOB.id} readOnly />);
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: "Close" }),
+				).toBeInTheDocument();
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Close" }));
+			expect(DEFAULT_PROPS.onClose).toHaveBeenCalledOnce();
+		});
+
+		it("does not show the favorite toggle in the title bar", async () => {
+			render(<JobDialog {...DEFAULT_PROPS} jobId={BASE_JOB.id} readOnly />);
+			await waitFor(() => {
+				expect(
+					screen.getByRole("heading", { name: /Engineer/ }),
+				).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByRole("button", { name: /favorite/i }),
+			).not.toBeInTheDocument();
+		});
+
+		it("does not show an Add Interview button on the Interviews tab", async () => {
+			render(<JobDialog {...DEFAULT_PROPS} jobId={BASE_JOB.id} readOnly />);
+			await waitFor(() => {
+				expect(
+					screen.getByRole("heading", { name: /Engineer/ }),
+				).toBeInTheDocument();
+			});
+			fireEvent.click(screen.getByRole("tab", { name: /Interviews/ }));
+			await waitFor(() => {
+				expect(
+					screen.queryByRole("button", { name: "Add Interview" }),
+				).not.toBeInTheDocument();
+			});
+		});
+	});
 });

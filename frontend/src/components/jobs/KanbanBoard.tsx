@@ -18,10 +18,17 @@ interface Props {
 	onStatusChange: (job: Job, newStatus: JobStatus) => void;
 	onCardClick: (job: Job) => void;
 	onToggleFavorite: (job: Job) => void;
+	readOnly?: boolean;
 }
 
 export default memo(
-	({ jobs, onStatusChange, onCardClick, onToggleFavorite }: Props) => {
+	({
+		jobs,
+		onStatusChange,
+		onCardClick,
+		onToggleFavorite,
+		readOnly = false,
+	}: Props) => {
 		const [activeJob, setActiveJob] = useState<Job | null>(null);
 		const [pendingStatusChange, setPendingStatusChange] = useState<{
 			job: Job;
@@ -48,7 +55,7 @@ export default memo(
 
 		function handleDragEnd({ active, over }: DragEndEvent) {
 			setActiveJob(null);
-			if (!over) {
+			if (readOnly || !over) {
 				return;
 			}
 			const job = (active.data.current as { job: Job } | undefined)?.job;
@@ -100,6 +107,7 @@ export default memo(
 							jobs={byStatus[status]}
 							onCardClick={onCardClick}
 							onToggleFavorite={onToggleFavorite}
+							readOnly={readOnly}
 						/>
 					))}
 				</Box>
@@ -110,6 +118,7 @@ export default memo(
 							job={activeJob}
 							onCardClick={() => {}}
 							onToggleFavorite={() => {}}
+							readOnly={readOnly}
 						/>
 					) : null}
 				</DragOverlay>
