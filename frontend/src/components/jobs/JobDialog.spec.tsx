@@ -107,7 +107,7 @@ describe("jobDialog", () => {
 
 		it("shows a text field for the link", () => {
 			render(<JobDialog {...DEFAULT_PROPS} jobId={null} />);
-			expect(screen.getByPlaceholderText("https://...")).toBeInTheDocument();
+			expect(screen.getByLabelText(/^Link/)).toBeInTheDocument();
 		});
 
 		it("does not show a hyperlink", () => {
@@ -438,9 +438,7 @@ describe("jobDialog", () => {
 
 		it("does not show the link text field initially", async () => {
 			await renderEditMode();
-			expect(
-				screen.queryByPlaceholderText("https://..."),
-			).not.toBeInTheDocument();
+			expect(screen.queryByLabelText("Link *")).not.toBeInTheDocument();
 		});
 
 		it("shows an edit button for the link", async () => {
@@ -453,7 +451,7 @@ describe("jobDialog", () => {
 		it("switches to text field when Edit link button is clicked", async () => {
 			await renderEditMode();
 			fireEvent.click(screen.getByRole("button", { name: "Edit link" }));
-			const input = screen.getByPlaceholderText("https://...");
+			const input = screen.getByLabelText("Link *");
 			expect(input).toBeInTheDocument();
 			expect(input).toHaveValue(BASE_JOB.link);
 		});
@@ -471,7 +469,7 @@ describe("jobDialog", () => {
 
 			// Switch to text field
 			fireEvent.click(screen.getByRole("button", { name: "Edit link" }));
-			expect(screen.getByPlaceholderText("https://...")).toBeInTheDocument();
+			expect(screen.getByLabelText("Link *")).toBeInTheDocument();
 
 			// Close and reopen
 			rerender(
@@ -480,9 +478,7 @@ describe("jobDialog", () => {
 			rerender(<JobDialog {...DEFAULT_PROPS} open jobId={BASE_JOB.id} />);
 
 			await waitFor(() => {
-				expect(
-					screen.queryByPlaceholderText("https://..."),
-				).not.toBeInTheDocument();
+				expect(screen.queryByLabelText("Link *")).not.toBeInTheDocument();
 				expect(
 					screen.getByRole("link", { name: BASE_JOB.link }),
 				).toBeInTheDocument();
@@ -507,7 +503,7 @@ describe("jobDialog", () => {
 			await renderEditMode();
 
 			fireEvent.click(screen.getByRole("button", { name: "Edit link" }));
-			fireEvent.change(screen.getByPlaceholderText("https://..."), {
+			fireEvent.change(screen.getByLabelText("Link *"), {
 				target: { value: "https://newjob.example.com" },
 			});
 			fireEvent.click(screen.getByRole("button", { name: "Save" }));
@@ -516,6 +512,149 @@ describe("jobDialog", () => {
 			expect(DEFAULT_PROPS.onSave.mock.calls[0]![0].link).toBe(
 				"https://newjob.example.com",
 			);
+		});
+	});
+
+	describe("cover letter URL field", () => {
+		it("is rendered as an empty text field when the job has no value", async () => {
+			await renderEditMode();
+			expect(screen.getByLabelText("Cover Letter URL")).toHaveValue("");
+		});
+
+		it("does not show a hyperlink when the job has no value", async () => {
+			await renderEditMode();
+			expect(
+				screen.queryByRole("link", { name: /docs\.google\.com/ }),
+			).not.toBeInTheDocument();
+		});
+
+		it("shows the value as a hyperlink when the job has one set", async () => {
+			const job = {
+				...BASE_JOB,
+				cover_letter_url: "https://docs.google.com/document/d/abc",
+			};
+			vi.mocked(api.getJob).mockResolvedValue(job);
+			await renderEditMode(job);
+			const link = screen.getByRole("link", {
+				name: "https://docs.google.com/document/d/abc",
+			});
+			expect(link).toHaveAttribute("href", job.cover_letter_url);
+			expect(link).toHaveAttribute("target", "_blank");
+		});
+
+		it("shows an edit button when a value is set", async () => {
+			const job = {
+				...BASE_JOB,
+				cover_letter_url: "https://docs.google.com/document/d/abc",
+			};
+			vi.mocked(api.getJob).mockResolvedValue(job);
+			await renderEditMode(job);
+			expect(
+				screen.getByRole("button", { name: "Edit cover letter URL" }),
+			).toBeInTheDocument();
+		});
+
+		it("switches to a text field when the edit button is clicked", async () => {
+			const job = {
+				...BASE_JOB,
+				cover_letter_url: "https://docs.google.com/document/d/abc",
+			};
+			vi.mocked(api.getJob).mockResolvedValue(job);
+			await renderEditMode(job);
+			fireEvent.click(
+				screen.getByRole("button", { name: "Edit cover letter URL" }),
+			);
+			expect(screen.getByLabelText("Cover Letter URL")).toHaveValue(
+				job.cover_letter_url,
+			);
+			expect(
+				screen.queryByRole("link", { name: /docs\.google\.com/ }),
+			).not.toBeInTheDocument();
+		});
+
+		it("saves null when the field is left empty", () => {
+			render(<JobDialog {...DEFAULT_PROPS} jobId={null} />);
+			fireEvent.change(screen.getByLabelText(/Company/), {
+				target: { value: "New Co" },
+			});
+			fireEvent.change(screen.getByLabelText(/Role/), {
+				target: { value: "Developer" },
+			});
+			fireEvent.change(screen.getByLabelText("Link *"), {
+				target: { value: "https://newco.com/job" },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Add Job" }));
+			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
+				expect.objectContaining({ cover_letter_url: null }),
+			);
+		});
+
+		it("saves the entered value", () => {
+			render(<JobDialog {...DEFAULT_PROPS} jobId={null} />);
+			fireEvent.change(screen.getByLabelText(/Company/), {
+				target: { value: "New Co" },
+			});
+			fireEvent.change(screen.getByLabelText(/Role/), {
+				target: { value: "Developer" },
+			});
+			fireEvent.change(screen.getByLabelText("Link *"), {
+				target: { value: "https://newco.com/job" },
+			});
+			fireEvent.change(screen.getByLabelText("Cover Letter URL"), {
+				target: { value: "https://docs.google.com/document/d/xyz" },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Add Job" }));
+			expect(DEFAULT_PROPS.onSave).toHaveBeenCalledWith(
+				expect.objectContaining({
+					cover_letter_url: "https://docs.google.com/document/d/xyz",
+				}),
+			);
+		});
+
+		it("shows a validation error and blocks save for a malformed URL", () => {
+			render(<JobDialog {...DEFAULT_PROPS} jobId={null} />);
+			fireEvent.change(screen.getByLabelText(/Company/), {
+				target: { value: "New Co" },
+			});
+			fireEvent.change(screen.getByLabelText(/Role/), {
+				target: { value: "Developer" },
+			});
+			fireEvent.change(screen.getByLabelText("Link *"), {
+				target: { value: "https://newco.com/job" },
+			});
+			fireEvent.change(screen.getByLabelText("Cover Letter URL"), {
+				target: { value: "not a url" },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Add Job" }));
+			expect(screen.getByText("Must be a valid URL")).toBeInTheDocument();
+			expect(DEFAULT_PROPS.onSave).not.toHaveBeenCalled();
+		});
+
+		it("does not require the field (no validation error when left blank)", () => {
+			render(<JobDialog {...DEFAULT_PROPS} jobId={null} />);
+			fireEvent.click(screen.getByRole("button", { name: "Add Job" }));
+			// Only company/role/link are required — cover_letter_url must not add a 4th
+			expect(screen.getAllByText("Required")).toHaveLength(3);
+		});
+
+		it("stays editable while typing the first character, in edit mode, when the job starts with no value", async () => {
+			const job = { ...BASE_JOB, cover_letter_url: null };
+			vi.mocked(api.getJob).mockResolvedValue(job);
+			await renderEditMode(job);
+
+			const input = screen.getByLabelText("Cover Letter URL");
+			fireEvent.change(input, { target: { value: "h" } });
+			expect(screen.getByLabelText("Cover Letter URL")).toHaveValue("h");
+
+			fireEvent.change(screen.getByLabelText("Cover Letter URL"), {
+				target: { value: "https://docs.google.com/document/d/abc" },
+			});
+			expect(screen.getByLabelText("Cover Letter URL")).toHaveValue(
+				"https://docs.google.com/document/d/abc",
+			);
+			expect(
+				screen.queryByRole("link", { name: /docs\.google\.com/ }),
+			).not.toBeInTheDocument();
 		});
 	});
 
@@ -1033,7 +1172,7 @@ describe("jobDialog", () => {
 			fireEvent.change(screen.getByLabelText(/Role \*/i), {
 				target: { value: "Engineer" },
 			});
-			fireEvent.change(screen.getByPlaceholderText("https://..."), {
+			fireEvent.change(screen.getByLabelText("Link *"), {
 				target: { value: "https://example.com" },
 			});
 		}
@@ -1071,7 +1210,7 @@ describe("jobDialog", () => {
 		it("shows an error when link exceeds 4096 characters", () => {
 			render(<JobDialog {...DEFAULT_PROPS} jobId={null} />);
 			fillRequiredFields();
-			fireEvent.change(screen.getByPlaceholderText("https://..."), {
+			fireEvent.change(screen.getByLabelText("Link *"), {
 				target: { value: "a".repeat(4097) },
 			});
 			clickSave();

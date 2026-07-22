@@ -145,6 +145,7 @@ export function tagChipProps(
 
 export const JOB_MAX_LENGTHS = {
 	company: 128,
+	cover_letter_url: 4096,
 	job_description: 20_000,
 	link: 4096,
 	notes: 20_000,
