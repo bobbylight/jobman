@@ -56,6 +56,7 @@ import type {
 
 const EMPTY: JobFormData = {
 	company: "",
+	cover_letter_url: null,
 	date_applied: null,
 	date_last_onsite: null,
 	date_offer_extended: null,
@@ -104,6 +105,7 @@ export default function JobDialog({
 	>({});
 	const [confirmDelete, setConfirmDelete] = useState(false);
 	const [linkEditing, setLinkEditing] = useState(false);
+	const [coverLetterUrlEditing, setCoverLetterUrlEditing] = useState(false);
 	const [activeTab, setActiveTab] = useState(0);
 	const [interviewCount, setInterviewCount] = useState<number | null>(null);
 	const [viewingQuestionsFor, setViewingQuestionsFor] =
@@ -133,6 +135,7 @@ export default function JobDialog({
 		setErrors({});
 		setConfirmDelete(false);
 		setLinkEditing(false);
+		setCoverLetterUrlEditing(false);
 		setActiveTab(0);
 		setInterviewCount(null);
 		setViewingQuestionsFor(null);
@@ -159,6 +162,9 @@ export default function JobDialog({
 					return;
 				}
 				setForm({ ...EMPTY, ...job });
+				// Start in edit mode when there's no existing value yet, so typing the
+				// First character doesn't flip the field to its read-only link view.
+				setCoverLetterUrlEditing(!job.cover_letter_url);
 				originalStatusRef.current = job.status;
 				originalHasOfferRef.current = job.has_offer;
 
@@ -225,6 +231,17 @@ export default function JobDialog({
 			e.link = `Must be ${JOB_MAX_LENGTHS.link.toLocaleString()} characters or fewer`;
 		}
 
+		if (form.cover_letter_url) {
+			if (form.cover_letter_url.length > JOB_MAX_LENGTHS.cover_letter_url) {
+				e.cover_letter_url = `Must be ${JOB_MAX_LENGTHS.cover_letter_url.toLocaleString()} characters or fewer`;
+			} else {
+				try {
+					void new URL(form.cover_letter_url);
+				} catch {
+					e.cover_letter_url = "Must be a valid URL";
+				}
+			}
+		}
 		if (form.salary && form.salary.length > JOB_MAX_LENGTHS.salary) {
 			e.salary = `Must be ${JOB_MAX_LENGTHS.salary.toLocaleString()} characters or fewer`;
 		}
@@ -664,6 +681,47 @@ export default function JobDialog({
 											htmlInput: { maxLength: JOB_MAX_LENGTHS.recruiter },
 										}}
 									/>
+								</Grid>
+
+								<Grid size={12}>
+									{isEdit && form.cover_letter_url && !coverLetterUrlEditing ? (
+										<Box sx={{ alignItems: "center", display: "flex", gap: 1 }}>
+											<Link
+												href={form.cover_letter_url}
+												target="_blank"
+												rel="noopener noreferrer"
+												sx={{ wordBreak: "break-all" }}
+											>
+												{form.cover_letter_url}
+											</Link>
+											<IconButton
+												size="small"
+												onClick={() => setCoverLetterUrlEditing(true)}
+												aria-label="Edit cover letter URL"
+												title="Edit cover letter URL"
+											>
+												<EditIcon fontSize="small" />
+											</IconButton>
+										</Box>
+									) : (
+										<TextField
+											label="Cover Letter URL"
+											value={form.cover_letter_url ?? ""}
+											onChange={(e) =>
+												set("cover_letter_url", e.target.value || null)
+											}
+											error={Boolean(errors.cover_letter_url)}
+											helperText={errors.cover_letter_url}
+											fullWidth
+											size="small"
+											placeholder="https://..."
+											slotProps={{
+												htmlInput: {
+													maxLength: JOB_MAX_LENGTHS.cover_letter_url,
+												},
+											}}
+										/>
+									)}
 								</Grid>
 
 								<Grid size={{ sm: isEdit ? 6 : 12, xs: 12 }}>

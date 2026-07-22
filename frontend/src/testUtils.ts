@@ -5,6 +5,7 @@ export const BASE_JOB: Job = {
 	company: "Acme Corp",
 	role: "Software Engineer",
 	link: "https://acme.example.com/job",
+	cover_letter_url: null,
 	status: "not_started",
 	ending_substatus: null,
 	fit_score: null,
