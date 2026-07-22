@@ -11,6 +11,7 @@ function makeDb() {
 
 const BASE_JOB: Omit<JobCreateData, "user_id"> = {
 	company: "Acme Corp",
+	cover_letter_url: null,
 	date_applied: null,
 	date_last_onsite: null,
 	date_offer_extended: null,
@@ -235,6 +236,53 @@ describe("jobs db", () => {
 			deleteJob(db, created.id, USER_ID);
 			const tagRows = db.prepare("SELECT * FROM job_tags WHERE job_id = ?").all(created.id);
 			expect(tagRows).toHaveLength(0);
+		});
+	});
+	describe("cover_letter_url", () => {
+		it("stores null when not provided", () => {
+			const job = createJob(db, { ...BASE_JOB, user_id: USER_ID });
+			expect(job.cover_letter_url).toBeNull();
+		});
+
+		it("round-trips a value on create", () => {
+			const job = createJob(db, {
+				...BASE_JOB,
+				cover_letter_url: "https://docs.google.com/document/d/abc",
+				user_id: USER_ID,
+			});
+			expect(job.cover_letter_url).toBe("https://docs.google.com/document/d/abc");
+		});
+
+		it("round-trips a value on update", () => {
+			const created = createJob(db, { ...BASE_JOB, user_id: USER_ID });
+			const updated = updateJob(db, created.id, USER_ID, {
+				...BASE_JOB,
+				cover_letter_url: "https://docs.google.com/document/d/xyz",
+			});
+			expect(updated?.cover_letter_url).toBe("https://docs.google.com/document/d/xyz");
+		});
+
+		it("clears the value on update when set back to null", () => {
+			const created = createJob(db, {
+				...BASE_JOB,
+				cover_letter_url: "https://docs.google.com/document/d/abc",
+				user_id: USER_ID,
+			});
+			const updated = updateJob(db, created.id, USER_ID, {
+				...BASE_JOB,
+				cover_letter_url: null,
+			});
+			expect(updated?.cover_letter_url).toBeNull();
+		});
+
+		it("is included in the summary view (unlike notes/job_description)", () => {
+			createJob(db, {
+				...BASE_JOB,
+				cover_letter_url: "https://docs.google.com/document/d/abc",
+				user_id: USER_ID,
+			});
+			const jobs = listJobs(db, USER_ID, "summary");
+			expect(jobs[0]?.cover_letter_url).toBe("https://docs.google.com/document/d/abc");
 		});
 	});
 });

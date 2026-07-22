@@ -556,6 +556,110 @@ describe("date_phone_screen and date_last_onsite fields", () => {
 	});
 });
 
+describe("cover_letter_url field", () => {
+	describe("pOST /api/jobs", () => {
+		it("maps omitted cover_letter_url to null", async () => {
+			const res = await req("post", "/api/jobs").send(BASE_JOB);
+			expect(res.status).toBe(201);
+			expect(res.body.cover_letter_url).toBeNull();
+		});
+
+		it("stores a valid URL", async () => {
+			const res = await req("post", "/api/jobs").send({
+				...BASE_JOB,
+				cover_letter_url: "https://docs.google.com/document/d/abc",
+			});
+			expect(res.status).toBe(201);
+			expect(res.body.cover_letter_url).toBe("https://docs.google.com/document/d/abc");
+		});
+
+		it("converts an empty string to null", async () => {
+			const res = await req("post", "/api/jobs").send({
+				...BASE_JOB,
+				cover_letter_url: "",
+			});
+			expect(res.status).toBe(201);
+			expect(res.body.cover_letter_url).toBeNull();
+		});
+
+		it("converts a whitespace-only string to null", async () => {
+			const res = await req("post", "/api/jobs").send({
+				...BASE_JOB,
+				cover_letter_url: "   ",
+			});
+			expect(res.status).toBe(201);
+			expect(res.body.cover_letter_url).toBeNull();
+		});
+
+		it("trims surrounding whitespace from a valid URL", async () => {
+			const res = await req("post", "/api/jobs").send({
+				...BASE_JOB,
+				cover_letter_url: "  https://docs.google.com/document/d/abc  ",
+			});
+			expect(res.status).toBe(201);
+			expect(res.body.cover_letter_url).toBe("https://docs.google.com/document/d/abc");
+		});
+
+		it("returns 422 for a structurally invalid URL", async () => {
+			const res = await req("post", "/api/jobs").send({
+				...BASE_JOB,
+				cover_letter_url: "not a url",
+			});
+			expect(res.status).toBe(422);
+			expect(res.body.error).toMatch(/cover_letter_url must be a valid URL/);
+		});
+
+		it("does not require liveness — an unreachable-looking URL is still accepted", async () => {
+			const res = await req("post", "/api/jobs").send({
+				...BASE_JOB,
+				cover_letter_url: "https://docs.google.com/document/d/this-does-not-actually-exist",
+			});
+			expect(res.status).toBe(201);
+		});
+	});
+
+	describe("pUT /api/jobs/:id", () => {
+		it("updates cover_letter_url", async () => {
+			const createRes = await req("post", "/api/jobs").send(BASE_JOB);
+			const {id} = createRes.body;
+
+			const res = await req("put", `/api/jobs/${id}`).send({
+				...BASE_JOB,
+				cover_letter_url: "https://docs.google.com/document/d/abc",
+			});
+			expect(res.status).toBe(200);
+			expect(res.body.cover_letter_url).toBe("https://docs.google.com/document/d/abc");
+		});
+
+		it("clears cover_letter_url back to null", async () => {
+			const createRes = await req("post", "/api/jobs").send({
+				...BASE_JOB,
+				cover_letter_url: "https://docs.google.com/document/d/abc",
+			});
+			const {id} = createRes.body;
+
+			const res = await req("put", `/api/jobs/${id}`).send({
+				...BASE_JOB,
+				cover_letter_url: "",
+			});
+			expect(res.status).toBe(200);
+			expect(res.body.cover_letter_url).toBeNull();
+		});
+
+		it("returns 422 for a structurally invalid URL", async () => {
+			const createRes = await req("post", "/api/jobs").send(BASE_JOB);
+			const {id} = createRes.body;
+
+			const res = await req("put", `/api/jobs/${id}`).send({
+				...BASE_JOB,
+				cover_letter_url: "not a url",
+			});
+			expect(res.status).toBe(422);
+			expect(res.body.error).toMatch(/cover_letter_url must be a valid URL/);
+		});
+	});
+});
+
 describe("date_offer_extended validation", () => {
 	const OFFER_BASE = {
 		...BASE_JOB,
@@ -650,6 +754,13 @@ describe("field length validation", () => {
 		number,
 	][];
 
+	// Cover_letter_url must also be a structurally valid URL, so a repeated-character
+	// String of the right length (used by the generic "accepts at exactly max" case
+	// Below) doesn't apply to it — it gets its own boundary test further down.
+	const NON_URL_LENGTH_CASES = LENGTH_CASES.filter(
+		([field]) => field !== "cover_letter_url",
+	);
+
 	describe("pOST /api/jobs", () => {
 		it.each(LENGTH_CASES)(
 			"returns 422 when %s exceeds %d characters",
@@ -663,7 +774,7 @@ describe("field length validation", () => {
 			},
 		);
 
-		it.each(LENGTH_CASES)(
+		it.each(NON_URL_LENGTH_CASES)(
 			"accepts %s at exactly %d characters",
 			async (field, max) => {
 				const res = await req("post", "/api/jobs").send({
@@ -673,6 +784,19 @@ describe("field length validation", () => {
 				expect(res.status).toBe(201);
 			},
 		);
+
+		it("accepts cover_letter_url at exactly the max length when it's a valid URL", async () => {
+			const prefix = "https://example.com/";
+			const url = prefix + "a".repeat(JOB_MAX_LENGTHS.cover_letter_url - prefix.length);
+			expect(url).toHaveLength(JOB_MAX_LENGTHS.cover_letter_url);
+
+			const res = await req("post", "/api/jobs").send({
+				...BASE_JOB,
+				cover_letter_url: url,
+			});
+			expect(res.status).toBe(201);
+			expect(res.body.cover_letter_url).toBe(url);
+		});
 	});
 
 	describe("pUT /api/jobs/:id", () => {

@@ -7,6 +7,7 @@ interface JobDbRow {
 	company: string;
 	role: string;
 	link: string;
+	cover_letter_url: string | null;
 	salary: string | null;
 	fit_score: string | null;
 	referred_by: string | null;
@@ -51,6 +52,7 @@ export interface JobCreateData {
 	company: string;
 	role: string;
 	link: string;
+	cover_letter_url: string | null;
 	salary: string | null;
 	fit_score: string | null;
 	referred_by: string | null;
@@ -142,10 +144,10 @@ export function createJob(
 	return db.transaction(() => {
 		const result = db
 			.prepare(
-				`INSERT INTO jobs (user_id, date_applied, company, role, link, salary, fit_score,
+				`INSERT INTO jobs (user_id, date_applied, company, role, link, cover_letter_url, salary, fit_score,
           referred_by, status, recruiter, notes, job_description, ending_substatus,
           date_phone_screen, date_last_onsite, date_offer_extended, favorite, search_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			)
 			.run(
 				data.user_id,
@@ -153,6 +155,7 @@ export function createJob(
 				data.company,
 				data.role,
 				data.link,
+				data.cover_letter_url,
 				data.salary,
 				data.fit_score,
 				data.referred_by,
@@ -199,7 +202,7 @@ export function updateJob(
 		const info = db
 			.prepare(
 				`UPDATE jobs SET
-          date_applied = ?, company = ?, role = ?, link = ?, salary = ?,
+          date_applied = ?, company = ?, role = ?, link = ?, cover_letter_url = ?, salary = ?,
           fit_score = ?, referred_by = ?, status = ?, recruiter = ?,
           notes = CASE WHEN ? THEN ? ELSE notes END,
           job_description = CASE WHEN ? THEN ? ELSE job_description END,
@@ -212,6 +215,7 @@ export function updateJob(
 				data.company,
 				data.role,
 				data.link,
+				data.cover_letter_url,
 				data.salary,
 				data.fit_score,
 				data.referred_by,

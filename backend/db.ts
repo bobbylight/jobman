@@ -32,6 +32,7 @@ export function applySchema(db: Database.Database): void {
     company          TEXT NOT NULL CHECK(length(company) <= 128),
     role             TEXT NOT NULL CHECK(length(role) <= 256),
     link             TEXT NOT NULL CHECK(length(link) <= 4096),
+    cover_letter_url TEXT     CHECK(length(cover_letter_url) <= 4096),
     salary           TEXT     CHECK(length(salary) <= 64),
     fit_score        TEXT     CHECK(length(fit_score) <= 32),
     referred_by      TEXT     CHECK(length(referred_by) <= 128),
