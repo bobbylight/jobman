@@ -26,6 +26,7 @@ vi.mock(import("../../api"), () => {
 
 		constructor(status: number, body: unknown) {
 			super(`API error ${status}`);
+			this.name = "MockApiError";
 			this.status = status;
 			this.body = body;
 		}

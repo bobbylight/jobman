@@ -68,7 +68,7 @@ describe("newSearchRoundDialog", () => {
 	it("calls onCancel when Cancel is clicked", () => {
 		render(<NewSearchRoundDialog {...DEFAULT_PROPS} />);
 		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-		expect(DEFAULT_PROPS.onCancel).toHaveBeenCalled();
+		expect(DEFAULT_PROPS.onCancel).toHaveBeenCalledWith(expect.anything());
 	});
 
 	describe("when blocked by unresolved jobs", () => {
@@ -105,7 +105,7 @@ describe("newSearchRoundDialog", () => {
 				/>,
 			);
 			fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-			expect(DEFAULT_PROPS.onCancel).toHaveBeenCalled();
+			expect(DEFAULT_PROPS.onCancel).toHaveBeenCalledWith(expect.anything());
 		});
 	});
 

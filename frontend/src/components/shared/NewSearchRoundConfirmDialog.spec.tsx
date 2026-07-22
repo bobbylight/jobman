@@ -38,12 +38,12 @@ describe("newSearchRoundConfirmDialog", () => {
 	it("calls onConfirm when 'Start Job Search' is clicked", () => {
 		render(<NewSearchRoundConfirmDialog {...DEFAULT_PROPS} />);
 		fireEvent.click(screen.getByRole("button", { name: "Start Job Search" }));
-		expect(DEFAULT_PROPS.onConfirm).toHaveBeenCalled();
+		expect(DEFAULT_PROPS.onConfirm).toHaveBeenCalledWith(expect.anything());
 	});
 
 	it("calls onCancel when Cancel is clicked", () => {
 		render(<NewSearchRoundConfirmDialog {...DEFAULT_PROPS} />);
 		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-		expect(DEFAULT_PROPS.onCancel).toHaveBeenCalled();
+		expect(DEFAULT_PROPS.onCancel).toHaveBeenCalledWith(expect.anything());
 	});
 });

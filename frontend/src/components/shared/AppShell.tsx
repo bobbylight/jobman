@@ -74,8 +74,8 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 		async function loadActiveSearch() {
 			try {
 				setActiveSearch(await api.getActiveSearch());
-			} catch (err) {
-				if (!(err instanceof ApiError && err.status === 404)) {
+			} catch (error) {
+				if (!(error instanceof ApiError && error.status === 404)) {
 					notify("Failed to load active job search", "error");
 				}
 			}
@@ -115,9 +115,9 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 			setPendingSearch(null);
 			setRoundVersion((v) => v + 1);
 			notify(`Started new job search "${search.name}"`);
-		} catch (err) {
-			if (err instanceof ApiError && err.status === 409) {
-				const body = err.body as { blockingJobs?: BlockingJob[] } | undefined;
+		} catch (error) {
+			if (error instanceof ApiError && error.status === 409) {
+				const body = error.body as { blockingJobs?: BlockingJob[] } | undefined;
 				setBlockingJobs(body?.blockingJobs ?? []);
 				setPendingSearch(null);
 				setNewSearchOpen(true);
