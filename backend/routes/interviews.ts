@@ -64,7 +64,7 @@ export function createInterviewSearchRouter(db: Database.Database) {
 	return router;
 }
 
-// Rejects writes against a job in a closed (non-active) search round (sends 403). Caller should already have verified the job belongs to the user.
+// Rejects writes against a job in a closed (non-active) search round (sends 409). Caller should already have verified the job belongs to the user.
 function checkActiveRound(
 	db: Database.Database,
 	jobId: string,
@@ -73,7 +73,7 @@ function checkActiveRound(
 ): boolean {
 	if (!JobSearchesDb.isJobInActiveSearch(db, Number(jobId), userId)) {
 		res
-			.status(403)
+			.status(409)
 			.json({ error: "Cannot modify interviews for a job in a closed search round" });
 		return false;
 	}

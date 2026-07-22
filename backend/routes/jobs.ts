@@ -108,7 +108,7 @@ export function createJobsRouter(db: Database.Database) {
 		if (!currentJob) {return res.status(404).json({ error: "Job not found" });}
 		if (!JobSearchesDb.isJobInActiveSearch(db, jobId, userId)) {
 			return res
-				.status(403)
+				.status(409)
 				.json({ error: "Cannot modify a job in a closed search round" });
 		}
 		if (f.status !== undefined && currentJob.status === "offer" && f.status !== "offer") {
@@ -153,7 +153,7 @@ export function createJobsRouter(db: Database.Database) {
 		}
 		if (!JobSearchesDb.isJobInActiveSearch(db, jobId, userId)) {
 			return res
-				.status(403)
+				.status(409)
 				.json({ error: "Cannot modify a job in a closed search round" });
 		}
 		const deleted = JobsDb.deleteJob(db, jobId, userId);
