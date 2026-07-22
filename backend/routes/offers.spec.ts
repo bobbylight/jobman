@@ -172,10 +172,10 @@ describe("pOST /api/jobs/:jobId/offer", () => {
 		expect(second.body.error).toMatch(/already exists/);
 	});
 
-	it("returns 403 when the job is in a closed search round", async () => {
+	it("returns 409 when the job is in a closed search round", async () => {
 		const jobId = insertJobInClosedSearch();
 		const res = await req("post", `/api/jobs/${jobId}/offer`).send(BASE_OFFER);
-		expect(res.status).toBe(403);
+		expect(res.status).toBe(409);
 	});
 
 	it("creates the offer and returns 201", async () => {
@@ -317,11 +317,11 @@ describe("pUT /api/jobs/:jobId/offer", () => {
 		expect(res.body.other_is_recurring).toBeTruthy();
 	});
 
-	it("returns 403 when the job is in a closed search round", async () => {
+	it("returns 409 when the job is in a closed search round", async () => {
 		const jobId = insertJobInClosedSearch();
 		testDb.prepare("INSERT INTO offers (job_id) VALUES (?)").run(jobId);
 		const res = await req("put", `/api/jobs/${jobId}/offer`).send(BASE_OFFER);
-		expect(res.status).toBe(403);
+		expect(res.status).toBe(409);
 	});
 });
 
@@ -364,11 +364,11 @@ describe("dELETE /api/jobs/:jobId/offer", () => {
 		expect(getRes.status).toBe(404);
 	});
 
-	it("returns 403 when the job is in a closed search round", async () => {
+	it("returns 409 when the job is in a closed search round", async () => {
 		const jobId = insertJobInClosedSearch();
 		testDb.prepare("INSERT INTO offers (job_id) VALUES (?)").run(jobId);
 		const res = await req("delete", `/api/jobs/${jobId}/offer`);
-		expect(res.status).toBe(403);
+		expect(res.status).toBe(409);
 	});
 });
 

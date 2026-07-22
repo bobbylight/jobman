@@ -21,7 +21,7 @@ function getJobInOfferStatus(
 	}
 	if (!JobSearchesDb.isJobInActiveSearch(db, jobId, userId)) {
 		res
-			.status(403)
+			.status(409)
 			.json({ error: "Cannot modify an offer for a job in a closed search round" });
 		return false;
 	}
@@ -111,7 +111,7 @@ export function createOffersRouter(db: Database.Database) {
 		if (!job) {return res.status(404).json({ error: "Job not found" });}
 		if (!JobSearchesDb.isJobInActiveSearch(db, Number(jobId), userId)) {
 			return res
-				.status(403)
+				.status(409)
 				.json({ error: "Cannot modify an offer for a job in a closed search round" });
 		}
 

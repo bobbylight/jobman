@@ -256,11 +256,11 @@ describe("pOST /api/jobs/:jobId/interviews", () => {
 		expect(res.body.error).toMatch(/job_id/);
 	});
 
-	it("returns 403 when the job is in a closed search round", async () => {
+	it("returns 409 when the job is in a closed search round", async () => {
 		const jobId = await createJob();
 		await closeRoundContaining(jobId);
 		const res = await req("post", `/api/jobs/${jobId}/interviews`).send(BASE_INTERVIEW);
-		expect(res.status).toBe(403);
+		expect(res.status).toBe(409);
 	});
 });
 
@@ -333,13 +333,13 @@ describe("pUT /api/jobs/:jobId/interviews/:interviewId", () => {
 		expect(res.body.interview_feeling).toBe("pretty_good");
 	});
 
-	it("returns 403 when the job is in a closed search round", async () => {
+	it("returns 409 when the job is in a closed search round", async () => {
 		const { jobId, interviewId } = await createJobAndInterview();
 		await closeRoundContaining(jobId);
 		const res = await req("put", `/api/jobs/${jobId}/interviews/${interviewId}`).send(
 			BASE_INTERVIEW,
 		);
-		expect(res.status).toBe(403);
+		expect(res.status).toBe(409);
 	});
 });
 
@@ -358,11 +358,11 @@ describe("dELETE /api/jobs/:jobId/interviews/:interviewId", () => {
 		expect(res.body.error).toBe("Interview not found");
 	});
 
-	it("returns 403 when the job is in a closed search round", async () => {
+	it("returns 409 when the job is in a closed search round", async () => {
 		const { jobId, interviewId } = await createJobAndInterview();
 		await closeRoundContaining(jobId);
 		const res = await req("delete", `/api/jobs/${jobId}/interviews/${interviewId}`);
-		expect(res.status).toBe(403);
+		expect(res.status).toBe(409);
 	});
 
 	it("returns 404 when the job does not exist", async () => {
@@ -554,14 +554,14 @@ describe("pOST /api/jobs/:jobId/interviews/:interviewId/questions", () => {
 		expect(res.status).toBe(404);
 	});
 
-	it("returns 403 when the job is in a closed search round", async () => {
+	it("returns 409 when the job is in a closed search round", async () => {
 		const { jobId, interviewId } = await createJobAndInterview();
 		await closeRoundContaining(jobId);
 		const res = await req(
 			"post",
 			`/api/jobs/${jobId}/interviews/${interviewId}/questions`,
 		).send(BASE_QUESTION);
-		expect(res.status).toBe(403);
+		expect(res.status).toBe(409);
 	});
 });
 
@@ -631,14 +631,14 @@ describe("pUT /api/jobs/:jobId/interviews/:interviewId/questions/:questionId", (
 		expect(res.status).toBe(422);
 	});
 
-	it("returns 403 when the job is in a closed search round", async () => {
+	it("returns 409 when the job is in a closed search round", async () => {
 		const { jobId, interviewId, questionId } = await createJobInterviewAndQuestion();
 		await closeRoundContaining(jobId);
 		const res = await req(
 			"put",
 			`/api/jobs/${jobId}/interviews/${interviewId}/questions/${questionId}`,
 		).send(BASE_QUESTION);
-		expect(res.status).toBe(403);
+		expect(res.status).toBe(409);
 	});
 });
 
@@ -683,14 +683,14 @@ describe("dELETE /api/jobs/:jobId/interviews/:interviewId/questions/:questionId"
 		expect(res.status).toBe(404);
 	});
 
-	it("returns 403 when the job is in a closed search round", async () => {
+	it("returns 409 when the job is in a closed search round", async () => {
 		const { jobId, interviewId, questionId } = await createJobInterviewAndQuestion();
 		await closeRoundContaining(jobId);
 		const res = await req(
 			"delete",
 			`/api/jobs/${jobId}/interviews/${interviewId}/questions/${questionId}`,
 		);
-		expect(res.status).toBe(403);
+		expect(res.status).toBe(409);
 	});
 });
 
