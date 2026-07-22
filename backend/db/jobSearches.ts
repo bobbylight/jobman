@@ -58,7 +58,7 @@ export function getOrCreateActiveSearch(
 	if (active) {
 		return active;
 	}
-	return startNewSearch(db, userId, "Search 1", null);
+	return startNewSearch(db, userId, "My Job Search", null);
 }
 
 /** Jobs in the given round that aren't in a terminal status — these block closing the round. */

@@ -163,7 +163,7 @@ export function applySchema(db: Database.Database): void {
 
 /**
  * Adds jobs.search_id (idempotent — better-sqlite3 has no "ADD COLUMN IF NOT EXISTS")
- * and backfills every pre-existing job into a new "Search 1" job_searches row per user.
+ * and backfills every pre-existing job into a new "My Job Search" job_searches row per user.
  * Runs against both fresh and pre-existing databases; a fresh DB simply has no rows to backfill.
  */
 export function migrateJobSearches(db: Database.Database): void {
@@ -184,7 +184,7 @@ export function migrateJobSearches(db: Database.Database): void {
 		"SELECT MIN(created_at) AS earliest FROM jobs WHERE user_id = ? AND search_id IS NULL",
 	);
 	const insertSearch = db.prepare(
-		"INSERT INTO job_searches (user_id, name, started_at) VALUES (?, 'Search 1', ?)",
+		"INSERT INTO job_searches (user_id, name, started_at) VALUES (?, 'My Job Search', ?)",
 	);
 	const backfillJobs = db.prepare(
 		"UPDATE jobs SET search_id = ? WHERE user_id = ? AND search_id IS NULL",
