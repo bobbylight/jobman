@@ -35,6 +35,7 @@ vi.mock(import("../../api"), () => {
 		ApiError: MockApiError,
 		api: {
 			getActiveSearch: vi.fn(),
+			listSearches: vi.fn(),
 			startNewSearch: vi.fn(),
 		},
 	} as any;
@@ -42,6 +43,7 @@ vi.mock(import("../../api"), () => {
 
 const mockGetActiveSearch = vi.mocked(api.getActiveSearch);
 const mockStartNewSearch = vi.mocked(api.startNewSearch);
+const mockListSearches = vi.mocked(api.listSearches);
 
 const MOCK_USER: User = {
 	avatarUrl: null,
@@ -272,6 +274,97 @@ describe("appShell", () => {
 					screen.queryByText("Start new job search?"),
 				).not.toBeInTheDocument(),
 			);
+		});
+	});
+
+	describe("past job searches", () => {
+		it("shows a 'Past Job Searches' item in the user menu", () => {
+			renderAppShell();
+			openUserMenu();
+			expect(
+				screen.getByRole("menuitem", { name: /Past Job Searches/ }),
+			).toBeInTheDocument();
+		});
+
+		it("opens the dialog and closes the user menu when clicked", () => {
+			mockListSearches.mockReturnValue(new Promise(() => {}));
+			renderAppShell();
+			openUserMenu();
+			fireEvent.click(
+				screen.getByRole("menuitem", { name: /Past Job Searches/ }),
+			);
+
+			expect(
+				screen.getByRole("heading", { name: "Past Job Searches" }),
+			).toBeInTheDocument();
+			expect(
+				screen.queryByRole("menuitem", { name: /Sign Out/ }),
+			).not.toBeInTheDocument();
+		});
+
+		it("excludes the active (still-open) round from the list", async () => {
+			mockListSearches.mockResolvedValue([
+				makeJobSearch({ closed_at: null, id: 1, name: "Current Search" }),
+				makeJobSearch({
+					closed_at: "2026-01-01T00:00:00.000Z",
+					id: 2,
+					name: "Old Search",
+				}),
+			]);
+			renderAppShell();
+			openUserMenu();
+			fireEvent.click(
+				screen.getByRole("menuitem", { name: /Past Job Searches/ }),
+			);
+
+			await waitFor(() => {
+				expect(screen.getByText("Old Search")).toBeInTheDocument();
+			});
+			expect(screen.queryByText("Current Search")).not.toBeInTheDocument();
+		});
+
+		it("shows an empty state when there are no closed rounds", async () => {
+			mockListSearches.mockResolvedValue([
+				makeJobSearch({ closed_at: null, id: 1, name: "Current Search" }),
+			]);
+			renderAppShell();
+			openUserMenu();
+			fireEvent.click(
+				screen.getByRole("menuitem", { name: /Past Job Searches/ }),
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByText(/No past job searches yet/i),
+				).toBeInTheDocument();
+			});
+		});
+
+		it("navigates to the history route and closes the dialog when a round is clicked", async () => {
+			mockListSearches.mockResolvedValue([
+				makeJobSearch({
+					closed_at: "2026-01-01T00:00:00.000Z",
+					id: 2,
+					name: "Old Search",
+				}),
+			]);
+			renderAppShell();
+			openUserMenu();
+			fireEvent.click(
+				screen.getByRole("menuitem", { name: /Past Job Searches/ }),
+			);
+
+			await waitFor(() => {
+				expect(screen.getByText("Old Search")).toBeInTheDocument();
+			});
+			fireEvent.click(screen.getByText("Old Search"));
+
+			expect(mockNavigate).toHaveBeenCalledWith("/jobs/history/2");
+			await waitFor(() => {
+				expect(
+					screen.queryByRole("heading", { name: "Past Job Searches" }),
+				).not.toBeInTheDocument();
+			});
 		});
 	});
 });

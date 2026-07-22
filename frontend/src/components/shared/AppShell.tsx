@@ -17,6 +17,7 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
+import HistoryIcon from "@mui/icons-material/History";
 import InsightsIcon from "@mui/icons-material/Insights";
 import PsychologyOutlinedIcon from "@mui/icons-material/PsychologyOutlined";
 import RadarIcon from "@mui/icons-material/Radar";
@@ -29,6 +30,7 @@ import type { BlockingJob, JobSearch, User } from "../../types";
 import Footer from "./Footer";
 import NewSearchRoundDialog from "./NewSearchRoundDialog";
 import NewSearchRoundConfirmDialog from "./NewSearchRoundConfirmDialog";
+import PastSearchesDialog from "./PastSearchesDialog";
 
 const NAV_ITEMS = [
 	{ icon: <ViewKanbanOutlinedIcon />, label: "Board", path: "/jobs" },
@@ -64,6 +66,7 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 	// Bumped whenever a new job search starts, forcing routed pages to remount and refetch.
 	const [roundVersion, setRoundVersion] = useState(0);
 	const [newSearchOpen, setNewSearchOpen] = useState(false);
+	const [pastSearchesOpen, setPastSearchesOpen] = useState(false);
 	const [pendingSearch, setPendingSearch] = useState<{
 		name: string;
 		notes: string | null;
@@ -93,6 +96,19 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 		setNewSearchOpen(false);
 		setBlockingJobs(null);
 	}, []);
+
+	const openPastSearches = useCallback(() => {
+		setUserMenuAnchor(null);
+		setPastSearchesOpen(true);
+	}, []);
+
+	const handleSelectPastSearch = useCallback(
+		(search: JobSearch) => {
+			setPastSearchesOpen(false);
+			navigate(`/jobs/history/${search.id}`);
+		},
+		[navigate],
+	);
 
 	const handleNameEntered = useCallback(
 		(name: string, notes: string | null) => {
@@ -184,6 +200,12 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 								<AutorenewIcon fontSize="small" />
 							</ListItemIcon>
 							<ListItemText>New Job Search</ListItemText>
+						</MenuItem>
+						<MenuItem onClick={openPastSearches}>
+							<ListItemIcon>
+								<HistoryIcon fontSize="small" />
+							</ListItemIcon>
+							<ListItemText>Past Job Searches</ListItemText>
 						</MenuItem>
 						<Divider />
 						<MenuItem
@@ -282,6 +304,12 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 				newSearchName={pendingSearch?.name ?? ""}
 				onConfirm={handleConfirmStart}
 				onCancel={() => setPendingSearch(null)}
+			/>
+
+			<PastSearchesDialog
+				open={pastSearchesOpen}
+				onClose={() => setPastSearchesOpen(false)}
+				onSelect={handleSelectPastSearch}
 			/>
 		</Box>
 	);
