@@ -241,7 +241,7 @@ db.exec(`
     ('LinkedIn',   'faang_adjacent', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('Spotify',    'faang_adjacent', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('Block',      'faang_adjacent', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-    ('Coinbase',   'faang_adjacent', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+    ('Coinbase',   'faang_adjacent', NULL, NULL, NULL, 'Max 3 applications within a 6-month period', 'official', 3, 180),
     ('Robinhood',  'faang_adjacent', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('Pinterest',  'faang_adjacent', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('Reddit',     'faang_adjacent', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
