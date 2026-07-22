@@ -16,6 +16,7 @@ const makeResponse = (body: unknown, ok = true) => ({
 
 const MOCK_JOB: Job = {
 	company: "Acme",
+	cover_letter_url: null,
 	created_at: "2024-01-01T00:00:00.000Z",
 	date_applied: null,
 	date_last_onsite: null,
@@ -219,6 +220,7 @@ describe("aPI module", () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_JOB));
 			const formData: JobFormData = {
 				company: "Acme",
+				cover_letter_url: null,
 				date_applied: null,
 				date_last_onsite: null,
 				date_offer_extended: null,

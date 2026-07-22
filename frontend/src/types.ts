@@ -74,6 +74,7 @@ export interface Job {
 	company: string;
 	role: string;
 	link: string;
+	cover_letter_url: string | null;
 	salary: string | null;
 	fit_score: FitScore | null;
 	referred_by: string | null;
