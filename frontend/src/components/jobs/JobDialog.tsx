@@ -83,6 +83,8 @@ interface Props {
 	onDelete: (id: number) => void;
 	/** Null = "add new job" mode; a number = edit the job with that ID */
 	jobId: number | null;
+	/** True when viewing a closed job search round — the dialog becomes view-only */
+	readOnly?: boolean;
 }
 
 export default function JobDialog({
@@ -91,6 +93,7 @@ export default function JobDialog({
 	onSave,
 	onDelete,
 	jobId,
+	readOnly = false,
 }: Props) {
 	const isEdit = jobId !== null;
 	const [form, setForm] = useState<JobFormData>(EMPTY);
@@ -306,11 +309,11 @@ export default function JobDialog({
 		</Dialog>
 	);
 
-	const formDisabled = loadingJob || Boolean(loadError);
+	const formDisabled = loadingJob || Boolean(loadError) || readOnly;
 
 	function actionsJustifyContent(): "space-between" | "flex-end" {
 		if (activeTab === 0) {
-			return isEdit ? "space-between" : "flex-end";
+			return isEdit && !readOnly ? "space-between" : "flex-end";
 		}
 		if (activeTab === 1) {
 			return viewingQuestionsFor ? "space-between" : "flex-end";
@@ -765,6 +768,7 @@ export default function JobDialog({
 								onCountChange={setInterviewCount}
 								viewingQuestionsFor={viewingQuestionsFor}
 								onViewingQuestionsChange={setViewingQuestionsFor}
+								readOnly={readOnly}
 							/>
 						)}
 						{isEdit && activeTab === 2 && form.status === "offer" && (
@@ -772,6 +776,7 @@ export default function JobDialog({
 								jobId={jobId!}
 								offerData={offerData}
 								onOfferChange={setOfferData}
+								readOnly={readOnly}
 							/>
 						)}
 					</Box>
@@ -784,31 +789,34 @@ export default function JobDialog({
 						py: 2,
 					}}
 				>
-					{activeTab === 0 && (
-						<>
-							{isEdit && (
-								<Button
-									color="error"
-									onClick={() => setConfirmDelete(true)}
-									disabled={formDisabled}
-								>
-									Delete
-								</Button>
-							)}
-							<div>
-								<Button onClick={handleClose} sx={{ mr: 1 }}>
-									Cancel
-								</Button>
-								<Button
-									variant="contained"
-									onClick={handleSave}
-									disabled={formDisabled}
-								>
-									{isEdit ? "Save" : "Add Job"}
-								</Button>
-							</div>
-						</>
-					)}
+					{activeTab === 0 &&
+						(readOnly ? (
+							<Button onClick={handleClose}>Close</Button>
+						) : (
+							<>
+								{isEdit && (
+									<Button
+										color="error"
+										onClick={() => setConfirmDelete(true)}
+										disabled={formDisabled}
+									>
+										Delete
+									</Button>
+								)}
+								<div>
+									<Button onClick={handleClose} sx={{ mr: 1 }}>
+										Cancel
+									</Button>
+									<Button
+										variant="contained"
+										onClick={handleSave}
+										disabled={formDisabled}
+									>
+										{isEdit ? "Save" : "Add Job"}
+									</Button>
+								</div>
+							</>
+						))}
 					{activeTab === 1 && (
 						<>
 							{viewingQuestionsFor && (

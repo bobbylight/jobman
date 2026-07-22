@@ -80,4 +80,10 @@ describe("kanbanColumn", () => {
 		expect(screen.getByText("Alpha Corp")).toBeInTheDocument();
 		expect(screen.getByText("Beta Inc")).toBeInTheDocument();
 	});
+
+	it("passes readOnly through to each card, hiding the drag handle", () => {
+		const jobs = [makeJob({ id: 1, status: "not_started" })];
+		render(<KanbanColumn {...DEFAULT_PROPS} jobs={jobs} readOnly />);
+		expect(screen.queryByTestId("DragIndicatorIcon")).not.toBeInTheDocument();
+	});
 });

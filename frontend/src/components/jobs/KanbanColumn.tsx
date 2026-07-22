@@ -10,10 +10,17 @@ interface Props {
 	jobs: Job[];
 	onCardClick: (job: Job) => void;
 	onToggleFavorite: (job: Job) => void;
+	readOnly?: boolean;
 }
 
 export default memo(
-	({ status, jobs, onCardClick, onToggleFavorite }: Props) => {
+	({
+		status,
+		jobs,
+		onCardClick,
+		onToggleFavorite,
+		readOnly = false,
+	}: Props) => {
 		const { setNodeRef, isOver } = useDroppable({ id: status });
 		const color = STATUS_COLORS[status];
 
@@ -92,6 +99,7 @@ export default memo(
 							job={job}
 							onCardClick={onCardClick}
 							onToggleFavorite={onToggleFavorite}
+							readOnly={readOnly}
 						/>
 					))}
 					{jobs.length === 0 && (

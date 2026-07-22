@@ -40,7 +40,7 @@ const DEFAULT_PROPS = {
 	onOfferChange: vi.fn(),
 };
 
-function renderTab(props = DEFAULT_PROPS) {
+function renderTab(props: Parameters<typeof OfferTab>[0] = DEFAULT_PROPS) {
 	return render(
 		<SnackbarProvider>
 			<OfferTab {...props} />
@@ -342,6 +342,23 @@ describe("offerTab", () => {
 				42,
 				expect.objectContaining({ equity_vesting_years: 4 }),
 			);
+		});
+	});
+
+	describe("readOnly", () => {
+		it("does not render Save/Clear buttons", () => {
+			renderTab({ ...DEFAULT_PROPS, offerData: BASE_OFFER, readOnly: true });
+			expect(
+				screen.queryByRole("button", { name: "Save Offer" }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: "Clear" }),
+			).not.toBeInTheDocument();
+		});
+
+		it("disables the Base Pay field", () => {
+			renderTab({ ...DEFAULT_PROPS, offerData: BASE_OFFER, readOnly: true });
+			expect(screen.getByLabelText(/Base Pay/i)).toBeDisabled();
 		});
 	});
 });

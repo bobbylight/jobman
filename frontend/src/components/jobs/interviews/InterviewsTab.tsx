@@ -17,6 +17,7 @@ interface Props {
 	onCountChange: (count: number) => void;
 	viewingQuestionsFor: Interview | null;
 	onViewingQuestionsChange: (interview: Interview | null) => void;
+	readOnly?: boolean;
 }
 
 export default function InterviewsTab({
@@ -25,6 +26,7 @@ export default function InterviewsTab({
 	onCountChange,
 	viewingQuestionsFor,
 	onViewingQuestionsChange,
+	readOnly = false,
 }: Props) {
 	const [interviews, setInterviews] = useState<Interview[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -274,6 +276,7 @@ export default function InterviewsTab({
 				onEdit={() => handleEditClick(interview)}
 				onDelete={() => setMode({ confirmDeleteId: interview.id })}
 				onViewQuestions={() => onViewingQuestionsChange(interview)}
+				readOnly={readOnly}
 			/>
 		);
 	};
@@ -336,7 +339,7 @@ export default function InterviewsTab({
 							mb: 1.5,
 						}}
 					>
-						{!isFormMode && (
+						{!isFormMode && !readOnly && (
 							<Button
 								size="small"
 								startIcon={<AddIcon />}
@@ -379,7 +382,11 @@ export default function InterviewsTab({
 				{/* Panel 2: Questions sub-view */}
 				<Box sx={{ minWidth: "50%", width: "50%" }}>
 					{displayedInterview && (
-						<QuestionSubView jobId={jobId} interview={displayedInterview} />
+						<QuestionSubView
+							jobId={jobId}
+							interview={displayedInterview}
+							readOnly={readOnly}
+						/>
 					)}
 				</Box>
 			</Box>

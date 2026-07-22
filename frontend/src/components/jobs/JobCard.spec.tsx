@@ -401,4 +401,73 @@ describe("jobCard", () => {
 			expect(screen.getByText("Offer received")).toBeInTheDocument();
 		});
 	});
+
+	describe("readOnly", () => {
+		it("does not render the drag handle icon", () => {
+			render(
+				<JobCard
+					job={BASE_JOB}
+					onCardClick={vi.fn()}
+					onToggleFavorite={vi.fn()}
+					readOnly
+				/>,
+			);
+			expect(screen.queryByTestId("DragIndicatorIcon")).not.toBeInTheDocument();
+		});
+
+		it("renders the drag handle icon when not readOnly", () => {
+			render(
+				<JobCard
+					job={BASE_JOB}
+					onCardClick={vi.fn()}
+					onToggleFavorite={vi.fn()}
+				/>,
+			);
+			expect(screen.getByTestId("DragIndicatorIcon")).toBeInTheDocument();
+		});
+
+		it("disables the favorite toggle and does not call onToggleFavorite when clicked", () => {
+			const onToggleFavorite = vi.fn();
+			render(
+				<JobCard
+					job={BASE_JOB}
+					onCardClick={vi.fn()}
+					onToggleFavorite={onToggleFavorite}
+					readOnly
+				/>,
+			);
+			const button = screen.getByRole("button", { name: "Not favorited" });
+			expect(button).toBeDisabled();
+			fireEvent.click(button);
+			expect(onToggleFavorite).not.toHaveBeenCalled();
+		});
+
+		it("shows a 'Favorited'/'Not favorited' label instead of the edit tooltip", () => {
+			render(
+				<JobCard
+					job={{ ...BASE_JOB, favorite: true }}
+					onCardClick={vi.fn()}
+					onToggleFavorite={vi.fn()}
+					readOnly
+				/>,
+			);
+			expect(
+				screen.getByRole("button", { name: "Favorited" }),
+			).toBeInTheDocument();
+		});
+
+		it("still calls onCardClick when the card body is clicked", () => {
+			const onCardClick = vi.fn();
+			render(
+				<JobCard
+					job={BASE_JOB}
+					onCardClick={onCardClick}
+					onToggleFavorite={vi.fn()}
+					readOnly
+				/>,
+			);
+			fireEvent.click(screen.getByText("Software Engineer"));
+			expect(onCardClick).toHaveBeenCalledWith(BASE_JOB);
+		});
+	});
 });

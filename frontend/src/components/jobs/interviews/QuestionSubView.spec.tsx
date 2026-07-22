@@ -469,4 +469,42 @@ describe("questionSubView", () => {
 			});
 		});
 	});
+
+	describe("readOnly", () => {
+		it("does not show the Add Question button when questions exist", async () => {
+			vi.mocked(api.getQuestions).mockResolvedValue([QUESTION_A]);
+			render(<QuestionSubView {...DEFAULT_PROPS} readOnly />);
+			await waitFor(() => {
+				expect(screen.getByText("Tell me about yourself")).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByRole("button", { name: /Add Question/i }),
+			).not.toBeInTheDocument();
+		});
+
+		it("shows the empty state without an 'Add one' link", async () => {
+			vi.mocked(api.getQuestions).mockResolvedValue([]);
+			render(<QuestionSubView {...DEFAULT_PROPS} readOnly />);
+			await waitFor(() => {
+				expect(
+					screen.getByText(/No questions recorded yet/i),
+				).toBeInTheDocument();
+			});
+			expect(screen.queryByText("Add one.")).not.toBeInTheDocument();
+		});
+
+		it("does not show Edit/Delete affordances on question cards", async () => {
+			vi.mocked(api.getQuestions).mockResolvedValue([QUESTION_A]);
+			render(<QuestionSubView {...DEFAULT_PROPS} readOnly />);
+			await waitFor(() => {
+				expect(screen.getByText("Tell me about yourself")).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByRole("button", { name: "Edit question" }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: "Delete question" }),
+			).not.toBeInTheDocument();
+		});
+	});
 });

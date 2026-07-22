@@ -93,9 +93,14 @@ function formatDttm(dttm: string): string {
 interface Props {
 	jobId: number;
 	interview: Interview;
+	readOnly?: boolean;
 }
 
-export default function QuestionSubView({ jobId, interview }: Props) {
+export default function QuestionSubView({
+	jobId,
+	interview,
+	readOnly = false,
+}: Props) {
 	const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [mode, setMode] = useState<QuestionMode>("list");
@@ -248,7 +253,7 @@ export default function QuestionSubView({ jobId, interview }: Props) {
 
 			{/* Add question button */}
 			<Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1.5 }}>
-				{!isFormMode && questions.length > 0 && (
+				{!isFormMode && !readOnly && questions.length > 0 && (
 					<Button
 						size="small"
 						startIcon={<AddIcon />}
@@ -333,6 +338,7 @@ export default function QuestionSubView({ jobId, interview }: Props) {
 								question={q}
 								onEdit={() => handleEditClick(q)}
 								onDelete={() => setMode({ confirmDeleteId: q.id })}
+								readOnly={readOnly}
 							/>
 						);
 					})}
@@ -344,18 +350,23 @@ export default function QuestionSubView({ jobId, interview }: Props) {
 							color="text.disabled"
 							sx={{ py: 3, textAlign: "center" }}
 						>
-							No questions recorded yet.{" "}
-							<Box
-								component="span"
-								onClick={handleAddClick}
-								sx={{
-									"&:hover": { textDecoration: "underline" },
-									color: "primary.main",
-									cursor: "pointer",
-								}}
-							>
-								Add one.
-							</Box>
+							No questions recorded yet.
+							{!readOnly && (
+								<>
+									{" "}
+									<Box
+										component="span"
+										onClick={handleAddClick}
+										sx={{
+											"&:hover": { textDecoration: "underline" },
+											color: "primary.main",
+											cursor: "pointer",
+										}}
+									>
+										Add one.
+									</Box>
+								</>
+							)}
 						</Typography>
 					)}
 
@@ -380,10 +391,12 @@ function QuestionCard({
 	question,
 	onEdit,
 	onDelete,
+	readOnly = false,
 }: {
 	question: InterviewQuestion;
 	onEdit: () => void;
 	onDelete: () => void;
+	readOnly?: boolean;
 }) {
 	const chipSx = QUESTION_TYPE_CHIP_SX[question.question_type];
 	const typeLabel = QUESTION_TYPE_LABELS[question.question_type];
@@ -418,26 +431,28 @@ function QuestionCard({
 					<Chip label={typeLabel} size="small" sx={chipSx} />
 					<DifficultySelector value={question.difficulty} readOnly />
 				</Box>
-				<Box sx={{ display: "flex", flexShrink: 0 }}>
-					<Tooltip title="Edit question">
-						<IconButton
-							size="small"
-							onClick={onEdit}
-							aria-label="Edit question"
-						>
-							<EditIcon fontSize="small" />
-						</IconButton>
-					</Tooltip>
-					<Tooltip title="Delete question">
-						<IconButton
-							size="small"
-							onClick={onDelete}
-							aria-label="Delete question"
-						>
-							<DeleteIcon fontSize="small" />
-						</IconButton>
-					</Tooltip>
-				</Box>
+				{!readOnly && (
+					<Box sx={{ display: "flex", flexShrink: 0 }}>
+						<Tooltip title="Edit question">
+							<IconButton
+								size="small"
+								onClick={onEdit}
+								aria-label="Edit question"
+							>
+								<EditIcon fontSize="small" />
+							</IconButton>
+						</Tooltip>
+						<Tooltip title="Delete question">
+							<IconButton
+								size="small"
+								onClick={onDelete}
+								aria-label="Delete question"
+							>
+								<DeleteIcon fontSize="small" />
+							</IconButton>
+						</Tooltip>
+					</Box>
+				)}
 			</Box>
 			<Typography variant="body2">{question.question_text}</Typography>
 			{question.question_notes && (

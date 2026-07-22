@@ -21,6 +21,20 @@ import type { FitScore, Job, JobStatus } from "../../types";
 import { STATUS_COLORS, TAG_LABELS, tagChipProps } from "../../constants";
 import { isPossiblyGhosted } from "../../jobUtils";
 
+function dragCursor(readOnly: boolean, isDragging: boolean): string {
+	if (readOnly) {
+		return "default";
+	}
+	return isDragging ? "grabbing" : "grab";
+}
+
+function favoriteTooltip(readOnly: boolean, favorite: boolean): string {
+	if (readOnly) {
+		return favorite ? "Favorited" : "Not favorited";
+	}
+	return favorite ? "Unfavorite" : "Favorite";
+}
+
 function formatDate(dateStr: string | null): string | null {
 	if (!dateStr) {
 		return null;
@@ -119,223 +133,235 @@ interface Props {
 	job: Job;
 	onCardClick: (job: Job) => void;
 	onToggleFavorite: (job: Job) => void;
+	readOnly?: boolean;
 }
 
-const JobCard = React.memo(({ job, onCardClick, onToggleFavorite }: Props) => {
-	const { attributes, listeners, setNodeRef, transform, isDragging } =
-		useDraggable({
-			data: { job },
-			id: String(job.id),
-		});
+const JobCard = React.memo(
+	({ job, onCardClick, onToggleFavorite, readOnly = false }: Props) => {
+		const { attributes, listeners, setNodeRef, transform, isDragging } =
+			useDraggable({
+				data: { job },
+				disabled: readOnly,
+				id: String(job.id),
+			});
 
-	const isGhosted = isPossiblyGhosted(job);
+		const isGhosted = isPossiblyGhosted(job);
 
-	const style = {
-		opacity: isDragging ? 0.4 : 1,
-		transform: CSS.Translate.toString(transform),
-	};
+		const style = {
+			opacity: isDragging ? 0.4 : 1,
+			transform: CSS.Translate.toString(transform),
+		};
 
-	return (
-		<Card
-			ref={setNodeRef}
-			style={style}
-			elevation={0}
-			sx={{
-				"&:hover": {
-					boxShadow: isGhosted
-						? `inset 3px 0 0 #ef5350, 0 0 0 1px rgba(239,83,80,0.5), 0 4px 12px rgba(239,83,80,0.2)`
-						: `0 0 0 1px rgba(99,102,241,0.3), 0 4px 12px rgba(0,0,0,0.1)`,
-				},
-				boxShadow: isGhosted ? "inset 3px 0 0 #ef5350" : undefined,
-				mb: 1.5,
-				transition: "box-shadow 0.15s",
-			}}
-			{...attributes}
-		>
-			{/* Card header — full row is the drag handle */}
-			<Box
-				{...listeners}
+		return (
+			<Card
+				ref={setNodeRef}
+				style={style}
+				elevation={0}
 				sx={{
-					alignItems: "center",
-					bgcolor: isDragging
-						? "rgba(0,0,0,0.035)"
-						: `${STATUS_COLORS[job.status]}26`,
-					borderBottom: isDragging
-						? "1px solid rgba(0,0,0,0.07)"
-						: `1px solid ${STATUS_COLORS[job.status]}40`,
-					cursor: isDragging ? "grabbing" : "grab",
-					display: "flex",
-					gap: 0.5,
-					px: 1,
-					py: 0.5,
-					touchAction: "none",
+					"&:hover": {
+						boxShadow: isGhosted
+							? `inset 3px 0 0 #ef5350, 0 0 0 1px rgba(239,83,80,0.5), 0 4px 12px rgba(239,83,80,0.2)`
+							: `0 0 0 1px rgba(99,102,241,0.3), 0 4px 12px rgba(0,0,0,0.1)`,
+					},
+					boxShadow: isGhosted ? "inset 3px 0 0 #ef5350" : undefined,
+					mb: 1.5,
+					transition: "box-shadow 0.15s",
 				}}
+				{...attributes}
 			>
-				<DragIndicatorIcon
-					sx={{ color: "text.disabled", flexShrink: 0, fontSize: 16 }}
-				/>
-				<CompanyLogo company={job.company} />
-				<Typography
-					variant="subtitle2"
-					noWrap
-					sx={{ flex: 1, fontWeight: 700, minWidth: 0 }}
+				{/* Card header — full row is the drag handle */}
+				<Box
+					{...listeners}
+					sx={{
+						alignItems: "center",
+						bgcolor: isDragging
+							? "rgba(0,0,0,0.035)"
+							: `${STATUS_COLORS[job.status]}26`,
+						borderBottom: isDragging
+							? "1px solid rgba(0,0,0,0.07)"
+							: `1px solid ${STATUS_COLORS[job.status]}40`,
+						cursor: dragCursor(readOnly, isDragging),
+						display: "flex",
+						gap: 0.5,
+						px: 1,
+						py: 0.5,
+						touchAction: "none",
+					}}
 				>
-					{job.company}
-				</Typography>
-
-				<Tooltip title="Open job listing">
-					<IconButton
-						size="small"
-						component="a"
-						href={job.link}
-						target="_blank"
-						rel="noopener noreferrer"
-						onPointerDown={(e) => e.stopPropagation()}
-						onClick={(e) => e.stopPropagation()}
-						sx={{ color: "text.disabled", flexShrink: 0, paddingX: "1px" }}
-					>
-						<OpenInNewIcon fontSize="small" />
-					</IconButton>
-				</Tooltip>
-				<Tooltip title={job.favorite ? "Unfavorite" : "Favorite"}>
-					<IconButton
-						size="small"
-						onPointerDown={(e) => e.stopPropagation()}
-						onClick={(e) => {
-							e.stopPropagation();
-							onToggleFavorite(job);
-						}}
-						sx={{
-							color: job.favorite ? "warning.main" : "text.disabled",
-							flexShrink: 0,
-							paddingX: "1px",
-						}}
-					>
-						{job.favorite ? (
-							<StarIcon fontSize="small" />
-						) : (
-							<StarBorderIcon fontSize="small" />
-						)}
-					</IconButton>
-				</Tooltip>
-			</Box>
-
-			{/* Card body — clickable to open edit dialog */}
-			<CardActionArea
-				onPointerDown={(e) => e.stopPropagation()}
-				onClick={() => onCardClick(job)}
-				sx={{ p: 0 }}
-			>
-				<CardContent sx={{ pb: "10px !important", pt: 1, px: 1.5 }}>
+					{!readOnly && (
+						<DragIndicatorIcon
+							sx={{ color: "text.disabled", flexShrink: 0, fontSize: 16 }}
+						/>
+					)}
+					<CompanyLogo company={job.company} />
 					<Typography
-						variant="body2"
-						color="text.secondary"
+						variant="subtitle2"
 						noWrap
-						sx={{ mb: job.recruiter ? 0.75 : 0 }}
+						sx={{ flex: 1, fontWeight: 700, minWidth: 0 }}
 					>
-						{job.role}
+						{job.company}
 					</Typography>
 
-					<Box
-						sx={{
-							alignItems: "center",
-							display: "flex",
-							flexWrap: "wrap",
-							gap: 0.5,
-							mb: 0.5,
-						}}
-					>
-						<Chip
-							label={job.salary ?? "$???"}
+					<Tooltip title="Open job listing">
+						<IconButton
 							size="small"
-							variant="filled"
-							sx={
-								job.salary
-									? { bgcolor: "#c8e6c9", color: "#1b5e20" }
-									: { bgcolor: "#e0e0e0", color: "#757575" }
-							}
-						/>
-						{job.fit_score && (
-							<Tooltip title={`Fit: ${job.fit_score}`} placement="top">
-								<Box
-									sx={{
-										alignItems: "center",
-										cursor: "default",
-										display: "flex",
-									}}
-								>
-									<FitScoreBars score={job.fit_score} />
-								</Box>
-							</Tooltip>
-						)}
-						{job.referred_by && (
-							<Chip
-								icon={<PeopleIcon />}
-								label={job.referred_by}
-								size="small"
-								variant="outlined"
-								sx={{ maxWidth: 120 }}
-							/>
-						)}
-						{isGhosted && (
-							<Tooltip title="No company response in 30+ days">
-								<Chip
-									label="👻 Possibly ghosted"
-									size="small"
-									variant="outlined"
-									sx={{ borderColor: "#ef5350", color: "#ef5350" }}
-								/>
-							</Tooltip>
-						)}
-					</Box>
-
-					{job.tags.length > 0 && (
-						<Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 0.5 }}>
-							{job.tags.map((tag) => (
-								<Chip
-									key={tag}
-									label={TAG_LABELS[tag]}
-									size="small"
-									{...tagChipProps(tag)}
-									variant="outlined"
-									sx={{
-										fontSize: "0.65rem",
-										height: 18,
-										...tagChipProps(tag).sx,
-									}}
-								/>
-							))}
-						</Box>
-					)}
-
-					{job.recruiter && (
-						<Typography
-							variant="caption"
-							color="text.secondary"
-							sx={{ display: "block" }}
+							component="a"
+							href={job.link}
+							target="_blank"
+							rel="noopener noreferrer"
+							onPointerDown={(e) => e.stopPropagation()}
+							onClick={(e) => e.stopPropagation()}
+							sx={{ color: "text.disabled", flexShrink: 0, paddingX: "1px" }}
 						>
-							Recruiter: {job.recruiter}
-						</Typography>
-					)}
+							<OpenInNewIcon fontSize="small" />
+						</IconButton>
+					</Tooltip>
+					<Tooltip title={favoriteTooltip(readOnly, job.favorite)}>
+						<span>
+							<IconButton
+								size="small"
+								disabled={readOnly}
+								aria-label={favoriteTooltip(readOnly, job.favorite)}
+								onPointerDown={(e) => e.stopPropagation()}
+								onClick={(e) => {
+									e.stopPropagation();
+									onToggleFavorite(job);
+								}}
+								sx={{
+									color: job.favorite ? "warning.main" : "text.disabled",
+									flexShrink: 0,
+									paddingX: "1px",
+								}}
+							>
+								{job.favorite ? (
+									<StarIcon fontSize="small" />
+								) : (
+									<StarBorderIcon fontSize="small" />
+								)}
+							</IconButton>
+						</span>
+					</Tooltip>
+				</Box>
 
-					{(() => {
-						const { label, getDate } = STATUS_DATE_LABEL[job.status];
-						const date = getDate(job);
-						return (
+				{/* Card body — clickable to open edit dialog */}
+				<CardActionArea
+					onPointerDown={(e) => e.stopPropagation()}
+					onClick={() => onCardClick(job)}
+					sx={{ p: 0 }}
+				>
+					<CardContent sx={{ pb: "10px !important", pt: 1, px: 1.5 }}>
+						<Typography
+							variant="body2"
+							color="text.secondary"
+							noWrap
+							sx={{ mb: job.recruiter ? 0.75 : 0 }}
+						>
+							{job.role}
+						</Typography>
+
+						<Box
+							sx={{
+								alignItems: "center",
+								display: "flex",
+								flexWrap: "wrap",
+								gap: 0.5,
+								mb: 0.5,
+							}}
+						>
+							<Chip
+								label={job.salary ?? "$???"}
+								size="small"
+								variant="filled"
+								sx={
+									job.salary
+										? { bgcolor: "#c8e6c9", color: "#1b5e20" }
+										: { bgcolor: "#e0e0e0", color: "#757575" }
+								}
+							/>
+							{job.fit_score && (
+								<Tooltip title={`Fit: ${job.fit_score}`} placement="top">
+									<Box
+										sx={{
+											alignItems: "center",
+											cursor: "default",
+											display: "flex",
+										}}
+									>
+										<FitScoreBars score={job.fit_score} />
+									</Box>
+								</Tooltip>
+							)}
+							{job.referred_by && (
+								<Chip
+									icon={<PeopleIcon />}
+									label={job.referred_by}
+									size="small"
+									variant="outlined"
+									sx={{ maxWidth: 120 }}
+								/>
+							)}
+							{isGhosted && (
+								<Tooltip title="No company response in 30+ days">
+									<Chip
+										label="👻 Possibly ghosted"
+										size="small"
+										variant="outlined"
+										sx={{ borderColor: "#ef5350", color: "#ef5350" }}
+									/>
+								</Tooltip>
+							)}
+						</Box>
+
+						{job.tags.length > 0 && (
+							<Box
+								sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 0.5 }}
+							>
+								{job.tags.map((tag) => (
+									<Chip
+										key={tag}
+										label={TAG_LABELS[tag]}
+										size="small"
+										{...tagChipProps(tag)}
+										variant="outlined"
+										sx={{
+											fontSize: "0.65rem",
+											height: 18,
+											...tagChipProps(tag).sx,
+										}}
+									/>
+								))}
+							</Box>
+						)}
+
+						{job.recruiter && (
 							<Typography
 								variant="caption"
-								color="text.disabled"
-								sx={{ display: "block", mt: 0.5 }}
+								color="text.secondary"
+								sx={{ display: "block" }}
 							>
-								{label}
-								{date ? ` ${date}` : ""}
+								Recruiter: {job.recruiter}
 							</Typography>
-						);
-					})()}
-				</CardContent>
-			</CardActionArea>
-		</Card>
-	);
-});
+						)}
+
+						{(() => {
+							const { label, getDate } = STATUS_DATE_LABEL[job.status];
+							const date = getDate(job);
+							return (
+								<Typography
+									variant="caption"
+									color="text.disabled"
+									sx={{ display: "block", mt: 0.5 }}
+								>
+									{label}
+									{date ? ` ${date}` : ""}
+								</Typography>
+							);
+						})()}
+					</CardContent>
+				</CardActionArea>
+			</Card>
+		);
+	},
+);
 
 export default JobCard;
