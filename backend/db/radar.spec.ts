@@ -124,6 +124,29 @@ describe("getRadar", () => {
 		expect(result.entries[0]!.eligibility).toBe("active");
 	});
 
+	it("does not treat a not_started job as active (still clear to apply)", () => {
+		const db = makeDb();
+		insertCompany(db, { name: "Acme" });
+		insertJob(db, { company: "Acme", status: "not_started" });
+		const result = getRadar(db, USER_ID);
+		expect(result.entries[0]!.eligibility).toBe("clear");
+		expect(result.entries[0]!.active_job_id).toBeNull();
+	});
+
+	it("falls back to a non-terminal job when a not_started job also exists", () => {
+		const db = makeDb();
+		insertCompany(db, { name: "Acme" });
+		insertJob(db, { company: "Acme", status: "not_started" });
+		const activeId = insertJob(db, {
+			company: "Acme",
+			status: "applied",
+			date_applied: daysAgo(5),
+		});
+		const result = getRadar(db, USER_ID);
+		expect(result.entries[0]!.eligibility).toBe("active");
+		expect(result.entries[0]!.active_job_id).toBe(activeId);
+	});
+
 	it("returns eligibility=cooling_down within the application cooldown window", () => {
 		const db = makeDb();
 		insertCompany(db, { name: "Acme", application_cooldown_days: 30 });
