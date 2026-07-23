@@ -257,7 +257,9 @@ export function getRadar(
 		const latestActiveStatus = bestRank > 0 ? (RANK_TO_STATUS[bestRank] ?? null) : null;
 
 		const activeJob =
-			companyJobs.find((j) => j.status !== "rejected_or_withdrawn") ?? null;
+			companyJobs.find(
+				(j) => j.status !== "rejected_or_withdrawn" && j.status !== "not_started",
+			) ?? null;
 
 		// Compute the earliest date each cooldown expires
 		const unlockCandidates: Date[] = [];
