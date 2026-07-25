@@ -54,6 +54,7 @@ export interface OfferWithJobRow {
 	favorite: number;
 	tags_csv: string | null;
 	has_offer: number;
+	search_name: string | null;
 	offer_id: number | null;
 	base_pay_amount: number | null;
 	target_bonus_percent: number | null;
@@ -171,12 +172,23 @@ export function deleteOffer(
 export function getOffersWithJobs(
 	db: Database.Database,
 	userId: number,
+	searchId: number | null,
 ): { job: object; offer: OfferRow | null }[] {
+	// Only join job_searches (for the round-name label) when showing every round —
+	// Scoped to a single round, the label would be the same for every card.
+	const searchNameSelect =
+		searchId === null ? "js.name AS search_name," : "NULL AS search_name,";
+	const searchNameJoin =
+		searchId === null ? "LEFT JOIN job_searches js ON js.id = j.search_id" : "";
+	const searchFilter = searchId !== null ? "AND j.search_id = ?" : "";
+	const searchParams = searchId !== null ? [searchId] : [];
+
 	const rows = db
 		.prepare(
 			`SELECT j.id AS job_id, j.company, j.role, j.link, j.fit_score, j.salary,
               j.favorite, GROUP_CONCAT(jt.tag) AS tags_csv,
               CASE WHEN o.id IS NOT NULL THEN 1 ELSE 0 END AS has_offer,
+              ${searchNameSelect}
               o.id AS offer_id,
               o.base_pay_amount, o.target_bonus_percent, o.equity_amount,
               o.equity_vesting_years, o.equity_type, o.signing_bonus_amount,
@@ -187,11 +199,12 @@ export function getOffersWithJobs(
        FROM jobs j
        LEFT JOIN offers o ON o.job_id = j.id
        LEFT JOIN job_tags jt ON jt.job_id = j.id
-       WHERE j.user_id = ? AND j.status = 'offer'
+       ${searchNameJoin}
+       WHERE j.user_id = ? ${searchFilter} AND j.status = 'offer'
        GROUP BY j.id
        ORDER BY j.created_at DESC`,
 		)
-		.all(userId) as OfferWithJobRow[];
+		.all(userId, ...searchParams) as OfferWithJobRow[];
 
 	return rows.map((r) => {
 		const job = {
@@ -204,6 +217,7 @@ export function getOffersWithJobs(
 			favorite: Boolean(r.favorite),
 			tags: r.tags_csv ? r.tags_csv.split(",") : [],
 			has_offer: Boolean(r.has_offer),
+			...(r.search_name !== null ? { search_name: r.search_name } : {}),
 		};
 		const offer = r.offer_id != null
 			? {

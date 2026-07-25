@@ -140,14 +140,14 @@ describe("offers db", () => {
 				.run(USER_ID, "Other Co", "PM", "https://other.com", "applied");
 			createOffer(db, { ...BASE_OFFER, job_id: jobId });
 
-			const results = getOffersWithJobs(db, USER_ID);
+			const results = getOffersWithJobs(db, USER_ID, null);
 			expect(results).toHaveLength(1);
 			const [first] = results;
 			expect(first!.job).toMatchObject({ id: jobId, company: "Acme" });
 		});
 
 		it("includes offer as null when job has no offer", () => {
-			const results = getOffersWithJobs(db, USER_ID);
+			const results = getOffersWithJobs(db, USER_ID, null);
 			expect(results).toHaveLength(1);
 			const [first] = results;
 			expect(first!.offer).toBeNull();
@@ -155,7 +155,7 @@ describe("offers db", () => {
 
 		it("includes offer data when job has an offer", () => {
 			createOffer(db, { ...BASE_OFFER, job_id: jobId });
-			const results = getOffersWithJobs(db, USER_ID);
+			const results = getOffersWithJobs(db, USER_ID, null);
 			const [first] = results;
 			expect(first!.offer).toBeDefined();
 			expect((first!.offer as { base_pay_amount: number }).base_pay_amount).toBe(150_000);
@@ -166,7 +166,7 @@ describe("offers db", () => {
 			db.prepare("INSERT INTO jobs (user_id, company, role, link, status) VALUES (?, ?, ?, ?, ?)")
 				.run(2, "Other Co", "PM", "https://other.com", "offer");
 
-			const results = getOffersWithJobs(db, USER_ID);
+			const results = getOffersWithJobs(db, USER_ID, null);
 			expect(results).toHaveLength(1);
 			const [first] = results;
 			expect(first!.job).toMatchObject({ company: "Acme" });
@@ -174,29 +174,88 @@ describe("offers db", () => {
 
 		it("coalesces null equity_vesting_years to 4 in offer", () => {
 			db.prepare("INSERT INTO offers (job_id, equity_vesting_years) VALUES (?, NULL)").run(jobId);
-			const results = getOffersWithJobs(db, USER_ID);
+			const results = getOffersWithJobs(db, USER_ID, null);
 			const [first] = results;
 			expect((first!.offer as { equity_vesting_years: number }).equity_vesting_years).toBe(4);
 		});
 
 		it("returns other_is_recurring as a boolean in offer", () => {
 			createOffer(db, { ...BASE_OFFER, job_id: jobId, other_is_recurring: true });
-			const results = getOffersWithJobs(db, USER_ID);
+			const results = getOffersWithJobs(db, USER_ID, null);
 			const [first] = results;
 			expect((first!.offer as { other_is_recurring: boolean }).other_is_recurring).toBeTruthy();
 		});
 
 		it("returns has_offer=true on the job when an offer exists", () => {
 			createOffer(db, { ...BASE_OFFER, job_id: jobId });
-			const results = getOffersWithJobs(db, USER_ID);
+			const results = getOffersWithJobs(db, USER_ID, null);
 			const [first] = results;
 			expect((first!.job as { has_offer: boolean }).has_offer).toBeTruthy();
 		});
 
 		it("returns has_offer=false on the job when no offer exists", () => {
-			const results = getOffersWithJobs(db, USER_ID);
+			const results = getOffersWithJobs(db, USER_ID, null);
 			const [first] = results;
 			expect((first!.job as { has_offer: boolean }).has_offer).toBeFalsy();
+		});
+
+		describe("round scoping (searchId)", () => {
+			function insertSearch(options: { name?: string; closedAt?: string | null } = {}): number {
+				return Number(
+					db
+						.prepare("INSERT INTO job_searches (user_id, name, closed_at) VALUES (?, ?, ?)")
+						.run(USER_ID, options.name ?? "Search", options.closedAt ?? null)
+						.lastInsertRowid,
+				);
+			}
+
+			function insertOfferJob(searchId: number, company: string): number {
+				const result = db
+					.prepare(
+						"INSERT INTO jobs (user_id, company, role, link, status, search_id) VALUES (?, ?, ?, ?, 'offer', ?)",
+					)
+					.run(USER_ID, company, "Engineer", "https://example.com", searchId);
+				return Number(result.lastInsertRowid);
+			}
+
+			it("only returns jobs in the given round when searchId is provided", () => {
+				const closedSearchId = insertSearch({ closedAt: "2025-01-01T00:00:00Z" });
+				const activeSearchId = insertSearch({ name: "Current Search" });
+				insertOfferJob(closedSearchId, "Closed Round Co");
+				insertOfferJob(activeSearchId, "Active Round Co");
+
+				const results = getOffersWithJobs(db, USER_ID, activeSearchId);
+				expect(results.map((r) => (r.job as { company: string }).company)).toStrictEqual([
+					"Active Round Co",
+				]);
+			});
+
+			it("returns jobs across every round when searchId is null", () => {
+				const closedSearchId = insertSearch({ closedAt: "2025-01-01T00:00:00Z" });
+				const activeSearchId = insertSearch({ name: "Current Search" });
+				insertOfferJob(closedSearchId, "Closed Round Co");
+				insertOfferJob(activeSearchId, "Active Round Co");
+				createOffer(db, { ...BASE_OFFER, job_id: jobId });
+
+				const results = getOffersWithJobs(db, USER_ID, null);
+				expect(results).toHaveLength(3);
+			});
+
+			it("includes search_name only when searchId is null (all rounds)", () => {
+				const activeSearchId = insertSearch({ name: "Current Search" });
+				insertOfferJob(activeSearchId, "Active Round Co");
+
+				const scoped = getOffersWithJobs(db, USER_ID, activeSearchId);
+				expect(scoped[0]!.job).not.toHaveProperty("search_name");
+
+				const all = getOffersWithJobs(db, USER_ID, null);
+				const activeRoundEntry = all.find(
+					(r) => (r.job as { company: string }).company === "Active Round Co",
+				);
+				expect((activeRoundEntry!.job as { search_name: string }).search_name).toBe(
+					"Current Search",
+				);
+			});
 		});
 	});
 });

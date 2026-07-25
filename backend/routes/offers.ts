@@ -126,9 +126,15 @@ export function createOffersRouter(db: Database.Database) {
 export function createOffersListRouter(db: Database.Database) {
 	const router = Router();
 
-	// GET /api/offers — all jobs in offer status with their offer (or null)
+	// GET /api/offers?scope=current|all — jobs in offer status with their offer (or null)
 	router.get("/", (req, res) => {
-		const results = OffersDb.getOffersWithJobs(db, req.session.userId!);
+		const userId = req.session.userId!;
+		const searchId =
+			req.query["scope"] === "all"
+				? null
+				: (JobSearchesDb.getActiveSearch(db, userId)?.id ?? null);
+
+		const results = OffersDb.getOffersWithJobs(db, userId, searchId);
 		return res.json(results);
 	});
 

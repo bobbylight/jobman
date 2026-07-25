@@ -415,6 +415,28 @@ describe("gET /api/offers", () => {
 		expect(res.status).toBe(200);
 		expect(res.body).toHaveLength(0);
 	});
+
+	it("scope=current (default) only returns offers in the active round", async () => {
+		insertJobInClosedSearch();
+		insertJob();
+
+		const res = await req("get", "/api/offers");
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(1);
+		expect(res.body[0].job.search_name).toBeUndefined();
+	});
+
+	it("scope=all returns offers across every round, each labeled with its round name", async () => {
+		insertJobInClosedSearch();
+		insertJob();
+
+		const res = await req("get", "/api/offers?scope=all");
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(2);
+		expect(res.body.map((r: { job: { search_name: string } }) => r.job.search_name).toSorted()).toStrictEqual(
+			["Closed Search", "Search 1"],
+		);
+	});
 });
 
 describe("offer cascade delete on job status change", () => {
