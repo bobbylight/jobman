@@ -607,11 +607,11 @@ describe("aPI module", () => {
 			transitions: [],
 		};
 
-		it("gETs /api/stats?window=all and returns the stats", async () => {
+		it("gETs /api/stats?window=all&scope=current by default", async () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_STATS));
 			const result = await api.getStats("all");
 			expect(mockFetch).toHaveBeenCalledWith(
-				"/api/stats?window=all",
+				"/api/stats?window=all&scope=current",
 				expect.objectContaining({
 					headers: { "Content-Type": "application/json" },
 				}),
@@ -623,7 +623,7 @@ describe("aPI module", () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_STATS));
 			await api.getStats("30");
 			expect(mockFetch).toHaveBeenCalledWith(
-				"/api/stats?window=30",
+				"/api/stats?window=30&scope=current",
 				expect.any(Object),
 			);
 		});
@@ -632,7 +632,16 @@ describe("aPI module", () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_STATS));
 			await api.getStats("90");
 			expect(mockFetch).toHaveBeenCalledWith(
-				"/api/stats?window=90",
+				"/api/stats?window=90&scope=current",
+				expect.any(Object),
+			);
+		});
+
+		it("gETs with scope=all when scope is explicitly passed", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_STATS));
+			await api.getStats("all", "all");
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/stats?window=all&scope=all",
 				expect.any(Object),
 			);
 		});
