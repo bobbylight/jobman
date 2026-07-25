@@ -32,14 +32,14 @@ import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import TuneIcon from "@mui/icons-material/Tune";
 import { useNavigate, useParams } from "react-router-dom";
-import { ApiError, api } from "../../api";
+import { api } from "../../api";
 import { useNotify } from "../../useSnackbar";
+import { useActiveSearch } from "../../useActiveSearch";
 import type {
 	EndingSubstatus,
 	FitScore,
 	Job,
 	JobFormData,
-	JobSearch,
 	JobStatus,
 	JobTag,
 } from "../../types";
@@ -105,7 +105,7 @@ export default function JobManagementPage() {
 	const [filterTags, setFilterTags] = useState<JobTag[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [filterAnchor, setFilterAnchor] = useState<HTMLElement | null>(null);
-	const [activeSearch, setActiveSearch] = useState<JobSearch | null>(null);
+	const { activeSearch } = useActiveSearch(searchId);
 
 	// "add" dialog is purely local; "edit" dialog is driven by the URL
 	const [addOpen, setAddOpen] = useState(false);
@@ -129,25 +129,9 @@ export default function JobManagementPage() {
 		}
 	}, [notify, searchId]);
 
-	// Loads the active round, or the specific historical round named by the URL
-	const loadSearchRound = useCallback(async () => {
-		try {
-			setActiveSearch(
-				searchId !== undefined
-					? await api.getSearch(searchId)
-					: await api.getActiveSearch(),
-			);
-		} catch (error) {
-			if (!(error instanceof ApiError && error.status === 404)) {
-				notify("Failed to load search round", "error");
-			}
-		}
-	}, [notify, searchId]);
-
 	useEffect(() => {
 		void loadJobs();
-		void loadSearchRound();
-	}, [loadJobs, loadSearchRound]);
+	}, [loadJobs]);
 
 	// Sync the edit dialog with the URL param once jobs are loaded
 	useEffect(() => {
