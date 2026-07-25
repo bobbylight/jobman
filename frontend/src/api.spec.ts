@@ -667,11 +667,11 @@ describe("aPI module", () => {
 			},
 		];
 
-		it("gETs /api/stats/link-jobs with encoded from, to, and window params", async () => {
+		it("gETs /api/stats/link-jobs with encoded from, to, window, and default scope params", async () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_LINK_JOBS));
 			const result = await api.getLinkJobs("applied", "phone_screen", "all");
 			expect(mockFetch).toHaveBeenCalledWith(
-				"/api/stats/link-jobs?from=applied&to=phone_screen&window=all",
+				"/api/stats/link-jobs?from=applied&to=phone_screen&window=all&scope=current",
 				expect.objectContaining({
 					headers: { "Content-Type": "application/json" },
 				}),
@@ -683,7 +683,16 @@ describe("aPI module", () => {
 			mockFetch.mockResolvedValue(makeResponse(MOCK_LINK_JOBS));
 			await api.getLinkJobs("rejected_or_withdrawn", "offer", "30");
 			expect(mockFetch).toHaveBeenCalledWith(
-				"/api/stats/link-jobs?from=rejected_or_withdrawn&to=offer&window=30",
+				"/api/stats/link-jobs?from=rejected_or_withdrawn&to=offer&window=30&scope=current",
+				expect.any(Object),
+			);
+		});
+
+		it("passes scope=all when explicitly requested", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_LINK_JOBS));
+			await api.getLinkJobs("applied", "phone_screen", "all", "all");
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/stats/link-jobs?from=applied&to=phone_screen&window=all&scope=all",
 				expect.any(Object),
 			);
 		});

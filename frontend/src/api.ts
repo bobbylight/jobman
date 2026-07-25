@@ -113,9 +113,14 @@ export const api = {
 	// Stats
 	getStats: (window: StatsWindow, scope: StatsScope = "current") =>
 		request<StatsResponse>(`/stats?window=${window}&scope=${scope}`),
-	getLinkJobs: (from: string, to: string, window: StatsWindow) =>
+	getLinkJobs: (
+		from: string,
+		to: string,
+		window: StatsWindow,
+		scope: StatsScope = "current",
+	) =>
 		request<LinkJob[]>(
-			`/stats/link-jobs?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&window=${window}`,
+			`/stats/link-jobs?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&window=${window}&scope=${scope}`,
 		),
 	getInterviewInsights: (window: StatsWindow = "all") =>
 		request<InterviewInsightsResponse>(`/interview-insights?window=${window}`),
