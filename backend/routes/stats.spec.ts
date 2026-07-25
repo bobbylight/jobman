@@ -43,6 +43,7 @@ function req(url: string) {
 
 afterEach(() => {
 	testDb.exec("DELETE FROM jobs");
+	testDb.exec("DELETE FROM job_searches");
 });
 
 describe("gET /api/stats", () => {
@@ -165,11 +166,90 @@ describe("gET /api/stats", () => {
 		expect(res.status).toBe(200);
 		expect(res.body.totalApplications).toBe(1);
 	});
+
+	describe("scope", () => {
+		afterEach(() => {
+			testDb.exec("DELETE FROM jobs");
+			testDb.exec("DELETE FROM job_searches");
+		});
+
+		it("scope=current only counts jobs in the active round by default", async () => {
+			const closedSearchId = testDb
+				.prepare(
+					"INSERT INTO job_searches (user_id, name, closed_at) VALUES (?, ?, ?)",
+				)
+				.run(TEST_USER_ID, "Old Search", "2025-01-01T00:00:00Z").lastInsertRowid;
+			const activeSearchId = testDb
+				.prepare(
+					"INSERT INTO job_searches (user_id, name, closed_at) VALUES (?, ?, NULL)",
+				)
+				.run(TEST_USER_ID, "Current Search").lastInsertRowid;
+			testDb
+				.prepare(
+					`INSERT INTO jobs (user_id, company, role, link, status, search_id)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+				)
+				.run(TEST_USER_ID, "Closed Round Co", "Dev", "https://closed.com", "applied", closedSearchId);
+			testDb
+				.prepare(
+					`INSERT INTO jobs (user_id, company, role, link, status, search_id)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+				)
+				.run(TEST_USER_ID, "Active Round Co", "Dev", "https://active.com", "applied", activeSearchId);
+
+			const res = await req("/api/stats");
+			expect(res.status).toBe(200);
+			expect(res.body.totalApplications).toBe(1);
+		});
+
+		it("scope=all counts jobs across every round", async () => {
+			const closedSearchId = testDb
+				.prepare(
+					"INSERT INTO job_searches (user_id, name, closed_at) VALUES (?, ?, ?)",
+				)
+				.run(TEST_USER_ID, "Old Search", "2025-01-01T00:00:00Z").lastInsertRowid;
+			const activeSearchId = testDb
+				.prepare(
+					"INSERT INTO job_searches (user_id, name, closed_at) VALUES (?, ?, NULL)",
+				)
+				.run(TEST_USER_ID, "Current Search").lastInsertRowid;
+			testDb
+				.prepare(
+					`INSERT INTO jobs (user_id, company, role, link, status, search_id)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+				)
+				.run(TEST_USER_ID, "Closed Round Co", "Dev", "https://closed.com", "applied", closedSearchId);
+			testDb
+				.prepare(
+					`INSERT INTO jobs (user_id, company, role, link, status, search_id)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+				)
+				.run(TEST_USER_ID, "Active Round Co", "Dev", "https://active.com", "applied", activeSearchId);
+
+			const res = await req("/api/stats?scope=all");
+			expect(res.status).toBe(200);
+			expect(res.body.totalApplications).toBe(2);
+		});
+
+		it("falls back to unscoped results when the user has no active round", async () => {
+			testDb
+				.prepare(
+					`INSERT INTO jobs (user_id, company, role, link, status)
+           VALUES (?, ?, ?, ?, ?)`,
+				)
+				.run(TEST_USER_ID, "No Round Co", "Dev", "https://noround.com", "applied");
+
+			const res = await req("/api/stats");
+			expect(res.status).toBe(200);
+			expect(res.body.totalApplications).toBe(1);
+		});
+	});
 });
 
 describe("gET /api/stats/link-jobs", () => {
 	afterEach(() => {
 		testDb.exec("DELETE FROM jobs");
+		testDb.exec("DELETE FROM job_searches");
 	});
 
 	it("returns 401 when the request is not authenticated", async () => {
@@ -232,5 +312,49 @@ describe("gET /api/stats/link-jobs", () => {
 		const res = await req("/api/stats/link-jobs?from=Direct&to=applied&window=bogus");
 		expect(res.status).toBe(200);
 		expect(res.body).toStrictEqual([]);
+	});
+
+	it("scope=current only returns jobs in the active round by default", async () => {
+		const closedSearchId = testDb
+			.prepare(
+				"INSERT INTO job_searches (user_id, name, closed_at) VALUES (?, ?, ?)",
+			)
+			.run(TEST_USER_ID, "Old Search", "2025-01-01T00:00:00Z").lastInsertRowid;
+		const activeSearchId = testDb
+			.prepare(
+				"INSERT INTO job_searches (user_id, name, closed_at) VALUES (?, ?, NULL)",
+			)
+			.run(TEST_USER_ID, "Current Search").lastInsertRowid;
+
+		const closedJobId = testDb
+			.prepare(
+				`INSERT INTO jobs (user_id, company, role, link, status, date_applied, search_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			)
+			.run(TEST_USER_ID, "Closed Round Co", "Dev", "https://closed.com", "applied", "2025-05-01", closedSearchId)
+			.lastInsertRowid;
+		testDb
+			.prepare("INSERT INTO job_status_history (job_id, status, entered_at) VALUES (?, ?, ?)")
+			.run(closedJobId, "applied", "2025-05-01T00:00:00Z");
+
+		const activeJobId = testDb
+			.prepare(
+				`INSERT INTO jobs (user_id, company, role, link, status, date_applied, search_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			)
+			.run(TEST_USER_ID, "Active Round Co", "Dev", "https://active.com", "applied", "2025-06-01", activeSearchId)
+			.lastInsertRowid;
+		testDb
+			.prepare("INSERT INTO job_status_history (job_id, status, entered_at) VALUES (?, ?, ?)")
+			.run(activeJobId, "applied", "2025-06-01T00:00:00Z");
+
+		const res = await req("/api/stats/link-jobs?from=Direct&to=applied");
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(1);
+		expect(res.body[0].company).toBe("Active Round Co");
+
+		const allRes = await req("/api/stats/link-jobs?from=Direct&to=applied&scope=all");
+		expect(allRes.status).toBe(200);
+		expect(allRes.body).toHaveLength(2);
 	});
 });

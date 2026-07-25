@@ -45,14 +45,20 @@ export function getStats(
 	db: Database.Database,
 	userId: number,
 	window: Window,
+	searchId: number | null,
 ): StatsResponse {
 	const df = dateFilter(window);
-	const baseWhere = `user_id = ? AND (ending_substatus IS NULL OR ending_substatus NOT IN ('Withdrawn', 'Not a good fit', 'Job closed')) ${df}`;
+	// When scoped to a round, filters reference the unaliased `jobs` table directly;
+	// `interviewsByWeek` joins `jobs` as `j` and needs the aliased variant below.
+	const searchFilter = searchId !== null ? "AND search_id = ?" : "";
+	const searchFilterJ = searchId !== null ? "AND j.search_id = ?" : "";
+	const searchParams = searchId !== null ? [searchId] : [];
+	const baseWhere = `user_id = ? ${searchFilter} AND (ending_substatus IS NULL OR ending_substatus NOT IN ('Withdrawn', 'Not a good fit', 'Job closed')) ${df}`;
 
 	const total = (
 		db
 			.prepare(`SELECT COUNT(*) as count FROM jobs WHERE ${baseWhere}`)
-			.get(userId) as { count: number }
+			.get(userId, ...searchParams) as { count: number }
 	).count;
 
 	const active = (
@@ -60,7 +66,7 @@ export function getStats(
 			.prepare(
 				`SELECT COUNT(*) as count FROM jobs WHERE ${baseWhere} AND status IN ${ACTIVE_STATUSES}`,
 			)
-			.get(userId) as { count: number }
+			.get(userId, ...searchParams) as { count: number }
 	).count;
 
 	const offers = (
@@ -68,7 +74,7 @@ export function getStats(
 			.prepare(
 				`SELECT COUNT(*) as count FROM jobs WHERE ${baseWhere} AND status = 'offer'`,
 			)
-			.get(userId) as { count: number }
+			.get(userId, ...searchParams) as { count: number }
 	).count;
 
 	// Response rate: jobs that got a phone screen or beyond, divided by all
@@ -79,7 +85,7 @@ export function getStats(
 			.prepare(
 				`SELECT COUNT(*) as count FROM jobs WHERE ${baseWhere} AND status IN ${SUBMITTED_STATUSES}`,
 			)
-			.get(userId) as { count: number }
+			.get(userId, ...searchParams) as { count: number }
 	).count;
 
 	const numerator = (
@@ -91,7 +97,7 @@ export function getStats(
          OR (status = 'rejected_or_withdrawn' AND date_phone_screen IS NOT NULL)
        )`,
 			)
-			.get(userId) as { count: number }
+			.get(userId, ...searchParams) as { count: number }
 	).count;
 
 	const responseRate =
@@ -102,7 +108,7 @@ export function getStats(
 			.prepare(
 				`SELECT COUNT(DISTINCT company) as count FROM jobs WHERE ${baseWhere} AND status IN ${SUBMITTED_STATUSES}`,
 			)
-			.get(userId) as { count: number }
+			.get(userId, ...searchParams) as { count: number }
 	).count;
 
 	const companiesPhoneScreened = (
@@ -114,7 +120,7 @@ export function getStats(
          OR (status = 'rejected_or_withdrawn' AND date_phone_screen IS NOT NULL)
        )`,
 			)
-			.get(userId) as { count: number }
+			.get(userId, ...searchParams) as { count: number }
 	).count;
 
 	const companiesOnSited = (
@@ -126,14 +132,14 @@ export function getStats(
          OR (status = 'rejected_or_withdrawn' AND date_last_onsite IS NOT NULL)
        )`,
 			)
-			.get(userId) as { count: number }
+			.get(userId, ...searchParams) as { count: number }
 	).count;
 
 	const byStatus = db
 		.prepare(
 			`SELECT status, COUNT(*) as count FROM jobs WHERE ${baseWhere} GROUP BY status`,
 		)
-		.all(userId) as { status: string; count: number }[];
+		.all(userId, ...searchParams) as { status: string; count: number }[];
 
 	const applicationsByWeek = db
 		.prepare(
@@ -145,13 +151,13 @@ export function getStats(
        GROUP BY week
        ORDER BY week ASC`,
 		)
-		.all(userId) as { week: string; count: number }[];
+		.all(userId, ...searchParams) as { week: string; count: number }[];
 
 	const avgDaysPerStage = db
 		.prepare(
 			`WITH job_filter AS (
         SELECT id, status AS current_status, updated_at FROM jobs
-        WHERE user_id = ?
+        WHERE user_id = ? ${searchFilter}
           AND (ending_substatus IS NULL OR ending_substatus NOT IN ${EXCLUDED_SUBSTATUSES})
           ${df}
       ),
@@ -192,7 +198,7 @@ export function getStats(
         ELSE 7
       END)`,
 		)
-		.all(userId) as { stage: string; avgDays: number }[];
+		.all(userId, ...searchParams) as { stage: string; avgDays: number }[];
 
 	// Each job is counted once per stage it reached (distinct-job counting).
 	// This ensures flow conservation: count at stage S = sum of counts at all
@@ -207,7 +213,7 @@ export function getStats(
             ELSE 'Direct'
           END AS starting_status
         FROM jobs
-        WHERE user_id = ?
+        WHERE user_id = ? ${searchFilter}
           AND (ending_substatus IS NULL OR ending_substatus NOT IN ${EXCLUDED_SUBSTATUSES})
           ${df}
       ),
@@ -278,7 +284,7 @@ export function getStats(
         AND (ending_substatus IS NOT NULL OR current_status = 'rejected_or_withdrawn')
       GROUP BY COALESCE(ending_substatus, 'rejected_or_withdrawn')`,
 		)
-		.all(userId) as { from: string; to: string; count: number }[];
+		.all(userId, ...searchParams) as { from: string; to: string; count: number }[];
 
 	let interviewDateFilter = "";
 	if (window === "30") {
@@ -293,12 +299,12 @@ export function getStats(
         COUNT(*) as count
        FROM interviews i
        JOIN jobs j ON j.id = i.job_id
-       WHERE j.user_id = ?
+       WHERE j.user_id = ? ${searchFilterJ}
          ${interviewDateFilter}
        GROUP BY week
        ORDER BY week ASC`,
 		)
-		.all(userId) as { week: string; count: number }[];
+		.all(userId, ...searchParams) as { week: string; count: number }[];
 
 	const topCompanies = db
 		.prepare(
@@ -329,7 +335,7 @@ export function getStats(
        ORDER BY applications DESC
        LIMIT 6`,
 		)
-		.all(userId) as {
+		.all(userId, ...searchParams) as {
 		company: string;
 		applications: number;
 		active: number;
@@ -342,7 +348,7 @@ export function getStats(
 		window === "all"
 			? `(SELECT date(MIN(h.entered_at), '-7 days')
            FROM job_status_history h JOIN jobs j ON j.id = h.job_id
-           WHERE j.user_id = ?)`
+           WHERE j.user_id = ? ${searchFilterJ})`
 			: `date('now', '-${window} days')`;
 
 	const statusOverTime = db
@@ -356,7 +362,7 @@ export function getStats(
       ),
       user_jobs AS (
         SELECT id FROM jobs
-        WHERE user_id = ?
+        WHERE user_id = ? ${searchFilter}
           AND (ending_substatus IS NULL OR ending_substatus NOT IN ${EXCLUDED_SUBSTATUSES})
       ),
       job_status_at_snap AS (
@@ -380,7 +386,9 @@ export function getStats(
       ORDER BY snap`,
 		)
 		.all(
-			...(window === "all" ? [userId, userId] : [userId]),
+			...(window === "all"
+				? [userId, ...searchParams, userId, ...searchParams]
+				: [userId, ...searchParams]),
 		) as { week: string; status: string; count: number }[];
 
 	return {
@@ -488,10 +496,13 @@ export function getJobsForLink(
 	from: string,
 	to: string,
 	window: Window,
+	searchId: number | null,
 ): LinkJob[] | null {
 	if (!VALID_LINK_NODES.has(from) || !VALID_LINK_NODES.has(to)) { return null; }
 
 	const df = dateFilter(window);
+	const searchFilter = searchId !== null ? "AND search_id = ?" : "";
+	const searchParams = searchId !== null ? [searchId] : [];
 	const [condition, condParams] = buildLinkCondition(from, to);
 
 	return db
@@ -504,7 +515,7 @@ export function getJobsForLink(
             ELSE 'Direct'
           END AS starting_status
         FROM jobs
-        WHERE user_id = ?
+        WHERE user_id = ? ${searchFilter}
           AND (ending_substatus IS NULL OR ending_substatus NOT IN ${EXCLUDED_SUBSTATUSES})
           ${df}
       ),
@@ -528,5 +539,5 @@ export function getJobsForLink(
       WHERE ${condition}
       ORDER BY j.date_applied DESC, j.created_at DESC`,
 		)
-		.all(userId, ...condParams) as LinkJob[];
+		.all(userId, ...searchParams, ...condParams) as LinkJob[];
 }

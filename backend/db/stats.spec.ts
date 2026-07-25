@@ -25,13 +25,14 @@ interface JobRow {
 	date_applied?: string | null;
 	referred_by?: string | null;
 	recruiter?: string | null;
+	search_id?: number | null;
 }
 
 function insertJob(conn: Database.Database, row: JobRow): void {
 	conn.prepare(
 		`INSERT INTO jobs
-      (user_id, company, role, link, status, ending_substatus, date_phone_screen, date_applied, referred_by, recruiter)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (user_id, company, role, link, status, ending_substatus, date_phone_screen, date_applied, referred_by, recruiter, search_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 	).run(
 		row.user_id,
 		row.company ?? "Acme",
@@ -43,6 +44,23 @@ function insertJob(conn: Database.Database, row: JobRow): void {
 		row.date_applied ?? null,
 		row.referred_by ?? null,
 		row.recruiter ?? null,
+		row.search_id ?? null,
+	);
+}
+
+/** Inserts a job_searches round and returns its id. */
+function insertSearch(
+	conn: Database.Database,
+	userId: number,
+	options: { name?: string; closedAt?: string | null } = {},
+): number {
+	return Number(
+		conn
+			.prepare(
+				"INSERT INTO job_searches (user_id, name, closed_at) VALUES (?, ?, ?)",
+			)
+			.run(userId, options.name ?? "My Job Search", options.closedAt ?? null)
+			.lastInsertRowid,
 	);
 }
 
@@ -81,7 +99,7 @@ describe("getStats", () => {
 
 	describe("totalApplications", () => {
 		it("returns 0 when the user has no jobs", () => {
-			const stats = getStats(db, USER_ID, "all");
+			const stats = getStats(db, USER_ID, "all", null);
 			expect(stats.totalApplications).toBe(0);
 		});
 
@@ -93,7 +111,7 @@ describe("getStats", () => {
 				status: "rejected_or_withdrawn",
 				user_id: USER_ID,
 			});
-			expect(getStats(db, USER_ID, "all").totalApplications).toBe(3);
+			expect(getStats(db, USER_ID, "all", null).totalApplications).toBe(3);
 		});
 
 		it("excludes jobs where ending_substatus is 'Withdrawn'", () => {
@@ -103,7 +121,7 @@ describe("getStats", () => {
 				user_id: USER_ID,
 			});
 			insertJob(db, { status: "interviewing", user_id: USER_ID });
-			expect(getStats(db, USER_ID, "all").totalApplications).toBe(1);
+			expect(getStats(db, USER_ID, "all", null).totalApplications).toBe(1);
 		});
 
 		it("includes Rejected/Withdrawn jobs with null ending_substatus", () => {
@@ -112,12 +130,12 @@ describe("getStats", () => {
 				status: "rejected_or_withdrawn",
 				user_id: USER_ID,
 			});
-			expect(getStats(db, USER_ID, "all").totalApplications).toBe(1);
+			expect(getStats(db, USER_ID, "all", null).totalApplications).toBe(1);
 		});
 
 		it("does not count other users' jobs", () => {
 			insertJob(db, { status: "interviewing", user_id: OTHER_USER_ID });
-			expect(getStats(db, USER_ID, "all").totalApplications).toBe(0);
+			expect(getStats(db, USER_ID, "all", null).totalApplications).toBe(0);
 		});
 	});
 
@@ -131,7 +149,7 @@ describe("getStats", () => {
 			]) {
 				insertJob(db, { status, user_id: USER_ID });
 			}
-			expect(getStats(db, USER_ID, "all").activePipeline).toBe(4);
+			expect(getStats(db, USER_ID, "all", null).activePipeline).toBe(4);
 		});
 
 		it("excludes terminal statuses from active pipeline", () => {
@@ -145,14 +163,14 @@ describe("getStats", () => {
 				status: "rejected_or_withdrawn",
 				user_id: USER_ID,
 			});
-			expect(getStats(db, USER_ID, "all").activePipeline).toBe(0);
+			expect(getStats(db, USER_ID, "all", null).activePipeline).toBe(0);
 		});
 	});
 
 	describe("offersReceived", () => {
 		it("returns 0 when there are no offers", () => {
 			insertJob(db, { status: "interviewing", user_id: USER_ID });
-			expect(getStats(db, USER_ID, "all").offersReceived).toBe(0);
+			expect(getStats(db, USER_ID, "all", null).offersReceived).toBe(0);
 		});
 
 		it("counts jobs with Offer! status", () => {
@@ -166,14 +184,14 @@ describe("getStats", () => {
 				status: "offer",
 				user_id: USER_ID,
 			});
-			expect(getStats(db, USER_ID, "all").offersReceived).toBe(2);
+			expect(getStats(db, USER_ID, "all", null).offersReceived).toBe(2);
 		});
 	});
 
 	describe("responseRate", () => {
 		it("returns null when there are no submitted applications", () => {
 			insertJob(db, { status: "not_started", user_id: USER_ID });
-			expect(getStats(db, USER_ID, "all").responseRate).toBeNull();
+			expect(getStats(db, USER_ID, "all", null).responseRate).toBeNull();
 		});
 
 		it("computes the rate as responded / submitted", () => {
@@ -181,7 +199,7 @@ describe("getStats", () => {
 			// Numerator (responded): Phone screen
 			insertJob(db, { status: "applied", user_id: USER_ID });
 			insertJob(db, { status: "phone_screen", user_id: USER_ID });
-			expect(getStats(db, USER_ID, "all").responseRate).toBe(0.5);
+			expect(getStats(db, USER_ID, "all", null).responseRate).toBe(0.5);
 		});
 
 		it("counts Rejected/Withdrawn with a date_phone_screen in the numerator", () => {
@@ -192,7 +210,7 @@ describe("getStats", () => {
 				status: "rejected_or_withdrawn",
 				user_id: USER_ID,
 			});
-			expect(getStats(db, USER_ID, "all").responseRate).toBe(0.5);
+			expect(getStats(db, USER_ID, "all", null).responseRate).toBe(0.5);
 		});
 
 		it("does not count Rejected/Withdrawn without date_phone_screen in the numerator", () => {
@@ -203,20 +221,20 @@ describe("getStats", () => {
 				status: "rejected_or_withdrawn",
 				user_id: USER_ID,
 			});
-			expect(getStats(db, USER_ID, "all").responseRate).toBe(0);
+			expect(getStats(db, USER_ID, "all", null).responseRate).toBe(0);
 		});
 	});
 
 	describe("byStatus", () => {
 		it("returns an empty array when there are no jobs", () => {
-			expect(getStats(db, USER_ID, "all").byStatus).toStrictEqual([]);
+			expect(getStats(db, USER_ID, "all", null).byStatus).toStrictEqual([]);
 		});
 
 		it("returns one entry per occupied status", () => {
 			insertJob(db, { status: "not_started", user_id: USER_ID });
 			insertJob(db, { status: "not_started", user_id: USER_ID });
 			insertJob(db, { status: "interviewing", user_id: USER_ID });
-			const {byStatus} = getStats(db, USER_ID, "all");
+			const {byStatus} = getStats(db, USER_ID, "all", null);
 			expect(byStatus).toHaveLength(2);
 
 			const notStarted = byStatus.find((s) => s.status === "not_started");
@@ -227,7 +245,7 @@ describe("getStats", () => {
 
 		it("omits statuses with zero count", () => {
 			insertJob(db, { status: "phone_screen", user_id: USER_ID });
-			const statuses = getStats(db, USER_ID, "all").byStatus.map((s) => s.status);
+			const statuses = getStats(db, USER_ID, "all", null).byStatus.map((s) => s.status);
 			expect(statuses).not.toContain("not_started");
 			expect(statuses).toContain("phone_screen");
 		});
@@ -235,7 +253,7 @@ describe("getStats", () => {
 
 	describe("applicationsByWeek", () => {
 		it("returns an empty array when there are no jobs", () => {
-			expect(getStats(db, USER_ID, "all").applicationsByWeek).toStrictEqual([]);
+			expect(getStats(db, USER_ID, "all", null).applicationsByWeek).toStrictEqual([]);
 		});
 
 		it("groups jobs by the ISO week of date_applied", () => {
@@ -250,7 +268,7 @@ describe("getStats", () => {
 				status: "not_started",
 				user_id: USER_ID,
 			});
-			const weeks = getStats(db, USER_ID, "all").applicationsByWeek;
+			const weeks = getStats(db, USER_ID, "all", null).applicationsByWeek;
 			expect(weeks).toHaveLength(1);
 			expect(weeks[0]?.count).toBe(2);
 		});
@@ -259,7 +277,7 @@ describe("getStats", () => {
 	describe("transitions", () => {
 		it("returns an empty array when there is no status history", () => {
 			insertJob(db, { status: "not_started", user_id: USER_ID });
-			expect(getStats(db, USER_ID, "all").transitions).toStrictEqual([]);
+			expect(getStats(db, USER_ID, "all", null).transitions).toStrictEqual([]);
 		});
 
 		it("counts distinct jobs per stage boundary, not hops", () => {
@@ -270,7 +288,7 @@ describe("getStats", () => {
 				{ entered_at: "2025-01-05T00:00:00Z", status: "phone_screen" },
 			]);
 
-			const { transitions } = getStats(db, USER_ID, "all");
+			const { transitions } = getStats(db, USER_ID, "all", null);
 			expect(transitions).toStrictEqual(
 				expect.arrayContaining([
 					{ count: 1, from: "Direct", to: "applied" },
@@ -291,7 +309,7 @@ describe("getStats", () => {
 				{ entered_at: "2025-01-02T00:00:00Z", status: "applied" },
 			]);
 
-			expect(getStats(db, USER_ID, "all").transitions).toStrictEqual([]);
+			expect(getStats(db, USER_ID, "all", null).transitions).toStrictEqual([]);
 		});
 
 		it("routes terminated jobs directly from their last active stage to their substatus", () => {
@@ -304,7 +322,7 @@ describe("getStats", () => {
 				{ entered_at: "2025-01-02T00:00:00Z", status: "applied" },
 			]);
 
-			const { transitions } = getStats(db, USER_ID, "all");
+			const { transitions } = getStats(db, USER_ID, "all", null);
 			expect(transitions).toStrictEqual(
 				expect.arrayContaining([
 					{ count: 1, from: "Direct", to: "applied" },
@@ -332,7 +350,7 @@ describe("getStats", () => {
 				{ entered_at: "2025-01-10T00:00:00Z", status: "applied" },
 			]);
 
-			const { transitions } = getStats(db, USER_ID, "all");
+			const { transitions } = getStats(db, USER_ID, "all", null);
 			const appliedIn = transitions
 				.filter((t) => t.to === "applied")
 				.reduce((s, t) => s + t.count, 0);
@@ -350,7 +368,7 @@ describe("getStats", () => {
 				{ entered_at: "2025-01-01T00:00:00Z", status: "applied" },
 			]);
 
-			const { transitions } = getStats(db, USER_ID, "all");
+			const { transitions } = getStats(db, USER_ID, "all", null);
 			// Only the source → Applied link; no outgoing from Applied
 			expect(transitions).toStrictEqual([{ count: 1, from: "Direct", to: "applied" }]);
 		});
@@ -372,7 +390,7 @@ describe("getStats", () => {
 				{ entered_at: "2025-01-03T00:00:00Z", status: "applied" },
 			]);
 
-			const { transitions } = getStats(db, USER_ID, "all");
+			const { transitions } = getStats(db, USER_ID, "all", null);
 			expect(transitions).toStrictEqual(
 				expect.arrayContaining([
 					{ count: 1, from: "Direct", to: "applied" },
@@ -411,15 +429,15 @@ describe("getStats", () => {
 		});
 
 		it("returns all jobs for 'all' window", () => {
-			expect(getStats(db, USER_ID, "all").totalApplications).toBe(3);
+			expect(getStats(db, USER_ID, "all", null).totalApplications).toBe(3);
 		});
 
 		it("only returns jobs within the last 90 days for '90' window", () => {
-			expect(getStats(db, USER_ID, "90").totalApplications).toBe(2);
+			expect(getStats(db, USER_ID, "90", null).totalApplications).toBe(2);
 		});
 
 		it("only returns jobs within the last 30 days for '30' window", () => {
-			expect(getStats(db, USER_ID, "30").totalApplications).toBe(1);
+			expect(getStats(db, USER_ID, "30", null).totalApplications).toBe(1);
 		});
 
 		it("falls back to created_at when date_applied is null", () => {
@@ -430,7 +448,51 @@ describe("getStats", () => {
 				status: "not_started",
 				user_id: USER_ID,
 			});
-			expect(getStats(db, USER_ID, "30").totalApplications).toBe(2);
+			expect(getStats(db, USER_ID, "30", null).totalApplications).toBe(2);
+		});
+	});
+
+	describe("round scoping (searchId)", () => {
+		let activeSearchId: number;
+		let closedSearchId: number;
+
+		beforeEach(() => {
+			closedSearchId = insertSearch(db, USER_ID, {
+				name: "Old Search",
+				closedAt: "2025-01-01T00:00:00Z",
+			});
+			activeSearchId = insertSearch(db, USER_ID, { name: "Current Search" });
+
+			insertJob(db, {
+				company: "Closed Round Co",
+				search_id: closedSearchId,
+				status: "applied",
+				user_id: USER_ID,
+			});
+			insertJob(db, {
+				company: "Active Round Co",
+				search_id: activeSearchId,
+				status: "applied",
+				user_id: USER_ID,
+			});
+		});
+
+		it("only counts jobs in the given round when searchId is provided", () => {
+			const stats = getStats(db, USER_ID, "all", activeSearchId);
+			expect(stats.totalApplications).toBe(1);
+			expect(stats.byStatus).toStrictEqual([{ count: 1, status: "applied" }]);
+		});
+
+		it("counts jobs across every round when searchId is null", () => {
+			const stats = getStats(db, USER_ID, "all", null);
+			expect(stats.totalApplications).toBe(2);
+		});
+
+		it("scopes topCompanies to the given round", () => {
+			const stats = getStats(db, USER_ID, "all", activeSearchId);
+			expect(stats.topCompanies.map((c) => c.company)).toStrictEqual([
+				"Active Round Co",
+			]);
 		});
 	});
 });
@@ -448,11 +510,11 @@ describe("getJobsForLink", () => {
 
 	describe("validation", () => {
 		it("returns null when 'from' is not a recognised node name", () => {
-			expect(getJobsForLink(db, USER_ID, "Hacking", "applied", "all")).toBeNull();
+			expect(getJobsForLink(db, USER_ID, "Hacking", "applied", "all", null)).toBeNull();
 		});
 
 		it("returns null when 'to' is not a recognised node name", () => {
-			expect(getJobsForLink(db, USER_ID, "applied", "Hacking", "all")).toBeNull();
+			expect(getJobsForLink(db, USER_ID, "applied", "Hacking", "all", null)).toBeNull();
 		});
 	});
 
@@ -462,7 +524,7 @@ describe("getJobsForLink", () => {
 			insertHistory(db, lastJobId(db), [
 				{ entered_at: "2025-01-01T00:00:00Z", status: "applied" },
 			]);
-			expect(getJobsForLink(db, USER_ID, "Direct", "applied", "all")).toHaveLength(1);
+			expect(getJobsForLink(db, USER_ID, "Direct", "applied", "all", null)).toHaveLength(1);
 		});
 
 		it("returns a Recruited job that reached Applied", () => {
@@ -470,7 +532,7 @@ describe("getJobsForLink", () => {
 			insertHistory(db, lastJobId(db), [
 				{ entered_at: "2025-01-01T00:00:00Z", status: "applied" },
 			]);
-			expect(getJobsForLink(db, USER_ID, "Recruited", "applied", "all")).toHaveLength(1);
+			expect(getJobsForLink(db, USER_ID, "Recruited", "applied", "all", null)).toHaveLength(1);
 		});
 
 		it("returns a Referred job that reached Applied", () => {
@@ -478,7 +540,7 @@ describe("getJobsForLink", () => {
 			insertHistory(db, lastJobId(db), [
 				{ entered_at: "2025-01-01T00:00:00Z", status: "applied" },
 			]);
-			expect(getJobsForLink(db, USER_ID, "Referred", "applied", "all")).toHaveLength(1);
+			expect(getJobsForLink(db, USER_ID, "Referred", "applied", "all", null)).toHaveLength(1);
 		});
 
 		it("does not cross-contaminate source types", () => {
@@ -487,7 +549,7 @@ describe("getJobsForLink", () => {
 			insertHistory(db, lastJobId(db), [
 				{ entered_at: "2025-01-01T00:00:00Z", status: "applied" },
 			]);
-			expect(getJobsForLink(db, USER_ID, "Recruited", "applied", "all")).toHaveLength(0);
+			expect(getJobsForLink(db, USER_ID, "Recruited", "applied", "all", null)).toHaveLength(0);
 		});
 	});
 
@@ -498,7 +560,7 @@ describe("getJobsForLink", () => {
 				{ entered_at: "2025-01-01T00:00:00Z", status: "applied" },
 				{ entered_at: "2025-01-02T00:00:00Z", status: "phone_screen" },
 			]);
-			expect(getJobsForLink(db, USER_ID, "applied", "phone_screen", "all")).toHaveLength(1);
+			expect(getJobsForLink(db, USER_ID, "applied", "phone_screen", "all", null)).toHaveLength(1);
 		});
 
 		it("returns jobs for the Phone screen → Interviewing link", () => {
@@ -508,7 +570,7 @@ describe("getJobsForLink", () => {
 				{ entered_at: "2025-01-02T00:00:00Z", status: "phone_screen" },
 				{ entered_at: "2025-01-03T00:00:00Z", status: "interviewing" },
 			]);
-			expect(getJobsForLink(db, USER_ID, "phone_screen", "interviewing", "all")).toHaveLength(1);
+			expect(getJobsForLink(db, USER_ID, "phone_screen", "interviewing", "all", null)).toHaveLength(1);
 		});
 
 		it("returns jobs for the Interviewing → Offer! link", () => {
@@ -519,7 +581,7 @@ describe("getJobsForLink", () => {
 				{ entered_at: "2025-01-03T00:00:00Z", status: "interviewing" },
 				{ entered_at: "2025-01-04T00:00:00Z", status: "offer" },
 			]);
-			expect(getJobsForLink(db, USER_ID, "interviewing", "offer", "all")).toHaveLength(1);
+			expect(getJobsForLink(db, USER_ID, "interviewing", "offer", "all", null)).toHaveLength(1);
 		});
 	});
 
@@ -529,7 +591,7 @@ describe("getJobsForLink", () => {
 			insertHistory(db, lastJobId(db), [
 				{ entered_at: "2025-01-01T00:00:00Z", status: "applied" },
 			]);
-			expect(getJobsForLink(db, USER_ID, "applied", "rejected_or_withdrawn", "all")).toHaveLength(1);
+			expect(getJobsForLink(db, USER_ID, "applied", "rejected_or_withdrawn", "all", null)).toHaveLength(1);
 		});
 
 		it("returns jobs terminated at Applied with a substatus for Applied → Ghosted", () => {
@@ -537,7 +599,7 @@ describe("getJobsForLink", () => {
 			insertHistory(db, lastJobId(db), [
 				{ entered_at: "2025-01-01T00:00:00Z", status: "applied" },
 			]);
-			expect(getJobsForLink(db, USER_ID, "applied", "Ghosted", "all")).toHaveLength(1);
+			expect(getJobsForLink(db, USER_ID, "applied", "Ghosted", "all", null)).toHaveLength(1);
 		});
 
 		it("does not include in Applied → Rejected/Withdrawn jobs that progressed to Phone screen", () => {
@@ -546,7 +608,7 @@ describe("getJobsForLink", () => {
 				{ entered_at: "2025-01-01T00:00:00Z", status: "applied" },
 				{ entered_at: "2025-01-02T00:00:00Z", status: "phone_screen" },
 			]);
-			expect(getJobsForLink(db, USER_ID, "applied", "rejected_or_withdrawn", "all")).toHaveLength(0);
+			expect(getJobsForLink(db, USER_ID, "applied", "rejected_or_withdrawn", "all", null)).toHaveLength(0);
 		});
 
 		it("returns jobs terminated at Offer! with a substatus", () => {
@@ -557,7 +619,7 @@ describe("getJobsForLink", () => {
 				{ entered_at: "2025-01-03T00:00:00Z", status: "interviewing" },
 				{ entered_at: "2025-01-04T00:00:00Z", status: "offer" },
 			]);
-			expect(getJobsForLink(db, USER_ID, "offer", "Offer accepted", "all")).toHaveLength(1);
+			expect(getJobsForLink(db, USER_ID, "offer", "Offer accepted", "all", null)).toHaveLength(1);
 		});
 
 		it("returns jobs at Offer! with no substatus for Offer! → Rejected/Withdrawn", () => {
@@ -568,7 +630,7 @@ describe("getJobsForLink", () => {
 				{ entered_at: "2025-01-03T00:00:00Z", status: "interviewing" },
 				{ entered_at: "2025-01-04T00:00:00Z", status: "offer" },
 			]);
-			expect(getJobsForLink(db, USER_ID, "offer", "rejected_or_withdrawn", "all")).toHaveLength(1);
+			expect(getJobsForLink(db, USER_ID, "offer", "rejected_or_withdrawn", "all", null)).toHaveLength(1);
 		});
 	});
 
@@ -585,7 +647,7 @@ describe("getJobsForLink", () => {
 			insertHistory(db, lastJobId(db), [
 				{ entered_at: "2025-05-01T00:00:00Z", status: "applied" },
 			]);
-			const jobs = getJobsForLink(db, USER_ID, "Direct", "applied", "all")!;
+			const jobs = getJobsForLink(db, USER_ID, "Direct", "applied", "all", null)!;
 			expect(jobs[0]).toMatchObject({
 				company: "Acme",
 				date_applied: "2025-05-01",
@@ -600,7 +662,7 @@ describe("getJobsForLink", () => {
 			insertHistory(db, lastJobId(db), [
 				{ entered_at: "2025-01-01T00:00:00Z", status: "applied" },
 			]);
-			expect(getJobsForLink(db, USER_ID, "applied", "phone_screen", "all")).toHaveLength(0);
+			expect(getJobsForLink(db, USER_ID, "applied", "phone_screen", "all", null)).toHaveLength(0);
 		});
 
 		it("does not return jobs belonging to other users", () => {
@@ -608,7 +670,7 @@ describe("getJobsForLink", () => {
 			insertHistory(db, lastJobId(db), [
 				{ entered_at: "2025-01-01T00:00:00Z", status: "applied" },
 			]);
-			expect(getJobsForLink(db, USER_ID, "Direct", "applied", "all")).toHaveLength(0);
+			expect(getJobsForLink(db, USER_ID, "Direct", "applied", "all", null)).toHaveLength(0);
 		});
 
 		it("respects the 30-day window and excludes older jobs", () => {
@@ -616,7 +678,23 @@ describe("getJobsForLink", () => {
 			insertHistory(db, lastJobId(db), [
 				{ entered_at: new Date(Date.now() - 60 * 86_400_000).toISOString(), status: "applied" },
 			]);
-			expect(getJobsForLink(db, USER_ID, "Direct", "applied", "30")).toHaveLength(0);
+			expect(getJobsForLink(db, USER_ID, "Direct", "applied", "30", null)).toHaveLength(0);
+		});
+	});
+
+	describe("round scoping (searchId)", () => {
+		it("only returns jobs in the given round when searchId is provided", () => {
+			const closedSearchId = insertSearch(db, USER_ID, { closedAt: "2025-01-01T00:00:00Z" });
+			const activeSearchId = insertSearch(db, USER_ID);
+
+			insertJob(db, { company: "Closed Round Co", search_id: closedSearchId, status: "applied", user_id: USER_ID });
+			insertHistory(db, lastJobId(db), [{ entered_at: "2025-01-01T00:00:00Z", status: "applied" }]);
+
+			insertJob(db, { company: "Active Round Co", search_id: activeSearchId, status: "applied", user_id: USER_ID });
+			insertHistory(db, lastJobId(db), [{ entered_at: "2025-06-01T00:00:00Z", status: "applied" }]);
+
+			const jobs = getJobsForLink(db, USER_ID, "Direct", "applied", "all", activeSearchId)!;
+			expect(jobs.map((j) => j.company)).toStrictEqual(["Active Round Co"]);
 		});
 	});
 });
