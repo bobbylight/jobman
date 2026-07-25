@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, Chip, FormControlLabel, Switch, Typography } from "@mui/material";
 import { api } from "../../api";
 import ChartCard from "../shared/ChartCard";
 import PageSpinner from "../shared/PageSpinner";
@@ -14,9 +14,11 @@ import AvgDaysChart from "./AvgDaysChart";
 import PipelineOverTimeChart from "./PipelineOverTimeChart";
 import TopCompaniesTable from "./TopCompaniesTable";
 import InterviewsPerWeekChart from "./InterviewsPerWeekChart";
+import { useActiveSearch } from "../../useActiveSearch";
 
 export default function StatsPage() {
 	const [window, setWindow] = useState<StatsWindow>("all");
+	const [allRounds, setAllRounds] = useState(false);
 	const [data, setData] = useState<StatsResponse | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(false);
@@ -24,16 +26,17 @@ export default function StatsPage() {
 		from: string;
 		to: string;
 	} | null>(null);
+	const { activeSearch } = useActiveSearch();
 
 	useEffect(() => {
 		setLoading(true);
 		setError(false);
 		api
-			.getStats(window)
+			.getStats(window, allRounds ? "all" : "current")
 			.then(setData)
 			.catch(() => setError(true))
 			.finally(() => setLoading(false));
-	}, [window]);
+	}, [window, allRounds]);
 
 	return (
 		<Box sx={{ maxWidth: 1100, mx: "auto", px: 3, py: 4 }}>
@@ -48,10 +51,28 @@ export default function StatsPage() {
 					mb: 3,
 				}}
 			>
-				<Typography variant="h5" sx={{ fontWeight: 700 }}>
-					Job Search Stats
-				</Typography>
-				<LookbackToggle value={window} onChange={setWindow} />
+				<Box sx={{ alignItems: "center", display: "flex", gap: 1.5 }}>
+					<Typography variant="h5" sx={{ fontWeight: 700 }}>
+						Job Search Stats
+					</Typography>
+					{activeSearch && !allRounds && (
+						<Chip label={activeSearch.name} size="small" />
+					)}
+				</Box>
+				<Box sx={{ alignItems: "center", display: "flex", gap: 2 }}>
+					<FormControlLabel
+						control={
+							<Switch
+								checked={allRounds}
+								onChange={(e) => setAllRounds(e.target.checked)}
+								size="small"
+							/>
+						}
+						label="All rounds"
+						sx={{ "& .MuiFormControlLabel-label": { fontSize: "0.875rem" } }}
+					/>
+					<LookbackToggle value={window} onChange={setWindow} />
+				</Box>
 			</Box>
 
 			{error && (
@@ -166,7 +187,7 @@ export default function StatsPage() {
 							<PipelineOverTimeChart statusOverTime={data.statusOverTime} />
 						</ChartCard>
 						<ChartCard
-							title="Top Companies (all time)"
+							title={`Top Companies (${allRounds ? "all time" : "this round"})`}
 							sx={{ flex: "1 1 340px" }}
 						>
 							<TopCompaniesTable topCompanies={data.topCompanies} />

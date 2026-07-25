@@ -199,6 +199,9 @@ export type InterviewQuestionFormData = Omit<
 
 export type StatsWindow = "all" | "90" | "30";
 
+/** "current" scopes to the active job search round; "all" spans every round. */
+export type StatsScope = "current" | "all";
+
 export type RadarEligibility =
 	| "active"
 	| "cooling_down"

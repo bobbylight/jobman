@@ -15,6 +15,7 @@ import type {
 	RadarPatch,
 	RadarResponse,
 	StatsResponse,
+	StatsScope,
 	StatsWindow,
 	User,
 } from "./types";
@@ -110,8 +111,8 @@ export const api = {
 		}),
 
 	// Stats
-	getStats: (window: StatsWindow) =>
-		request<StatsResponse>(`/stats?window=${window}`),
+	getStats: (window: StatsWindow, scope: StatsScope = "current") =>
+		request<StatsResponse>(`/stats?window=${window}&scope=${scope}`),
 	getLinkJobs: (from: string, to: string, window: StatsWindow) =>
 		request<LinkJob[]>(
 			`/stats/link-jobs?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&window=${window}`,
