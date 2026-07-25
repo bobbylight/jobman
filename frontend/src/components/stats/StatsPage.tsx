@@ -201,6 +201,7 @@ export default function StatsPage() {
 					from={linkClick.from}
 					to={linkClick.to}
 					open={linkClick !== null}
+					scope={allRounds ? "all" : "current"}
 					window={window}
 					onClose={() => setLinkClick(null)}
 				/>

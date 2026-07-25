@@ -38,6 +38,7 @@ const DEFAULT_PROPS = {
 	from: "applied",
 	onClose: vi.fn(),
 	open: true,
+	scope: "current" as const,
 	to: "phone_screen",
 	window: "all" as const,
 };
@@ -128,13 +129,43 @@ describe("transitionJobsDialog", () => {
 		);
 	});
 
-	it("calls getLinkJobs with correct from, to, and window args", async () => {
+	it("calls getLinkJobs with correct from, to, window, and scope args", async () => {
 		vi.mocked(api.getLinkJobs).mockResolvedValue([]);
 		render(<TransitionJobsDialog {...DEFAULT_PROPS} />);
 		await waitFor(() =>
 			expect(api.getLinkJobs).toHaveBeenCalledWith(
 				"applied",
 				"phone_screen",
+				"all",
+				"current",
+			),
+		);
+	});
+
+	it("calls getLinkJobs with scope='all' when scope prop is 'all'", async () => {
+		vi.mocked(api.getLinkJobs).mockResolvedValue([]);
+		render(<TransitionJobsDialog {...DEFAULT_PROPS} scope="all" />);
+		await waitFor(() =>
+			expect(api.getLinkJobs).toHaveBeenCalledWith(
+				"applied",
+				"phone_screen",
+				"all",
+				"all",
+			),
+		);
+	});
+
+	it("re-fetches when scope changes", async () => {
+		vi.mocked(api.getLinkJobs).mockResolvedValue([]);
+		const { rerender } = render(<TransitionJobsDialog {...DEFAULT_PROPS} />);
+		await waitFor(() => expect(api.getLinkJobs).toHaveBeenCalledOnce());
+
+		rerender(<TransitionJobsDialog {...DEFAULT_PROPS} scope="all" />);
+		await waitFor(() =>
+			expect(api.getLinkJobs).toHaveBeenLastCalledWith(
+				"applied",
+				"phone_screen",
+				"all",
 				"all",
 			),
 		);

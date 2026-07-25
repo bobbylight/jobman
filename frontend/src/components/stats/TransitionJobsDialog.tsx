@@ -15,12 +15,13 @@ import {
 } from "@mui/material";
 import { api } from "../../api";
 import { STATUS_LABELS } from "../../constants";
-import type { JobStatus, LinkJob, StatsWindow } from "../../types";
+import type { JobStatus, LinkJob, StatsScope, StatsWindow } from "../../types";
 
 interface Props {
 	from: string;
 	onClose: () => void;
 	open: boolean;
+	scope: StatsScope;
 	to: string;
 	window: StatsWindow;
 }
@@ -29,6 +30,7 @@ export default function TransitionJobsDialog({
 	from,
 	onClose,
 	open,
+	scope,
 	to,
 	window,
 }: Props) {
@@ -42,11 +44,11 @@ export default function TransitionJobsDialog({
 		setLoading(true);
 		setJobs(null);
 		api
-			.getLinkJobs(from, to, window)
+			.getLinkJobs(from, to, window, scope)
 			.then(setJobs)
 			.catch(() => setJobs([]))
 			.finally(() => setLoading(false));
-	}, [open, from, to, window]);
+	}, [open, from, to, window, scope]);
 
 	return (
 		<Dialog fullWidth maxWidth="sm" onClose={onClose} open={open}>
