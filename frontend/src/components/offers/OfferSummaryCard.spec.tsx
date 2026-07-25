@@ -59,4 +59,20 @@ describe("offerSummaryCard", () => {
 		expect(screen.getByText("No offer recorded")).toBeInTheDocument();
 		expect(screen.queryByText("Year 1 TC")).not.toBeInTheDocument();
 	});
+
+	it("does not show a round chip when searchName is absent", () => {
+		render(<OfferSummaryCard job={makeJob()} offer={makeOffer()} />);
+		expect(screen.queryByText("Q3 2026 Search")).not.toBeInTheDocument();
+	});
+
+	it("shows the round name as a chip when searchName is present", () => {
+		render(
+			<OfferSummaryCard
+				job={makeJob()}
+				offer={makeOffer()}
+				searchName="Q3 2026 Search"
+			/>,
+		);
+		expect(screen.getByText("Q3 2026 Search")).toBeInTheDocument();
+	});
 });

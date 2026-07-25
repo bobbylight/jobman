@@ -208,5 +208,6 @@ export const api = {
 		}),
 	deleteOffer: (jobId: number) =>
 		request<void>(`/jobs/${jobId}/offer`, { method: "DELETE" }),
-	getOffersComparison: () => request<OfferComparisonEntry[]>("/offers"),
+	getOffersComparison: (scope: StatsScope = "current") =>
+		request<OfferComparisonEntry[]>(`/offers?scope=${scope}`),
 };

@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Card, CardContent, Typography } from "@mui/material";
+import { Box, Card, CardContent, Chip, Typography } from "@mui/material";
 import type { Job, Offer } from "../../types";
 import {
 	computeOngoingTC,
@@ -11,9 +11,11 @@ import CompanyLogo from "../shared/CompanyLogo";
 interface Props {
 	job: Job;
 	offer: Offer | null;
+	/** Job search round name — shown only in the "all rounds" view, where cards can span multiple rounds. */
+	searchName?: string;
 }
 
-export default function OfferSummaryCard({ job, offer }: Props) {
+export default function OfferSummaryCard({ job, offer, searchName }: Props) {
 	return (
 		<Card sx={{ flex: "1 1 220px", maxWidth: 280 }}>
 			<CardContent>
@@ -31,6 +33,15 @@ export default function OfferSummaryCard({ job, offer }: Props) {
 						</Typography>
 					</Box>
 				</Box>
+
+				{searchName && (
+					<Chip
+						label={searchName}
+						size="small"
+						variant="outlined"
+						sx={{ mb: 1.5 }}
+					/>
+				)}
 
 				{offer === null ? (
 					<Typography
