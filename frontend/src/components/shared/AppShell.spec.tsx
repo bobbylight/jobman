@@ -106,6 +106,54 @@ describe("appShell", () => {
 		expect(screen.getByTestId("outlet")).toBeInTheDocument();
 	});
 
+	describe("nav scope captions", () => {
+		it("shows a 'current search' tooltip caption for Stats", async () => {
+			renderAppShell();
+			fireEvent.mouseOver(screen.getByRole("button", { name: "Stats" }));
+			await expect(
+				screen.findByText("Stats — current search"),
+			).resolves.toBeInTheDocument();
+		});
+
+		it("shows a 'current search' tooltip caption for Offers", async () => {
+			renderAppShell();
+			fireEvent.mouseOver(screen.getByRole("button", { name: "Offers" }));
+			await expect(
+				screen.findByText("Offers — current search"),
+			).resolves.toBeInTheDocument();
+		});
+
+		it("shows an 'all time' tooltip caption for Radar", async () => {
+			renderAppShell();
+			fireEvent.mouseOver(screen.getByRole("button", { name: "Radar" }));
+			await expect(
+				screen.findByText("Radar — all time"),
+			).resolves.toBeInTheDocument();
+		});
+
+		it("shows an 'all time' tooltip caption for Insights", async () => {
+			renderAppShell();
+			fireEvent.mouseOver(screen.getByRole("button", { name: "Insights" }));
+			await expect(
+				screen.findByText("Insights — all time"),
+			).resolves.toBeInTheDocument();
+		});
+
+		it("shows no scope caption for Board", async () => {
+			renderAppShell();
+			fireEvent.mouseOver(screen.getByRole("button", { name: "Board" }));
+			await expect(screen.findByText("Board")).resolves.toBeInTheDocument();
+			expect(screen.queryByText(/Board —/)).not.toBeInTheDocument();
+		});
+
+		it("shows no scope caption for Calendar", async () => {
+			renderAppShell();
+			fireEvent.mouseOver(screen.getByRole("button", { name: "Calendar" }));
+			await expect(screen.findByText("Calendar")).resolves.toBeInTheDocument();
+			expect(screen.queryByText(/Calendar —/)).not.toBeInTheDocument();
+		});
+	});
+
 	it("navigates to /jobs when Board is clicked", () => {
 		renderAppShell();
 		fireEvent.click(screen.getByRole("button", { name: "Board" }));

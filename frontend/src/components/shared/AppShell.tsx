@@ -32,22 +32,42 @@ import NewSearchRoundDialog from "./NewSearchRoundDialog";
 import NewSearchRoundConfirmDialog from "./NewSearchRoundConfirmDialog";
 import PastSearchesDialog from "./PastSearchesDialog";
 
+// "current" scope pages only show data for the active job search round.
+// "All" scope pages aggregate across every round instead. Board is exempt —
+// It communicates its own scope via the round-name chip in its toolbar.
 const NAV_ITEMS = [
-	{ icon: <ViewKanbanOutlinedIcon />, label: "Board", path: "/jobs" },
+	{
+		icon: <ViewKanbanOutlinedIcon />,
+		label: "Board",
+		path: "/jobs",
+		scope: null,
+	},
 	{
 		icon: <CalendarMonthOutlinedIcon />,
 		label: "Calendar",
 		path: "/calendar",
+		scope: null,
 	},
-	{ icon: <InsightsIcon />, label: "Stats", path: "/stats" },
+	{ icon: <InsightsIcon />, label: "Stats", path: "/stats", scope: "current" },
 	{
 		icon: <PsychologyOutlinedIcon />,
 		label: "Insights",
 		path: "/insights",
+		scope: "all",
 	},
-	{ icon: <RadarIcon />, label: "Radar", path: "/radar" },
-	{ icon: <CompareArrowsIcon />, label: "Offers", path: "/offers" },
+	{ icon: <RadarIcon />, label: "Radar", path: "/radar", scope: "all" },
+	{
+		icon: <CompareArrowsIcon />,
+		label: "Offers",
+		path: "/offers",
+		scope: "current",
+	},
 ] as const;
+
+const SCOPE_CAPTIONS: Record<"current" | "all", string> = {
+	all: "all time",
+	current: "current search",
+};
 
 interface Props {
 	currentUser: User;
@@ -246,10 +266,11 @@ export default function AppShell({ currentUser, onLogout }: Props) {
 						width: 56,
 					}}
 				>
-					{NAV_ITEMS.map(({ path, icon, label }) => {
+					{NAV_ITEMS.map(({ path, icon, label, scope }) => {
 						const active = location.pathname.startsWith(path);
+						const title = scope ? `${label} — ${SCOPE_CAPTIONS[scope]}` : label;
 						return (
-							<Tooltip key={path} title={label} placement="right">
+							<Tooltip key={path} title={title} placement="right">
 								<IconButton
 									aria-label={label}
 									onClick={() => navigate(path)}
