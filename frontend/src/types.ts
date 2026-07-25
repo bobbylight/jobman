@@ -130,7 +130,8 @@ export type OfferFormData = Omit<
 >;
 
 export interface OfferComparisonEntry {
-	job: Job;
+	/** `search_name` is present only when the entry came from a `scope=all` response. */
+	job: Job & { search_name?: string };
 	offer: Offer | null;
 }
 

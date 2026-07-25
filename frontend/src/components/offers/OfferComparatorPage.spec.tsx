@@ -3,7 +3,8 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import OfferComparatorPage from "./OfferComparatorPage";
 import { api } from "../../api";
-import { makeJob } from "../../testUtils";
+import { SnackbarProvider } from "../../useSnackbar";
+import { makeJob, makeJobSearch } from "../../testUtils";
 import type { Offer, OfferComparisonEntry } from "../../types";
 
 const mockNavigate = vi.fn();
@@ -12,10 +13,13 @@ vi.mock(import("react-router-dom"), async (importOriginal) => {
 	return { ...actual, useNavigate: () => mockNavigate };
 });
 
-vi.mock(
-	import("../../api"),
-	() => ({ api: { getOffersComparison: vi.fn() } }) as any,
-);
+vi.mock(import("../../api"), async (importOriginal) => {
+	const original = await importOriginal();
+	return {
+		...original,
+		api: { getActiveSearch: vi.fn(), getOffersComparison: vi.fn() },
+	} as any;
+});
 
 vi.mock(
 	import("../../useCompanyLogo"),
@@ -28,6 +32,7 @@ vi.mock(
 );
 
 const mockGetOffersComparison = vi.mocked(api.getOffersComparison);
+const mockGetActiveSearch = vi.mocked(api.getActiveSearch);
 
 const BASE_OFFER: Offer = {
 	id: 1,
@@ -57,15 +62,18 @@ function makeEntry(
 
 function renderPage() {
 	return render(
-		<MemoryRouter>
-			<OfferComparatorPage />
-		</MemoryRouter>,
+		<SnackbarProvider>
+			<MemoryRouter>
+				<OfferComparatorPage />
+			</MemoryRouter>
+		</SnackbarProvider>,
 	);
 }
 
 describe("offerComparatorPage", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockGetActiveSearch.mockResolvedValue(makeJobSearch());
 	});
 
 	it("shows a loading spinner while fetching offers", () => {
@@ -82,17 +90,35 @@ describe("offerComparatorPage", () => {
 		);
 	});
 
-	it("shows the empty state and links to the Kanban board when there are no offer-status jobs", async () => {
+	it("shows the current-round empty state by default", async () => {
 		mockGetOffersComparison.mockResolvedValue([]);
 		renderPage();
 		await waitFor(() =>
 			expect(
-				screen.getByText(/don't have any jobs in the Offer column/),
+				screen.getByText("No offers in your current search."),
 			).toBeInTheDocument(),
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Go to Kanban Board" }));
 		expect(mockNavigate).toHaveBeenCalledWith("/jobs");
+	});
+
+	it("shows the all-time empty state when 'Include past rounds' is on", async () => {
+		mockGetOffersComparison.mockResolvedValue([]);
+		renderPage();
+		await waitFor(() =>
+			expect(mockGetOffersComparison).toHaveBeenCalledWith("current"),
+		);
+
+		fireEvent.click(
+			screen.getByRole("switch", { name: "Include past rounds" }),
+		);
+
+		await waitFor(() =>
+			expect(
+				screen.getByText(/don't have any jobs in the Offer column/),
+			).toBeInTheDocument(),
+		);
 	});
 
 	it("renders summary cards, comparison table, and breakdown chart when offer-status jobs exist", async () => {
@@ -109,5 +135,61 @@ describe("offerComparatorPage", () => {
 		expect(screen.getByText("No offer recorded")).toBeInTheDocument();
 		expect(screen.getByText("Compensation Comparison")).toBeInTheDocument();
 		expect(screen.getByTestId("offer-breakdown-chart")).toBeInTheDocument();
+	});
+
+	describe("round scoping", () => {
+		it("fetches with scope='current' by default", async () => {
+			mockGetOffersComparison.mockResolvedValue([]);
+			renderPage();
+			await waitFor(() =>
+				expect(mockGetOffersComparison).toHaveBeenCalledWith("current"),
+			);
+		});
+
+		it("shows the active round's name as a chip next to the title", async () => {
+			mockGetActiveSearch.mockResolvedValue(
+				makeJobSearch({ name: "Q3 2026 Search" }),
+			);
+			mockGetOffersComparison.mockResolvedValue([]);
+			renderPage();
+			await waitFor(() =>
+				expect(screen.getByText("Q3 2026 Search")).toBeInTheDocument(),
+			);
+		});
+
+		it("re-fetches with scope='all' and hides the round chip when the switch is toggled on", async () => {
+			mockGetActiveSearch.mockResolvedValue(
+				makeJobSearch({ name: "Q3 2026 Search" }),
+			);
+			mockGetOffersComparison.mockResolvedValue([]);
+			renderPage();
+			await waitFor(() =>
+				expect(screen.getByText("Q3 2026 Search")).toBeInTheDocument(),
+			);
+
+			fireEvent.click(
+				screen.getByRole("switch", { name: "Include past rounds" }),
+			);
+
+			await waitFor(() =>
+				expect(mockGetOffersComparison).toHaveBeenCalledWith("all"),
+			);
+			expect(screen.queryByText("Q3 2026 Search")).not.toBeInTheDocument();
+		});
+
+		it("passes each entry's search_name through to its summary card", async () => {
+			mockGetOffersComparison.mockResolvedValue([
+				makeEntry({
+					job: {
+						...makeJob({ company: "Acme Corp" }),
+						search_name: "Old Search",
+					},
+				}),
+			]);
+			renderPage();
+			await waitFor(() =>
+				expect(screen.getByText("Old Search")).toBeInTheDocument(),
+			);
+		});
 	});
 });

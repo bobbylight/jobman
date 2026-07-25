@@ -5,6 +5,7 @@ import type {
 	Job,
 	JobFormData,
 	LinkJob,
+	OfferComparisonEntry,
 	StatsResponse,
 } from "./types";
 
@@ -704,6 +705,38 @@ describe("aPI module", () => {
 			await expect(
 				api.getLinkJobs("applied", "phone_screen", "all"),
 			).rejects.toThrow("API error 400");
+		});
+	});
+
+	describe("getOffersComparison", () => {
+		const MOCK_ENTRIES: OfferComparisonEntry[] = [];
+
+		it("gETs /api/offers?scope=current by default", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_ENTRIES));
+			const result = await api.getOffersComparison();
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/offers?scope=current",
+				expect.objectContaining({
+					headers: { "Content-Type": "application/json" },
+				}),
+			);
+			expect(result).toStrictEqual(MOCK_ENTRIES);
+		});
+
+		it("passes scope=all when explicitly requested", async () => {
+			mockFetch.mockResolvedValue(makeResponse(MOCK_ENTRIES));
+			await api.getOffersComparison("all");
+			expect(mockFetch).toHaveBeenCalledWith(
+				"/api/offers?scope=all",
+				expect.any(Object),
+			);
+		});
+
+		it("throws when the response is not ok", async () => {
+			mockFetch.mockResolvedValue(
+				makeResponse({ error: "Unauthorized" }, false),
+			);
+			await expect(api.getOffersComparison()).rejects.toThrow("API error 400");
 		});
 	});
 
