@@ -141,5 +141,14 @@ describe("users db", () => {
 				.get(user.id) as { refresh_token: string | null };
 			expect(identityRow.refresh_token).toBeNull();
 		});
+
+		it("creates a free/active subscription row for the new user", () => {
+			const user = createUserWithGoogleIdentity(db, GOOGLE_PARAMS);
+			const subscription = db
+				.prepare("SELECT tier, status FROM subscriptions WHERE user_id = ?")
+				.get(user.id) as { tier: string; status: string };
+			expect(subscription.tier).toBe("free");
+			expect(subscription.status).toBe("active");
+		});
 	});
 });

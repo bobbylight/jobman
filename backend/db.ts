@@ -25,6 +25,16 @@ export function applySchema(db: Database.Database): void {
     UNIQUE(provider, provider_user_id)
   );
 
+  CREATE TABLE IF NOT EXISTS subscriptions (
+    id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id            INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    tier               TEXT NOT NULL DEFAULT 'free' CHECK (tier IN ('free', 'premium')),
+    status             TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'canceled', 'past_due')),
+    started_at         TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    created_at         TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    updated_at         TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+  );
+
   CREATE TABLE IF NOT EXISTS jobs (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id          INTEGER NOT NULL REFERENCES users(id),
@@ -206,12 +216,26 @@ export function migrateJobSearches(db: Database.Database): void {
 	backfill();
 }
 
+/**
+ * Backfills a default ('free', 'active') subscriptions row for every pre-existing user
+ * that doesn't already have one. Runs against both fresh and pre-existing databases; a
+ * fresh DB simply has no rows to backfill.
+ */
+export function migrateSubscriptions(db: Database.Database): void {
+	db.exec(`
+    INSERT INTO subscriptions (user_id)
+    SELECT id FROM users
+    WHERE id NOT IN (SELECT user_id FROM subscriptions)
+  `);
+}
+
 const db = new Database(join(import.meta.dirname, "jobman.db"));
 
 // Enable foreign key enforcement
 db.pragma("foreign_keys = ON");
 applySchema(db);
 migrateJobSearches(db);
+migrateSubscriptions(db);
 
 // Seed target companies (INSERT OR IGNORE — safe to re-run)
 db.exec(`
