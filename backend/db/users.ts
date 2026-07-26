@@ -1,4 +1,5 @@
 import type Database from "better-sqlite3";
+import { createFreeSubscription } from "./subscriptions.js";
 
 export interface UserRow {
 	id: number;
@@ -77,6 +78,7 @@ export function createUserWithGoogleIdentity(
 			params.accessToken,
 			params.refreshToken,
 		);
+		createFreeSubscription(db, row.id);
 		return {
 			avatar_url: params.avatarUrl,
 			display_name: params.displayName,
