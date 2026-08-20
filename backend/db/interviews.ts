@@ -50,6 +50,8 @@ export interface EnrichedInterviewRow extends InterviewRow {
 	company: string;
 	role: string;
 	link: string;
+	search_id: number | null;
+	search_closed: 0 | 1;
 }
 
 export function listEnrichedInterviews(
@@ -74,9 +76,11 @@ export function listEnrichedInterviews(
 		SELECT i.id, i.job_id, i.interview_stage, i.interview_dttm,
 		       i.interview_interviewers, i.interview_type, i.interview_vibe, i.interview_notes,
 		       i.interview_result, i.interview_feeling,
-		       j.company, j.role, j.link
+		       j.company, j.role, j.link, j.search_id,
+		       CASE WHEN s.closed_at IS NULL THEN 0 ELSE 1 END AS search_closed
 		FROM interviews i
 		JOIN jobs j ON j.id = i.job_id
+		LEFT JOIN job_searches s ON s.id = j.search_id
 		WHERE ${conditions.join(" AND ")}
 		ORDER BY i.interview_dttm ASC
 	`;
@@ -93,9 +97,11 @@ export function listEnrichedInterviewsAfter(
 		SELECT i.id, i.job_id, i.interview_stage, i.interview_dttm,
 		       i.interview_interviewers, i.interview_type, i.interview_vibe, i.interview_notes,
 		       i.interview_result, i.interview_feeling,
-		       j.company, j.role, j.link
+		       j.company, j.role, j.link, j.search_id,
+		       CASE WHEN s.closed_at IS NULL THEN 0 ELSE 1 END AS search_closed
 		FROM interviews i
 		JOIN jobs j ON j.id = i.job_id
+		LEFT JOIN job_searches s ON s.id = j.search_id
 		WHERE j.user_id = ? AND i.interview_dttm > ?
 		ORDER BY i.interview_dttm ASC
 		LIMIT ?

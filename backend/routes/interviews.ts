@@ -7,10 +7,19 @@ import { validateInterview, validateInterviewQuestion } from "../validators.js";
 const PAGE_SIZE = 10;
 
 function toEnrichedResponse(rows: InterviewsDb.EnrichedInterviewRow[]) {
-	return rows.map(({ company, role, link, ...interview }) => ({
-		...interview,
-		job: { company, id: interview.job_id, link, role },
-	}));
+	return rows.map(
+		({ company, role, link, search_id, search_closed, ...interview }) => ({
+			...interview,
+			job: {
+				company,
+				id: interview.job_id,
+				link,
+				role,
+				search_id,
+				search_closed: search_closed === 1,
+			},
+		}),
+	);
 }
 
 // GET /api/interviews — cross-job interview search

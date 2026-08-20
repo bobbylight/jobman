@@ -174,6 +174,8 @@ export interface EnrichedInterview extends Interview {
 		company: string;
 		role: string;
 		link: string;
+		search_id: number | null;
+		search_closed: boolean;
 	};
 }
 

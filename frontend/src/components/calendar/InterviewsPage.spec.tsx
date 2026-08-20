@@ -54,6 +54,8 @@ function makeInterview(
 			id: 10,
 			link: "https://example.com/job",
 			role: "Software Engineer",
+			search_id: 1,
+			search_closed: false,
 		},
 		job_id: 10,
 		...overrides,
@@ -522,6 +524,8 @@ describe("interviewsPage", () => {
 				id: 11,
 				link: "https://beta.example.com",
 				role: "Staff SWE",
+				search_id: 1,
+				search_closed: false,
 			},
 		});
 		mockSearchInterviews.mockResolvedValue([first]);
