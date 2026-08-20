@@ -340,7 +340,13 @@ export default function InterviewsPage() {
 												<InterviewRow
 													key={iv.id}
 													interview={iv}
-													onJobClick={() => navigate(`/jobs/${iv.job.id}`)}
+													onJobClick={() =>
+														navigate(
+															iv.job.search_closed && iv.job.search_id !== null
+																? `/jobs/history/${iv.job.search_id}/${iv.job.id}`
+																: `/jobs/${iv.job.id}`,
+														)
+													}
 													dimmed={isPast}
 												/>
 											))}
