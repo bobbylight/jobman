@@ -1438,5 +1438,46 @@ describe("jobDialog", () => {
 				).not.toBeInTheDocument();
 			});
 		});
+
+		it("opens the question sub-view when a Questions link is clicked", async () => {
+			vi.mocked(api.getInterviews).mockResolvedValue([MOCK_INTERVIEW]);
+			render(<JobDialog {...DEFAULT_PROPS} jobId={BASE_JOB.id} readOnly />);
+			await waitFor(() => {
+				expect(
+					screen.getByRole("heading", { name: /Engineer/ }),
+				).toBeInTheDocument();
+			});
+			fireEvent.click(screen.getByRole("tab", { name: /Interviews/ }));
+			await waitFor(() => {
+				expect(screen.getByText("Jane Smith")).toBeInTheDocument();
+			});
+			fireEvent.click(screen.getByRole("button", { name: /Questions/ }));
+			await waitFor(() => {
+				expect(
+					screen.getByText("No questions recorded yet."),
+				).toBeInTheDocument();
+			});
+		});
+
+		// A native <fieldset disabled> silently blocks all descendant form controls
+		// (jsdom doesn't emulate this cascade, so we assert on the markup directly)
+		// — the Interviews tab must not be nested inside the Details form's fieldset,
+		// Or its buttons (like "Questions") become permanently inert in real browsers.
+		it("does not wrap the Interviews tab content in the Details form's fieldset", async () => {
+			vi.mocked(api.getInterviews).mockResolvedValue([MOCK_INTERVIEW]);
+			render(<JobDialog {...DEFAULT_PROPS} jobId={BASE_JOB.id} readOnly />);
+			await waitFor(() => {
+				expect(
+					screen.getByRole("heading", { name: /Engineer/ }),
+				).toBeInTheDocument();
+			});
+			fireEvent.click(screen.getByRole("tab", { name: /Interviews/ }));
+			await waitFor(() => {
+				expect(screen.getByText("Jane Smith")).toBeInTheDocument();
+			});
+			// MUI Dialog renders via a portal to document.body, so query there
+			// (RTL's container only covers the initial root element).
+			expect(document.querySelector("fieldset")).not.toBeInTheDocument();
+		});
 	});
 });
