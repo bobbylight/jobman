@@ -440,12 +440,12 @@ export default function JobDialog({
 							{loadError}
 						</Alert>
 					)}
-					<Box
-						component="fieldset"
-						disabled={formDisabled}
-						sx={{ border: "none", m: 0, minWidth: 0, p: 0 }}
-					>
-						{activeTab === 0 && (
+					{activeTab === 0 && (
+						<Box
+							component="fieldset"
+							disabled={formDisabled}
+							sx={{ border: "none", m: 0, minWidth: 0, p: 0 }}
+						>
 							<Grid container spacing={2} sx={{ pt: 0.5 }}>
 								<Grid size={{ sm: 6, xs: 12 }}>
 									<TextField
@@ -818,26 +818,26 @@ export default function JobDialog({
 									/>
 								</Grid>
 							</Grid>
-						)}
-						{isEdit && activeTab === 1 && (
-							<InterviewsTab
-								jobId={jobId!}
-								jobStatus={form.status}
-								onCountChange={setInterviewCount}
-								viewingQuestionsFor={viewingQuestionsFor}
-								onViewingQuestionsChange={setViewingQuestionsFor}
-								readOnly={readOnly}
-							/>
-						)}
-						{isEdit && activeTab === 2 && form.status === "offer" && (
-							<OfferTab
-								jobId={jobId!}
-								offerData={offerData}
-								onOfferChange={setOfferData}
-								readOnly={readOnly}
-							/>
-						)}
-					</Box>
+						</Box>
+					)}
+					{isEdit && activeTab === 1 && (
+						<InterviewsTab
+							jobId={jobId!}
+							jobStatus={form.status}
+							onCountChange={setInterviewCount}
+							viewingQuestionsFor={viewingQuestionsFor}
+							onViewingQuestionsChange={setViewingQuestionsFor}
+							readOnly={readOnly}
+						/>
+					)}
+					{isEdit && activeTab === 2 && form.status === "offer" && (
+						<OfferTab
+							jobId={jobId!}
+							offerData={offerData}
+							onOfferChange={setOfferData}
+							readOnly={readOnly}
+						/>
+					)}
 				</DialogContent>
 
 				<DialogActions
